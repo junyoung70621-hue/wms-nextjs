@@ -12,6 +12,9 @@ export async function GET(request: Request) {
   const actionType = searchParams.get('action')
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '200'), 1000)
 
+  const dateFrom = searchParams.get('date_from') // YYYY-MM-DD
+  const dateTo   = searchParams.get('date_to')   // YYYY-MM-DD
+
   let query = supabase
     .from('history')
     .select(
@@ -24,6 +27,12 @@ export async function GET(request: Request) {
 
   if (actionType) {
     query = query.eq('action_type', actionType)
+  }
+  if (dateFrom) {
+    query = query.gte('acted_at', `${dateFrom}T00:00:00+09:00`)
+  }
+  if (dateTo) {
+    query = query.lte('acted_at', `${dateTo}T23:59:59+09:00`)
   }
 
   const { data, error } = await query

@@ -54,6 +54,8 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
   const [filterSearch, setFilterSearch] = useState('')
   const [filterLimit,  setFilterLimit]  = useState('200')
   const [filterCenter, setFilterCenter] = useState('전체')
+  const [dateFrom,     setDateFrom]     = useState('')
+  const [dateTo,       setDateTo]       = useState('')
 
   const isAdminOrMaterials = user.role === 'admin' || user.role === 'materials'
   const userCenter = user.assigned_center ?? user.center
@@ -65,6 +67,8 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
     try {
       const params = new URLSearchParams({ limit: filterLimit })
       if (filterAction !== 'all') params.set('action', filterAction)
+      if (dateFrom) params.set('date_from', dateFrom)
+      if (dateTo)   params.set('date_to',   dateTo)
       const res  = await fetch(`/api/history?${params}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -76,7 +80,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
     }
   }
 
-  useEffect(() => { fetchData() }, [filterAction, filterLimit])
+  useEffect(() => { fetchData() }, [filterAction, filterLimit, dateFrom, dateTo])
 
   // ── 클라이언트 필터 ───────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -196,16 +200,42 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
           </SelectContent>
         </Select>
 
-        <Button variant="outline" onClick={fetchData} disabled={loading}>
-          {loading ? '로딩 중...' : '🔄 새로고침'}
+        {/* 날짜 범위 */}
+        <div className="flex items-center gap-1 text-[12px]">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] h-8"
+          />
+          <span className="text-[#94A3B8]">~</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] h-8"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo('') }}
+              className="text-[#94A3B8] hover:text-[#D3004F] text-[11px] px-1"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <Button variant="outline" onClick={fetchData} disabled={loading} className="h-8 text-[12px]">
+          {loading ? '...' : '🔄'}
         </Button>
 
         <Button
           variant="outline"
           onClick={handleCsvDownload}
           disabled={loading || filtered.length === 0}
+          className="h-8 text-[12px]"
         >
-          ⬇️ CSV 다운로드
+          ⬇️ CSV
         </Button>
       </div>
 
