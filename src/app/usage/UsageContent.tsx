@@ -172,7 +172,14 @@ export default function UsageContent({ user }: { user: SessionUser }) {
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{error}</p>
       )}
 
-      <p className="text-sm text-gray-500">총 {filtered.length.toLocaleString()}건</p>
+      <div className="flex flex-wrap gap-3 text-[12px]">
+        <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
+        {filtered.length > 0 && (
+          <span className="text-[#c62828]">
+            출고 합계 <b>{filtered.reduce((s, h) => s + h.quantity, 0).toLocaleString()}</b>개
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-48 text-gray-400 border rounded">

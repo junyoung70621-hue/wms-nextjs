@@ -245,7 +245,20 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         </p>
       )}
 
-      <p className="text-sm text-gray-500">총 {filtered.length.toLocaleString()}건</p>
+      {/* 요약 통계 */}
+      {filtered.length > 0 && (() => {
+        const inQty  = filtered.filter(h => h.action_type === 'in').reduce((s, h) => s + h.quantity, 0)
+        const outQty = filtered.filter(h => h.action_type === 'out').reduce((s, h) => s + h.quantity, 0)
+        const trQty  = filtered.filter(h => h.action_type === 'transfer').reduce((s, h) => s + h.quantity, 0)
+        return (
+          <div className="flex flex-wrap gap-3 text-[12px]">
+            <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
+            {inQty  > 0 && <span className="text-[#2e7d32]">📥 입고 <b>{inQty.toLocaleString()}</b>개</span>}
+            {outQty > 0 && <span className="text-[#c62828]">📤 출고 <b>{outQty.toLocaleString()}</b>개</span>}
+            {trQty  > 0 && <span className="text-[#1565c0]">🚚 이동 <b>{trQty.toLocaleString()}</b>개</span>}
+          </div>
+        )
+      })()}
 
       {/* 테이블 */}
       {loading ? (
