@@ -53,7 +53,25 @@ export async function PATCH(request: Request) {
   update.last_modified_by = session.user.id
   update.last_modified_at = new Date().toISOString()
 
+  // 수량 변경 전 현재 재고 조회
+  const { data: before } = await supabase
+    .from('warehouse').select('quantity, location').eq('id', id).single()
+
   const { error } = await supabase.from('warehouse').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 수정 이력 기록
+  await supabase.from('history').insert({
+    actor_id:             session.user.id,
+    item_id:              id,
+    action_type:          'edit',
+    quantity:             update.quantity !== undefined ? Number(update.quantity) : (before?.quantity ?? 0),
+    reason:               '정보 수정',
+    from_center:          before?.location ?? null,
+    to_center:            (update.location as string | undefined) ?? null,
+    snapshot_qty_before:  before?.quantity ?? 0,
+    snapshot_qty_after:   update.quantity !== undefined ? Number(update.quantity) : (before?.quantity ?? 0),
+  })
+
   return NextResponse.json({ ok: true })
 }

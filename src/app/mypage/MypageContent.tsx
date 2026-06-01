@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -14,6 +15,8 @@ const ROLE_LABEL: Record<string, string> = {
 }
 
 export default function MypageContent({ user }: { user: SessionUser }) {
+  const router = useRouter()
+
   // ── 내 정보 수정 ────────────────────────────────────────────────────────
   const [name,     setName]     = useState(user.name)
   const [email,    setEmail]    = useState(user.email)
@@ -45,6 +48,7 @@ export default function MypageContent({ user }: { user: SessionUser }) {
       const data = await res.json()
       if (!res.ok) { setInfoErr(data.error); return }
       setInfoMsg('✅ 정보가 업데이트됐습니다!')
+      router.refresh()
     } catch { setInfoErr('네트워크 오류가 발생했습니다.') }
     finally { setInfoLoad(false) }
   }
