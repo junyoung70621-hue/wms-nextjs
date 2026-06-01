@@ -385,6 +385,7 @@ function NewRequestForm({
 export default function MaterialRequestsContent({ user }: { user: SessionUser }) {
   const [data,    setData]    = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
   const isManager = user.role === 'admin' || user.role === 'materials'
   const isAdmin   = user.role === 'admin'
 
@@ -425,8 +426,19 @@ export default function MaterialRequestsContent({ user }: { user: SessionUser })
     fetchData()
   }
 
+  const searchedData = useMemo(() => {
+    if (!search.trim()) return data
+    const q = search.toLowerCase()
+    return data.filter(r =>
+      r.requester_name.toLowerCase().includes(q) ||
+      r.from_center.toLowerCase().includes(q) ||
+      (r.notes ?? '').toLowerCase().includes(q) ||
+      (r.items ?? []).some((it: { item_name: string }) => it.item_name?.toLowerCase().includes(q))
+    )
+  }, [data, search])
+
   const filterByStatus = (status: string | null) =>
-    status ? data.filter(r => r.status === status) : data
+    status ? searchedData.filter(r => r.status === status) : searchedData
 
   const cardProps = (req: Request) => ({
     req, isManager, isAdmin, userId: user.id,
@@ -480,9 +492,19 @@ export default function MaterialRequestsContent({ user }: { user: SessionUser })
               <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
             ))}
           </TabsList>
-          <Button variant="outline" onClick={fetchData} disabled={loading} className="text-[12px] h-8">
-            {loading ? '...' : '🔄'}
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            {isManager && (
+              <Input
+                placeholder="이름 / 센터 / 자재명 검색"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="h-8 text-[12px] w-44"
+              />
+            )}
+            <Button variant="outline" onClick={fetchData} disabled={loading} className="text-[12px] h-8">
+              {loading ? '...' : '🔄'}
+            </Button>
+          </div>
         </div>
 
         {/* 새 요청 탭 */}
