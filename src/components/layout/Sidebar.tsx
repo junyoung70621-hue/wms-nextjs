@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
+
+type Counts = { mat_pending: number; pur_pending: number; unread_notices: number }
 
 // ── 메뉴 구성 ────────────────────────────────────────────────────────────────
 function getMenuSections(user: SessionUser) {
@@ -72,6 +75,14 @@ export default function Sidebar({ user }: { user: SessionUser }) {
   const pathname = usePathname()
   const router   = useRouter()
   const sections = getMenuSections(user)
+  const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, unread_notices: 0 })
+
+  useEffect(() => {
+    fetch('/api/notifications/counts')
+      .then(r => r.json())
+      .then(d => { if (!d.error) setCounts(d) })
+      .catch(() => {})
+  }, [pathname])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -79,8 +90,15 @@ export default function Sidebar({ user }: { user: SessionUser }) {
     router.refresh()
   }
 
+  const BADGE_MAP: Record<string, number> = {
+    '/material-requests': counts.mat_pending,
+    '/purchase-requests': counts.pur_pending,
+    '/notices':           counts.unread_notices,
+  }
+
   function NavLink({ href, label }: { href: string; label: string }) {
     const isActive = pathname === href || pathname.startsWith(href + '/')
+    const badge = BADGE_MAP[href] ?? 0
     return (
       <Link
         href={href}
@@ -92,7 +110,12 @@ export default function Sidebar({ user }: { user: SessionUser }) {
             : 'font-normal text-[#1E293B] border-l-transparent hover:bg-[rgba(0,0,0,0.04)] hover:border-l-[rgba(211,0,79,0.4)]'
         )}
       >
-        {label}
+        <span className="flex-1">{label}</span>
+        {badge > 0 && (
+          <span className="ml-1 bg-[#D3004F] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
       </Link>
     )
   }

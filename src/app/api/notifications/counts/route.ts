@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server'
+import { getSession } from '@/lib/session'
+import { supabase } from '@/lib/supabase'
+
+export async function GET() {
+  const session = await getSession()
+  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+
+  const u = session.user
+  const isManager = u.role === 'admin' || u.role === 'materials'
+  const userCenter = u.assigned_center ?? u.center
+
+  // 대기 자재요청
+  let matQ = supabase
+    .from('material_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+  if (!isManager) matQ = matQ.eq('from_center', userCenter)
+  const { count: matPending } = await matQ
+
+  // 대기 구매요청
+  let purQ = supabase
+    .from('purchase_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+  if (!isManager) purQ = purQ.eq('requester_id', u.id)
+  const { count: purPending } = await purQ
+
+  // 미읽은 공지
+  const { data: notices } = await supabase
+    .from('notices')
+    .select('id')
+    .eq('is_active', true)
+
+  let unreadNotices = 0
+  if (notices?.length) {
+    const ids = notices.map(n => n.id)
+    const { data: read } = await supabase
+      .from('notice_reads')
+      .select('notice_id')
+      .eq('user_id', u.id)
+      .in('notice_id', ids)
+
+    const readSet = new Set((read ?? []).map(r => r.notice_id))
+    unreadNotices = ids.filter(id => !readSet.has(id)).length
+  }
+
+  return NextResponse.json({
+    mat_pending:    matPending  ?? 0,
+    pur_pending:    purPending  ?? 0,
+    unread_notices: unreadNotices,
+  })
+}
