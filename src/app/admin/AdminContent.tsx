@@ -378,6 +378,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
   const [users,       setUsers]       = useState<UserRow[]>([])
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
+  const [toast,       setToast]       = useState('')
   const [filterRole,  setFilterRole]  = useState('all')
   const [filterApprv, setFilterApprv] = useState('all')
   const [search,      setSearch]      = useState('')
@@ -396,6 +397,11 @@ export default function AdminContent({ user }: { user: SessionUser }) {
 
   useEffect(() => { loadUsers() }, [loadUsers])
 
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
   const handleSave = async (id: string, patch: Record<string, unknown>) => {
     const res = await fetch('/api/admin/users', {
       method: 'PATCH',
@@ -403,7 +409,8 @@ export default function AdminContent({ user }: { user: SessionUser }) {
       body: JSON.stringify({ id, ...patch }),
     })
     const d = await res.json()
-    if (d.error) { alert(d.error); return }
+    if (d.error) { showToast(`❌ ${d.error}`); return }
+    showToast('✅ 저장되었습니다.')
     await loadUsers()
   }
 
@@ -414,8 +421,8 @@ export default function AdminContent({ user }: { user: SessionUser }) {
       body: JSON.stringify({ id }),
     })
     const d = await res.json()
-    if (d.error) { alert(d.error); return }
-    alert(`${name} 계정이 삭제되었습니다.`)
+    if (d.error) { showToast(`❌ ${d.error}`); return }
+    showToast(`🗑️ ${name} 계정이 삭제되었습니다.`)
     await loadUsers()
   }
 
@@ -437,7 +444,28 @@ export default function AdminContent({ user }: { user: SessionUser }) {
 
   const pendingCount = users.filter(u => !u.is_approved).length
 
+  const handleApproveAll = async () => {
+    const pending = users.filter(u => !u.is_approved)
+    if (!pending.length) return
+    for (const u of pending) {
+      await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: u.id, is_approved: true, role: 'user' }),
+      })
+    }
+    await loadUsers()
+  }
+
   return (
+    <div className="relative">
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-[13px] font-medium text-white transition-all ${
+          toast.startsWith('❌') ? 'bg-red-600' : 'bg-[#1E293B]'
+        }`}>
+          {toast}
+        </div>
+      )}
     <Tabs defaultValue="users">
       <TabsList className="mb-4">
         <TabsTrigger value="users">
@@ -485,6 +513,15 @@ export default function AdminContent({ user }: { user: SessionUser }) {
           <span className="text-[11px] text-[#94A3B8] ml-auto">
             {filtered.length} / {users.length}명
           </span>
+          {pendingCount > 0 && (
+            <Button
+              size="sm"
+              onClick={handleApproveAll}
+              className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-[11px] h-7 px-2 flex-shrink-0"
+            >
+              전체 승인 ({pendingCount}명)
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -516,5 +553,6 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         </div>
       </TabsContent>
     </Tabs>
+    </div>
   )
 }

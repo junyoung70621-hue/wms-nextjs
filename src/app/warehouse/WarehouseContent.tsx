@@ -9,7 +9,7 @@ import {
   SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import type { SessionUser } from '@/lib/session'
-import { getViewableCenters } from '@/constants/centers'
+import { getViewableCenters, CENTERS } from '@/constants/centers'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type Item = {
@@ -112,6 +112,7 @@ function ItemDetailModal({
     category_small: item.category_small ?? '', erp_code: item.erp_code ?? '',
     erp_name: item.erp_name ?? '', notes: item.notes ?? '',
     repair_manager: (item as Record<string, unknown>).repair_manager as string ?? '',
+    location: item.location,
   })
   const [editSaving,  setEditSaving]  = useState(false)
   const [editMsg,     setEditMsg]     = useState('')
@@ -293,6 +294,14 @@ function ItemDetailModal({
                       className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F]" />
                   </div>
                 ))}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">센터 (위치 변경)</label>
+                <select value={String(editData.location ?? item.location)}
+                  onChange={e => setEditData(p => ({ ...p, location: e.target.value }))}
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] bg-white">
+                  {CENTERS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[#64748B] block mb-1">비고</label>
