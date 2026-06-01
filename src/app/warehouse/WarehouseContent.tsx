@@ -111,6 +111,7 @@ function ItemDetailModal({
     category_large: item.category_large ?? '', category_mid: item.category_mid ?? '',
     category_small: item.category_small ?? '', erp_code: item.erp_code ?? '',
     erp_name: item.erp_name ?? '', notes: item.notes ?? '',
+    repair_manager: (item as Record<string, unknown>).repair_manager as string ?? '',
   })
   const [editSaving,  setEditSaving]  = useState(false)
   const [editMsg,     setEditMsg]     = useState('')
@@ -283,7 +284,7 @@ function ItemDetailModal({
                   ['item_name','자재명'], ['quantity','수량'],
                   ['rack_no','랙번호'], ['shelf','단'], ['box_no','박스번호'],
                   ['category_large','대분류'], ['category_mid','중분류'], ['category_small','소분류'],
-                  ['erp_code','ERP코드'], ['erp_name','ERP품명'],
+                  ['erp_code','ERP코드'], ['erp_name','ERP품명'], ['repair_manager','수리담당자'],
                 ] as [string, string][]).map(([key, label]) => (
                   <div key={key}>
                     <label className="text-[11px] font-semibold text-[#64748B] block mb-1">{label}</label>

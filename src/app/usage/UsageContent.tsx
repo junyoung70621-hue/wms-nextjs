@@ -56,6 +56,8 @@ export default function UsageContent({ user }: { user: SessionUser }) {
       const params = new URLSearchParams({ limit })
       const targetCenter = isAdminOrMaterials ? center : userCenter
       if (targetCenter && targetCenter !== '전체') params.set('center', targetCenter)
+      if (dateFrom) params.set('date_from', dateFrom)
+      if (dateTo)   params.set('date_to',   dateTo)
       const res  = await fetch(`/api/usage?${params}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -65,16 +67,10 @@ export default function UsageContent({ user }: { user: SessionUser }) {
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchData() }, [center, limit])
+  useEffect(() => { fetchData() }, [center, limit, dateFrom, dateTo])
 
   const filtered = useMemo(() => {
     let rows = data
-
-    // 기간 필터
-    rows = rows.filter(h => {
-      const d = tsKst(h.acted_at).slice(0, 10)
-      return d >= dateFrom && d <= dateTo
-    })
 
     // 검색
     if (search.trim()) {

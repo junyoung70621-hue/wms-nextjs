@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import bcrypt from 'bcryptjs'
 
 // ── 승인/거절/보류 처리 (admin/materials) ────────────────────────────────
 export async function POST(request: Request) {
@@ -83,6 +82,50 @@ export async function POST(request: Request) {
         }
       }
     }
+  }
+
+  // 승인/거절 시 신청자에게 이메일
+  if (['approved', 'rejected', 'on_hold'].includes(action)) {
+    try {
+      const { data: req } = await supabase
+        .from('material_requests')
+        .select('requester_id, requester_name, from_center, items')
+        .eq('id', id).single()
+
+      if (req?.requester_id) {
+        const { data: reqUser } = await supabase
+          .from('users').select('email').eq('id', req.requester_id).single()
+
+        if (reqUser?.email) {
+          const STATUS_KO: Record<string, string> = {
+            approved: '✅ 승인', rejected: '❌ 거절', on_hold: '⏸️ 보류',
+          }
+          const nodemailer = await import('nodemailer')
+          const t = nodemailer.default.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
+          })
+          const itemRows = (req.items ?? []).map((it: Record<string, unknown>, i: number) =>
+            `<tr><td>${i + 1}</td><td>${it['item_name'] ?? ''}</td><td>${it['requested_qty'] ?? ''}</td></tr>`
+          ).join('')
+
+          await t.sendMail({
+            from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
+            to: reqUser.email,
+            subject: `[자재요청] ${STATUS_KO[action] ?? action} — ${req.requester_name}님의 요청`,
+            html: `
+              <h3>자재 요청이 <b>${STATUS_KO[action] ?? action}</b> 처리되었습니다.</h3>
+              <p><b>요청자:</b> ${req.requester_name} (${req.from_center})</p>
+              ${replyMessage ? `<p><b>담당자 메시지:</b> ${replyMessage}</p>` : ''}
+              <table border="1" cellpadding="5" style="border-collapse:collapse">
+                <tr><th>No</th><th>자재명</th><th>요청수량</th></tr>
+                ${itemRows}
+              </table>
+            `,
+          })
+        }
+      }
+    } catch { /* 메일 실패 무시 */ }
   }
 
   return NextResponse.json({ ok: true })
