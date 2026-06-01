@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
 
@@ -196,6 +197,191 @@ function RequestCard({
   )
 }
 
+// ── 새 자재요청 폼 ────────────────────────────────────────────────────────────
+type WarehouseItem = { id: number; item_name: string; quantity: number; category_large: string | null }
+
+function NewRequestForm({
+  user, onSubmitted,
+}: { user: SessionUser; onSubmitted: () => void }) {
+  const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([])
+  const [search,   setSearch]   = useState('')
+  const [selected, setSelected] = useState<Record<number, number>>({}) // item_id -> requested_qty
+  const [notes,    setNotes]    = useState('')
+  const [loading,  setLoading]  = useState(true)
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState('')
+  const [success,  setSuccess]  = useState(false)
+
+  useEffect(() => {
+    fetch('/api/warehouse?center=%EC%9E%90%EC%9E%AC%EC%84%BC%ED%84%B0')
+      .then(r => r.json())
+      .then(d => setWarehouseItems(d.data ?? []))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return warehouseItems
+    const q = search.toLowerCase()
+    return warehouseItems.filter(i => i.item_name.toLowerCase().includes(q))
+  }, [warehouseItems, search])
+
+  const selectedCount = Object.values(selected).filter(q => q > 0).length
+
+  const handleQtyChange = (id: number, qty: number) => {
+    setSelected(prev => {
+      if (qty <= 0) { const next = { ...prev }; delete next[id]; return next }
+      return { ...prev, [id]: qty }
+    })
+  }
+
+  const handleSubmit = async () => {
+    if (selectedCount === 0) { setMsg('자재를 1개 이상 선택하세요.'); return }
+    setSaving(true); setMsg('')
+    try {
+      const items = Object.entries(selected)
+        .filter(([, q]) => q > 0)
+        .map(([idStr, qty]) => {
+          const item = warehouseItems.find(i => i.id === Number(idStr))!
+          return { item_name: item.item_name, current_qty: item.quantity, requested_qty: qty }
+        })
+      const res = await fetch('/api/material-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, notes }),
+      })
+      const d = await res.json()
+      if (d.error) { setMsg(d.error); return }
+      setSuccess(true); setSelected({}); setNotes('')
+      onSubmitted()
+    } catch { setMsg('오류 발생') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-[13px] text-green-700 flex items-center justify-between">
+          ✅ 자재요청이 접수되었습니다.
+          <button className="text-green-500 underline text-[11px]" onClick={() => setSuccess(false)}>닫기</button>
+        </div>
+      )}
+
+      {/* 요청자 정보 */}
+      <div className="grid grid-cols-2 gap-3 text-[12px]">
+        <div>
+          <label className="text-[11px] text-[#64748B] block mb-1">요청자</label>
+          <div className="border rounded px-3 py-1.5 bg-[#F8F9FA] text-[#94A3B8]">{user.name}</div>
+        </div>
+        <div>
+          <label className="text-[11px] text-[#64748B] block mb-1">소속</label>
+          <div className="border rounded px-3 py-1.5 bg-[#F8F9FA] text-[#94A3B8]">
+            {user.assigned_center ?? user.center}
+          </div>
+        </div>
+      </div>
+
+      {/* 자재 검색 */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[11px] text-[#64748B] font-medium">자재센터 재고에서 선택 *</label>
+          {selectedCount > 0 && (
+            <span className="text-[11px] text-[#D3004F] font-bold">{selectedCount}종 선택됨</span>
+          )}
+        </div>
+        <Input
+          placeholder="품명 검색..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="h-8 text-[12px] mb-2"
+        />
+        {loading ? (
+          <div className="text-[12px] text-[#94A3B8] py-4 text-center">로딩 중...</div>
+        ) : (
+          <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#F8F9FA] sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left text-[#64748B] font-medium">품명</th>
+                  <th className="px-3 py-2 text-right text-[#64748B] font-medium w-20">재고</th>
+                  <th className="px-3 py-2 text-center text-[#64748B] font-medium w-28">요청 수량</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={3} className="px-3 py-4 text-center text-[#94A3B8]">검색 결과 없음</td></tr>
+                ) : filtered.map((item, i) => {
+                  const qty = selected[item.id] ?? 0
+                  return (
+                    <tr key={item.id} className={qty > 0 ? 'bg-[rgba(211,0,79,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
+                      <td className="px-3 py-1.5 text-[#1E293B]">{item.item_name}</td>
+                      <td className={`px-3 py-1.5 text-right font-mono ${item.quantity === 0 ? 'text-red-400' : 'text-[#475569]'}`}>
+                        {item.quantity.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-1.5 text-center">
+                        <input
+                          type="number"
+                          min="0"
+                          max={item.quantity}
+                          value={qty || ''}
+                          placeholder="0"
+                          onChange={e => handleQtyChange(item.id, parseInt(e.target.value) || 0)}
+                          className="w-20 border rounded px-2 py-0.5 text-[11px] text-center focus:outline-none focus:border-[#D3004F]"
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 선택된 자재 요약 */}
+      {selectedCount > 0 && (
+        <div className="bg-[rgba(211,0,79,0.04)] border border-[rgba(211,0,79,0.15)] rounded-lg p-3">
+          <div className="text-[11px] font-bold text-[#D3004F] mb-2">선택된 자재 ({selectedCount}종)</div>
+          <div className="space-y-1">
+            {Object.entries(selected).map(([idStr, qty]) => {
+              const item = warehouseItems.find(i => i.id === Number(idStr))
+              if (!item) return null
+              return (
+                <div key={idStr} className="flex items-center justify-between text-[12px]">
+                  <span className="text-[#1E293B]">{item.item_name}</span>
+                  <span className="text-[#D3004F] font-bold">{qty}개 요청</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 비고 */}
+      <div>
+        <label className="text-[11px] text-[#64748B] mb-1 block">비고 (선택)</label>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={2}
+          placeholder="추가 사항을 입력하세요..."
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none"
+        />
+      </div>
+
+      {msg && <p className="text-[12px] text-red-500">{msg}</p>}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={saving || selectedCount === 0}
+        className="bg-[#D3004F] hover:bg-[#a8003c] text-white"
+      >
+        {saving ? '제출 중...' : '📦 자재요청 제출'}
+      </Button>
+    </div>
+  )
+}
+
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 export default function MaterialRequestsContent({ user }: { user: SessionUser }) {
   const [data,    setData]    = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
@@ -269,24 +455,49 @@ export default function MaterialRequestsContent({ user }: { user: SessionUser })
         { key: 'cancelled',label: '🚫 취소' },
       ]
 
+  const canRequest = !isManager && user.role !== 'guest'
+  const pendingCount = filterByStatus('pending').length
+
   return (
     <div className="space-y-4 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#1E293B]">📦 자재 요청 {isManager ? '관리' : '현황'}</h2>
-        <Button variant="outline" onClick={fetchData} disabled={loading}>
-          {loading ? '로딩 중...' : '🔄 새로고침'}
-        </Button>
-      </div>
+      <Tabs defaultValue={isManager ? 'pending' : canRequest ? 'new' : 'all'}>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+          <TabsList className="flex-wrap h-auto">
+            {canRequest && (
+              <TabsTrigger value="new" className="text-[12px]">➕ 새 요청</TabsTrigger>
+            )}
+            {isManager && (
+              <TabsTrigger value="pending" className="text-[12px]">
+                ⏳ 대기중
+                {pendingCount > 0 && (
+                  <span className="ml-1 bg-[#f57c00] text-white text-[9px] font-bold rounded px-1 py-0.5">
+                    {pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {tabs.map(t => (
+              <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
+            ))}
+          </TabsList>
+          <Button variant="outline" onClick={fetchData} disabled={loading} className="text-[12px] h-8">
+            {loading ? '...' : '🔄'}
+          </Button>
+        </div>
 
-      <Tabs defaultValue={isManager ? 'pending' : 'all'}>
-        <TabsList className="flex-wrap h-auto">
-          {tabs.map(t => (
-            <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
-          ))}
-        </TabsList>
+        {/* 새 요청 탭 */}
+        {canRequest && (
+          <TabsContent value="new">
+            <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4">
+              <h3 className="text-[13px] font-semibold text-[#1E293B] mb-4">자재센터에 자재 요청</h3>
+              <NewRequestForm user={user} onSubmitted={fetchData} />
+            </div>
+          </TabsContent>
+        )}
 
+        {/* 상태별 탭 */}
         {tabs.map(t => (
-          <TabsContent key={t.key} value={t.key} className="space-y-2 mt-3">
+          <TabsContent key={t.key} value={t.key} className="space-y-2 mt-2">
             {loading ? (
               <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p>
             ) : filterByStatus(t.key === 'all' ? null : t.key).length === 0 ? (

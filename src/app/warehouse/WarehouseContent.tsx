@@ -112,8 +112,10 @@ function ItemDetailModal({
     category_small: item.category_small ?? '', erp_code: item.erp_code ?? '',
     erp_name: item.erp_name ?? '', notes: item.notes ?? '',
   })
-  const [editSaving, setEditSaving] = useState(false)
-  const [editMsg,    setEditMsg]    = useState('')
+  const [editSaving,  setEditSaving]  = useState(false)
+  const [editMsg,     setEditMsg]     = useState('')
+  const [delConfirm,  setDelConfirm]  = useState(false)
+  const [delSaving,   setDelSaving]   = useState(false)
 
   const isAdmin     = user.role === 'admin'
   const canTransfer = ['admin', 'manager', 'user'].includes(user.role) ||
@@ -165,6 +167,20 @@ function ItemDetailModal({
       if (!res.ok) setEditMsg(`❌ ${j.error}`)
       else { setEditMsg('✅ 저장 완료'); onUpdated() }
     } finally { setEditSaving(false) }
+  }
+
+  const handleDelete = async () => {
+    setDelSaving(true)
+    try {
+      const res = await fetch('/api/admin/warehouse', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setEditMsg(`❌ ${j.error}`); return }
+      onUpdated(); onClose()
+    } finally { setDelSaving(false) }
   }
 
   const modalTabs = ['history', ...(canTransfer ? ['transfer'] : []), ...(isAdmin ? ['edit'] : [])]
@@ -284,9 +300,31 @@ function ItemDetailModal({
                   className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
               </div>
               {editMsg && <p className="text-[12px]">{editMsg}</p>}
-              <Button onClick={handleEdit} disabled={editSaving} className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
-                {editSaving ? '저장 중...' : '💾 저장'}
-              </Button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Button onClick={handleEdit} disabled={editSaving} className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
+                  {editSaving ? '저장 중...' : '💾 저장'}
+                </Button>
+                <div className="ml-auto">
+                  {!delConfirm ? (
+                    <Button variant="outline" onClick={() => setDelConfirm(true)}
+                      className="text-red-500 border-red-200 text-[12px]">
+                      🗑️ 삭제
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-red-500">정말 삭제?</span>
+                      <Button onClick={handleDelete} disabled={delSaving}
+                        className="bg-red-600 hover:bg-red-700 text-white text-[11px] h-7 px-2">
+                        {delSaving ? '...' : '확인'}
+                      </Button>
+                      <Button variant="outline" onClick={() => setDelConfirm(false)}
+                        className="text-[11px] h-7 px-2">
+                        취소
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
