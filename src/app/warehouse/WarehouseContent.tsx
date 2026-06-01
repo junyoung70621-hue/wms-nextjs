@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
@@ -10,7 +11,7 @@ import {
 import type { SessionUser } from '@/lib/session'
 import { getViewableCenters } from '@/constants/centers'
 
-// ── 타입 ──────────────────────────────────────────────────────────────────────
+// ── 타입 ─────────────────────────────────────────────────────────────────────
 type Item = {
   id: number
   item_name: string
@@ -27,68 +28,307 @@ type Item = {
   notes: string | null
 }
 
+type HistoryRow = {
+  id: number
+  action_type: string
+  quantity: number
+  reason: string | null
+  from_center: string | null
+  to_center: string | null
+  snapshot_qty_before: number
+  snapshot_qty_after: number
+  acted_at: string
+  actor: { name: string } | null
+}
+
+type Transfer = {
+  id: number
+  from_center: string
+  to_center: string
+  quantity: number
+  status: string
+  requested_at: string
+  processed_at: string | null
+  requester: { id: string; name: string; center: string; assigned_center: string | null } | null
+  approver: { name: string; center: string; assigned_center: string | null } | null
+  warehouse: { id: number; item_name: string; quantity: number; location: string } | null
+}
+
 type SortField = 'item_name' | 'quantity' | 'category_large' | 'category_mid' | 'category_small'
 
+// ── 유틸 ─────────────────────────────────────────────────────────────────────
+function tsKst(ts: string) {
+  if (!ts) return ''
+  try {
+    return new Date(new Date(ts).getTime() + 9 * 3600 * 1000)
+      .toISOString().slice(0, 16).replace('T', ' ')
+  } catch { return ts.slice(0, 10) }
+}
+
+const ACTION_KO: Record<string, string> = {
+  in: '📥 입고', out: '📤 출고', transfer: '🚚 이동', edit: '✏️ 수정',
+}
+const TR_STATUS: Record<string, { label: string; color: string }> = {
+  pending:   { label: '⏳ 대기중', color: '#f57c00' },
+  approved:  { label: '✅ 승인됨', color: '#2e7d32' },
+  rejected:  { label: '❌ 거절됨', color: '#c62828' },
+  cancelled: { label: '🚫 취소됨', color: '#757575' },
+}
+
 // ── KPI 카드 ─────────────────────────────────────────────────────────────────
-function KpiCard({
-  label, value, color, active, onClick,
-}: {
-  label: string; value: number; color: string
-  active?: boolean; onClick?: () => void
+function KpiCard({ label, value, color, active, onClick }: {
+  label: string; value: number; color: string; active?: boolean; onClick?: () => void
 }) {
   return (
-    <div
-      className="rounded-lg p-3 text-center cursor-pointer transition-all"
-      style={{
-        background: active ? `${color}22` : `${color}11`,
-        border: active ? `2px solid ${color}` : `1px solid ${color}55`,
-      }}
-      onClick={onClick}
-    >
+    <div onClick={onClick} className="rounded-lg p-3 text-center cursor-pointer transition-all"
+      style={{ background: active ? `${color}22` : `${color}11`, border: active ? `2px solid ${color}` : `1px solid ${color}55` }}>
       <div className="text-[11px] text-gray-400">{label}</div>
-      <div className="text-[22px] font-bold mt-0.5" style={{ color }}>
-        {value.toLocaleString()}
+      <div className="text-[22px] font-bold mt-0.5" style={{ color }}>{value.toLocaleString()}</div>
+    </div>
+  )
+}
+
+// ── 자재 상세 모달 ────────────────────────────────────────────────────────────
+function ItemDetailModal({
+  item, user, center, onClose, onUpdated,
+}: {
+  item: Item; user: SessionUser; center: string; onClose: () => void; onUpdated: () => void
+}) {
+  const [history,  setHistory]  = useState<HistoryRow[]>([])
+  const [histLoad, setHistLoad] = useState(true)
+  const [tab,      setTab]      = useState<'history' | 'edit' | 'transfer'>('history')
+
+  // 이동 신청 폼
+  const [trDest,   setTrDest]   = useState('')
+  const [trQty,    setTrQty]    = useState(1)
+  const [trSaving, setTrSaving] = useState(false)
+  const [trMsg,    setTrMsg]    = useState('')
+
+  // 수정 폼 (admin)
+  const [editData, setEditData] = useState<Record<string, string | number>>({
+    item_name: item.item_name, quantity: item.quantity,
+    rack_no: item.rack_no ?? '', shelf: item.shelf ?? '', box_no: item.box_no ?? '',
+    category_large: item.category_large ?? '', category_mid: item.category_mid ?? '',
+    category_small: item.category_small ?? '', erp_code: item.erp_code ?? '',
+    erp_name: item.erp_name ?? '', notes: item.notes ?? '',
+  })
+  const [editSaving, setEditSaving] = useState(false)
+  const [editMsg,    setEditMsg]    = useState('')
+
+  const isAdmin     = user.role === 'admin'
+  const canTransfer = ['admin', 'manager', 'user'].includes(user.role) ||
+                      (user.role === 'materials' && center === '자재센터')
+
+  const REGIONAL = new Set(['강서센터','강북센터','강동센터','강남센터'])
+  const SPECIAL  = new Set(['택시지원파트','리페어팀','AFC지원파트','고속/시외','대전센터','토스','외부창고','에이텍본사','티머니(버스)','티머니(택시)'])
+  const allCenters = ['자재센터','강서센터','강북센터','강동센터','강남센터','택시지원파트','리페어팀','AFC지원파트','고속/시외','대전센터','토스','외부창고','에이텍본사','티머니(버스)','티머니(택시)']
+
+  const destinations = useMemo(() => {
+    if (center === '자재센터') return allCenters.filter(c => c !== '자재센터')
+    if (REGIONAL.has(center)) return allCenters.filter(c => c === '자재센터' || (REGIONAL.has(c) && c !== center))
+    if (SPECIAL.has(center)) return ['자재센터']
+    return []
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center])
+
+  useEffect(() => {
+    fetch(`/api/warehouse/item?item_id=${item.id}`)
+      .then(r => r.json())
+      .then(j => setHistory(j.data ?? []))
+      .finally(() => setHistLoad(false))
+  }, [item.id])
+
+  const handleTransfer = async () => {
+    if (!trDest || trQty < 1) return
+    setTrSaving(true); setTrMsg('')
+    try {
+      const res = await fetch('/api/transfers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: item.id, from_center: center, to_center: trDest, quantity: trQty }),
+      })
+      const j = await res.json()
+      if (!res.ok) setTrMsg(`❌ ${j.error}`)
+      else { setTrMsg('✅ 이동 신청 완료'); onUpdated() }
+    } finally { setTrSaving(false) }
+  }
+
+  const handleEdit = async () => {
+    setEditSaving(true); setEditMsg('')
+    try {
+      const res = await fetch('/api/warehouse/item', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, ...editData }),
+      })
+      const j = await res.json()
+      if (!res.ok) setEditMsg(`❌ ${j.error}`)
+      else { setEditMsg('✅ 저장 완료'); onUpdated() }
+    } finally { setEditSaving(false) }
+  }
+
+  const modalTabs = ['history', ...(canTransfer ? ['transfer'] : []), ...(isAdmin ? ['edit'] : [])]
+  const tabLabel = (t: string) => ({ history: '📋 이력', transfer: '🚚 이동 신청', edit: '✏️ 수정' }[t] ?? t)
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={e => e.stopPropagation()}>
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-3 border-b bg-[#F8F9FA]">
+          <div>
+            <div className="text-[15px] font-bold text-[#1E293B]">{item.item_name}</div>
+            <div className="text-[11px] text-[#64748B]">
+              {[item.category_large, item.category_mid, item.category_small].filter(Boolean).join(' > ')}
+              {item.erp_code && ` · ERP: ${item.erp_code}`}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[20px] font-bold"
+              style={{ color: item.quantity === 0 ? '#c62828' : item.quantity <= 9 ? '#f57c00' : '#2e7d32' }}>
+              {item.quantity.toLocaleString()}개
+            </span>
+            <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-xl leading-none">×</button>
+          </div>
+        </div>
+
+        {/* 탭 */}
+        <div className="flex border-b text-[12px]">
+          {modalTabs.map(t => (
+            <button key={t} onClick={() => setTab(t as typeof tab)}
+              className={`px-4 py-2 font-medium border-b-2 transition-colors ${tab === t ? 'border-[#D3004F] text-[#D3004F]' : 'border-transparent text-[#64748B] hover:text-[#1E293B]'}`}>
+              {tabLabel(t)}
+            </button>
+          ))}
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-4">
+          {/* 이력 */}
+          {tab === 'history' && (
+            histLoad ? <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p> :
+            history.length === 0 ? <p className="text-gray-400 text-sm text-center py-8">이력이 없습니다.</p> :
+            <table className="w-full text-[11px]">
+              <thead className="bg-[#F8F9FA] sticky top-0">
+                <tr>
+                  {['일시','구분','수량','변동','담당자','사유'].map(h => (
+                    <th key={h} className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h, i) => (
+                  <tr key={h.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-2 py-1 text-[#94A3B8] whitespace-nowrap">{tsKst(h.acted_at)}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{ACTION_KO[h.action_type] ?? h.action_type}</td>
+                    <td className="px-2 py-1 text-right font-mono font-bold">{h.quantity}</td>
+                    <td className="px-2 py-1 text-[#64748B] whitespace-nowrap">{h.snapshot_qty_before} → {h.snapshot_qty_after}</td>
+                    <td className="px-2 py-1 text-[#64748B]">{h.actor?.name ?? '-'}</td>
+                    <td className="px-2 py-1 text-[#94A3B8] max-w-[150px] truncate">{h.reason ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {/* 이동 신청 */}
+          {tab === 'transfer' && (
+            <div className="space-y-4 max-w-sm">
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">출발 센터</label>
+                <input value={center} disabled className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8]" />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">도착 센터 *</label>
+                <select value={trDest} onChange={e => setTrDest(e.target.value)}
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]">
+                  <option value="">선택하세요</option>
+                  {destinations.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">수량 * (현재 {item.quantity}개)</label>
+                <input type="number" min={1} max={item.quantity} value={trQty}
+                  onChange={e => setTrQty(Math.min(item.quantity, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+              </div>
+              {trMsg && <p className="text-[12px]">{trMsg}</p>}
+              <Button onClick={handleTransfer} disabled={trSaving || !trDest}
+                className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white">
+                {trSaving ? '신청 중...' : '🚚 이동 신청'}
+              </Button>
+            </div>
+          )}
+
+          {/* 수정 (admin) */}
+          {tab === 'edit' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  ['item_name','자재명'], ['quantity','수량'],
+                  ['rack_no','랙번호'], ['shelf','단'], ['box_no','박스번호'],
+                  ['category_large','대분류'], ['category_mid','중분류'], ['category_small','소분류'],
+                  ['erp_code','ERP코드'], ['erp_name','ERP품명'],
+                ] as [string, string][]).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="text-[11px] font-semibold text-[#64748B] block mb-1">{label}</label>
+                    <input value={String(editData[key] ?? '')} type={key === 'quantity' ? 'number' : 'text'}
+                      onChange={e => setEditData(p => ({ ...p, [key]: key === 'quantity' ? parseInt(e.target.value) || 0 : e.target.value }))}
+                      className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">비고</label>
+                <textarea value={String(editData.notes ?? '')} rows={2}
+                  onChange={e => setEditData(p => ({ ...p, notes: e.target.value }))}
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
+              </div>
+              {editMsg && <p className="text-[12px]">{editMsg}</p>}
+              <Button onClick={handleEdit} disabled={editSaving} className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
+                {editSaving ? '저장 중...' : '💾 저장'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-// ── 정렬 아이콘 ──────────────────────────────────────────────────────────────
-function SortIcon({ field, sortField, sortDir }: {
-  field: string; sortField: string; sortDir: 'asc' | 'desc'
+// ── 재고 현황 탭 ──────────────────────────────────────────────────────────────
+function InventoryTab({ user, center, onCenterChange }: {
+  user: SessionUser; center: string; onCenterChange: (c: string) => void
 }) {
-  if (sortField !== field) return <span className="text-gray-300 ml-1">↕</span>
-  return <span className="ml-1" style={{ color: '#D3004F' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
-}
+  const viewable = getViewableCenters(user.role, user.assigned_center ?? user.center)
+  const isHub    = center === '자재센터'
+  const isAdmin  = user.role === 'admin'
+  const canStock = user.role === 'admin' || user.role === 'materials'
 
-// ── 메인 컴포넌트 ──────────────────────────────────────────────────────────
-export default function WarehouseContent({ user }: { user: SessionUser }) {
-  const userCenter = user.assigned_center ?? user.center
-  const viewable   = getViewableCenters(user.role, userCenter)
-  const isHub      = (c: string) => c === '자재센터'
+  const [data,    setData]    = useState<Item[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
 
-  const [center, setCenter]     = useState(viewable[0] ?? '자재센터')
-  const [data, setData]         = useState<Item[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState('')
+  const [filterLarge, setFilterLarge] = useState('전체')
+  const [filterMid,   setFilterMid]   = useState('전체')
+  const [filterSmall, setFilterSmall] = useState('전체')
+  const [search,      setSearch]      = useState('')
+  const [kpiFilter,   setKpiFilter]   = useState<'all'|'low'|'zero'>('all')
 
-  // 필터
-  const [filterLarge,  setFilterLarge]  = useState('전체')
-  const [filterMid,    setFilterMid]    = useState('전체')
-  const [filterSmall,  setFilterSmall]  = useState('전체')
-  const [search,       setSearch]       = useState('')
-  const [kpiFilter,    setKpiFilter]    = useState<'all'|'low'|'zero'>('all')
-
-  // 페이지
   const [page,     setPage]     = useState(1)
   const [pageSize, setPageSize] = useState(20)
-
-  // 정렬
   const [sortField, setSortField] = useState<SortField>('item_name')
   const [sortDir,   setSortDir]   = useState<'asc'|'desc'>('asc')
 
-  // ── 데이터 조회 ────────────────────────────────────────────────────────
-  const fetchData = async (c: string) => {
+  const [selected,    setSelected]    = useState<Set<number>>(new Set())
+  const [showStock,   setShowStock]   = useState<'in'|'out'|null>(null)
+  const [stockQties,  setStockQties]  = useState<Record<number, number>>({})
+  const [stockReason, setStockReason] = useState('')
+  const [stockSaving, setStockSaving] = useState(false)
+  const [stockMsg,    setStockMsg]    = useState('')
+
+  const [detailItem, setDetailItem] = useState<Item | null>(null)
+
+  const fetchData = useCallback(async (c: string) => {
     setLoading(true); setError('')
     try {
       const res  = await fetch(`/api/warehouse?center=${encodeURIComponent(c)}`)
@@ -97,49 +337,31 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
       setData(json.data)
     } catch (e: unknown) {
       setError((e as Error).message || '데이터를 불러오지 못했습니다.')
-    } finally {
-      setLoading(false)
-    }
-  }
+    } finally { setLoading(false) }
+  }, [])
 
   useEffect(() => {
     fetchData(center)
     setFilterLarge('전체'); setFilterMid('전체'); setFilterSmall('전체')
-    setSearch(''); setKpiFilter('all'); setPage(1)
-  }, [center])
+    setSearch(''); setKpiFilter('all'); setPage(1); setSelected(new Set())
+  }, [center, fetchData])
 
-  // ── 카테고리 목록 (데이터 기반) ────────────────────────────────────────
-  const largeList = useMemo(() => {
-    const s = new Set(data.map(r => r.category_large).filter(Boolean) as string[])
-    return ['전체', ...Array.from(s).sort()]
-  }, [data])
-
-  const midList = useMemo(() => {
+  const largeList = useMemo(() => ['전체', ...Array.from(new Set(data.map(r => r.category_large).filter(Boolean) as string[])).sort()], [data])
+  const midList   = useMemo(() => {
     const src = filterLarge === '전체' ? data : data.filter(r => r.category_large === filterLarge)
-    const s = new Set(src.map(r => r.category_mid).filter(Boolean) as string[])
-    return ['전체', ...Array.from(s).sort()]
+    return ['전체', ...Array.from(new Set(src.map(r => r.category_mid).filter(Boolean) as string[])).sort()]
   }, [data, filterLarge])
-
   const smallList = useMemo(() => {
-    const src = data.filter(r =>
-      (filterLarge === '전체' || r.category_large === filterLarge) &&
-      (filterMid   === '전체' || r.category_mid   === filterMid)
-    )
-    const s = new Set(src.map(r => r.category_small).filter(Boolean) as string[])
-    return ['전체', ...Array.from(s).sort()]
+    const src = data.filter(r => (filterLarge === '전체' || r.category_large === filterLarge) && (filterMid === '전체' || r.category_mid === filterMid))
+    return ['전체', ...Array.from(new Set(src.map(r => r.category_small).filter(Boolean) as string[])).sort()]
   }, [data, filterLarge, filterMid])
 
-  // ── KPI 계산 ───────────────────────────────────────────────────────────
-  const kpi = useMemo(() => {
-    const q = data.map(r => r.quantity ?? 0)
-    return {
-      all:  data.length,
-      low:  q.filter(v => v >= 1 && v <= 9).length,
-      zero: q.filter(v => v === 0).length,
-    }
-  }, [data])
+  const kpi = useMemo(() => ({
+    all:  data.length,
+    low:  data.filter(r => (r.quantity ?? 0) >= 1 && (r.quantity ?? 0) <= 9).length,
+    zero: data.filter(r => (r.quantity ?? 0) === 0).length,
+  }), [data])
 
-  // ── 필터링 + 정렬 + 페이지네이션 ──────────────────────────────────────
   const filtered = useMemo(() => {
     let rows = data
     if (filterLarge !== '전체') rows = rows.filter(r => r.category_large === filterLarge)
@@ -149,9 +371,9 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
       const q = search.toLowerCase()
       rows = rows.filter(r =>
         r.item_name.toLowerCase().includes(q) ||
-        (r.erp_code        ?? '').toLowerCase().includes(q) ||
-        (r.category_large  ?? '').toLowerCase().includes(q) ||
-        (r.category_mid    ?? '').toLowerCase().includes(q)
+        (r.erp_code ?? '').toLowerCase().includes(q) ||
+        (r.category_large ?? '').toLowerCase().includes(q) ||
+        (r.category_mid ?? '').toLowerCase().includes(q)
       )
     }
     if (kpiFilter === 'low')  rows = rows.filter(r => (r.quantity ?? 0) >= 1 && (r.quantity ?? 0) <= 9)
@@ -159,194 +381,214 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
     return rows
   }, [data, filterLarge, filterMid, filterSmall, search, kpiFilter])
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const av = a[sortField] ?? ''
-      const bv = b[sortField] ?? ''
-      if (sortField === 'quantity') {
-        return sortDir === 'asc'
-          ? (a.quantity ?? 0) - (b.quantity ?? 0)
-          : (b.quantity ?? 0) - (a.quantity ?? 0)
-      }
-      return sortDir === 'asc'
-        ? String(av).localeCompare(String(bv), 'ko')
-        : String(bv).localeCompare(String(av), 'ko')
-    })
-  }, [filtered, sortField, sortDir])
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    if (sortField === 'quantity') return sortDir === 'asc' ? (a.quantity ?? 0) - (b.quantity ?? 0) : (b.quantity ?? 0) - (a.quantity ?? 0)
+    const av = String(a[sortField] ?? ''); const bv = String(b[sortField] ?? '')
+    return sortDir === 'asc' ? av.localeCompare(bv, 'ko') : bv.localeCompare(av, 'ko')
+  }), [filtered, sortField, sortDir])
 
   const totalPages  = Math.max(1, Math.ceil(sorted.length / pageSize))
   const currentPage = Math.min(page, totalPages)
   const paged       = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  function handleSort(field: SortField) {
-    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortField(field); setSortDir('asc') }
+  function handleSort(f: SortField) {
+    if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortField(f); setSortDir('asc') }
   }
 
-  function handleCenterChange(c: string) { setCenter(c) }
-
-  function Th({ label, field }: { label: string; field?: SortField }) {
-    return (
-      <th
-        className={`px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b border-[rgba(0,0,0,0.08)] whitespace-nowrap uppercase tracking-wide ${field ? 'cursor-pointer select-none hover:text-[#D3004F]' : ''}`}
-        onClick={field ? () => handleSort(field) : undefined}
-      >
-        {label}
-        {field && <SortIcon field={field} sortField={sortField} sortDir={sortDir} />}
-      </th>
-    )
+  function SortIcon({ field }: { field: string }) {
+    if (sortField !== field) return <span className="text-gray-300 ml-1">↕</span>
+    return <span className="ml-1" style={{ color: '#D3004F' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
-  // ── 수량 색상 ──────────────────────────────────────────────────────────
   function qtyColor(q: number) {
     if (q === 0) return 'text-red-500 font-bold'
     if (q <= 9)  return 'text-amber-500 font-semibold'
     return 'text-[#1E293B]'
   }
 
+  async function handleStock() {
+    if (!showStock || !stockReason.trim()) return
+    const items = Array.from(selected).map(id => ({ item_id: id, quantity: stockQties[id] ?? 1 }))
+    setStockSaving(true); setStockMsg('')
+    try {
+      const res = await fetch('/api/warehouse/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, action: showStock, reason: stockReason }),
+      })
+      const j = await res.json()
+      if (!res.ok) setStockMsg(`❌ ${j.error}`)
+      else {
+        setStockMsg(j.errors?.length ? `⚠️ 일부 실패: ${j.errors.join(', ')}` : '✅ 완료')
+        setSelected(new Set()); setShowStock(null); setStockReason(''); setStockQties({})
+        fetchData(center)
+      }
+    } finally { setStockSaving(false) }
+  }
+
   return (
-    <div className="space-y-4">
-      {/* 헤더 + 센터 선택 */}
+    <div className="space-y-3">
+      {/* 헤더 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-xl font-bold text-[#1E293B]">📦 재고 현황</h2>
         <div className="flex items-center gap-2">
-          <Select value={center} onValueChange={handleCenterChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {viewable.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
+          <Select value={center} onValueChange={onCenterChange}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>{viewable.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => fetchData(center)} disabled={loading}>
-            {loading ? '로딩 중...' : '🔄 새로고침'}
+          <Button variant="outline" onClick={() => fetchData(center)} disabled={loading} className="text-[12px]">
+            {loading ? '...' : '🔄'}
           </Button>
         </div>
+        {canStock && selected.size > 0 && (
+          <div className="flex gap-2">
+            <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
+              onClick={() => setShowStock('in')}>📥 입고 ({selected.size})</Button>
+            <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
+              onClick={() => setShowStock('out')}>📤 출고 ({selected.size})</Button>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{error}</p>}
 
-      {/* KPI 카드 */}
+      {/* KPI */}
       {!loading && data.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          <KpiCard
-            label="📦 전체 품목" value={kpi.all} color="#4A9EFF"
-            active={kpiFilter === 'all'}
-            onClick={() => { setKpiFilter('all'); setPage(1) }}
-          />
-          <KpiCard
-            label="⚠️ 재고 부족 (1~9)" value={kpi.low} color="#FFAA00"
-            active={kpiFilter === 'low'}
-            onClick={() => { setKpiFilter(kpiFilter === 'low' ? 'all' : 'low'); setPage(1) }}
-          />
-          <KpiCard
-            label="🚨 재고 없음" value={kpi.zero} color="#FF4444"
-            active={kpiFilter === 'zero'}
-            onClick={() => { setKpiFilter(kpiFilter === 'zero' ? 'all' : 'zero'); setPage(1) }}
-          />
+        <div className="grid grid-cols-3 gap-2">
+          <KpiCard label="📦 전체" value={kpi.all} color="#4A9EFF" active={kpiFilter === 'all'}
+            onClick={() => { setKpiFilter('all'); setPage(1) }} />
+          <KpiCard label="⚠️ 부족(1~9)" value={kpi.low} color="#FFAA00" active={kpiFilter === 'low'}
+            onClick={() => { setKpiFilter(kpiFilter === 'low' ? 'all' : 'low'); setPage(1) }} />
+          <KpiCard label="🚨 없음" value={kpi.zero} color="#FF4444" active={kpiFilter === 'zero'}
+            onClick={() => { setKpiFilter(kpiFilter === 'zero' ? 'all' : 'zero'); setPage(1) }} />
         </div>
       )}
 
-      {/* 필터 바 */}
+      {/* 필터 */}
       <div className="flex flex-wrap gap-2 items-center">
-        <Input
-          className="w-[220px]"
-          placeholder="자재명 / ERP코드 / 분류명 검색..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-        />
+        <Input className="w-[200px] h-8 text-[12px]" placeholder="자재명 / ERP코드 / 분류명..."
+          value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
         <Select value={filterLarge} onValueChange={v => { setFilterLarge(v); setFilterMid('전체'); setFilterSmall('전체'); setPage(1) }}>
-          <SelectTrigger className="w-[130px]"><SelectValue placeholder="대분류" /></SelectTrigger>
+          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="대분류" /></SelectTrigger>
           <SelectContent>{largeList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={filterMid} onValueChange={v => { setFilterMid(v); setFilterSmall('전체'); setPage(1) }}>
-          <SelectTrigger className="w-[130px]"><SelectValue placeholder="중분류" /></SelectTrigger>
+          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="중분류" /></SelectTrigger>
           <SelectContent>{midList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={filterSmall} onValueChange={v => { setFilterSmall(v); setPage(1) }}>
-          <SelectTrigger className="w-[130px]"><SelectValue placeholder="소분류" /></SelectTrigger>
+          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="소분류" /></SelectTrigger>
           <SelectContent>{smallList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
         {(filterLarge !== '전체' || filterMid !== '전체' || filterSmall !== '전체' || search || kpiFilter !== 'all') && (
-          <Button variant="ghost" className="text-[#D3004F]" onClick={() => {
-            setFilterLarge('전체'); setFilterMid('전체'); setFilterSmall('전체')
-            setSearch(''); setKpiFilter('all'); setPage(1)
-          }}>
+          <Button variant="ghost" className="text-[#D3004F] text-[12px] h-8"
+            onClick={() => { setFilterLarge('전체'); setFilterMid('전체'); setFilterSmall('전체'); setSearch(''); setKpiFilter('all'); setPage(1) }}>
             ✕ 초기화
           </Button>
         )}
       </div>
 
-      {/* 테이블 정보 + 페이지 크기 */}
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <span><b className="text-[#1E293B]">{center}</b> — 총 {sorted.length.toLocaleString()}개 품목</span>
+      {/* 입출고 패널 */}
+      {showStock && selected.size > 0 && (
+        <div className="border rounded-lg p-4 bg-[#FFF8F0] space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-bold">{showStock === 'in' ? '📥 입고' : '📤 출고'} — {selected.size}개 자재</span>
+            <button onClick={() => setShowStock(null)} className="text-[#94A3B8] hover:text-red-400">✕</button>
+          </div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {data.filter(r => selected.has(r.id)).map(r => (
+              <div key={r.id} className="flex items-center gap-2">
+                <span className="text-[12px] flex-1 truncate">{r.item_name}</span>
+                <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
+                <input type="number" min={1} value={stockQties[r.id] ?? 1}
+                  onChange={e => setStockQties(prev => ({ ...prev, [r.id]: parseInt(e.target.value) || 1 }))}
+                  className="w-20 border rounded px-2 py-0.5 text-[12px] text-right focus:outline-none" />
+              </div>
+            ))}
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-[#64748B] block mb-1">사유 *</label>
+            <input value={stockReason} onChange={e => setStockReason(e.target.value)}
+              placeholder="입출고 사유" className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+          </div>
+          {stockMsg && <p className="text-[12px]">{stockMsg}</p>}
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleStock} disabled={stockSaving || !stockReason.trim()}
+              className={showStock === 'in' ? 'bg-[#2e7d32] hover:bg-[#1b5e20] text-white' : 'bg-[#c62828] hover:bg-[#8e0000] text-white'}>
+              {stockSaving ? '처리 중...' : showStock === 'in' ? '✅ 입고 확정' : '✅ 출고 확정'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setShowStock(null); setStockMsg('') }}>취소</Button>
+          </div>
+        </div>
+      )}
+
+      {/* 테이블 정보 */}
+      <div className="flex items-center justify-between text-[12px] text-gray-500">
+        <span><b className="text-[#1E293B]">{center}</b> — {sorted.length.toLocaleString()}개 품목</span>
         <Select value={String(pageSize)} onValueChange={v => { setPageSize(Number(v)); setPage(1) }}>
-          <SelectTrigger className="w-[90px] h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[20, 50, 100, 200].map(n => <SelectItem key={n} value={String(n)}>{n}개씩</SelectItem>)}
-          </SelectContent>
+          <SelectTrigger className="w-[85px] h-7 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>{[20, 50, 100, 200].map(n => <SelectItem key={n} value={String(n)}>{n}개씩</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
       {/* 테이블 */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">
-          데이터 로딩 중...
-        </div>
+        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">데이터 로딩 중...</div>
       ) : sorted.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">
-          📭 해당 조건의 재고가 없습니다.
-        </div>
+        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">📭 해당 조건의 재고가 없습니다.</div>
       ) : (
-        <div className="border rounded overflow-auto max-h-[560px]">
+        <div className="border rounded overflow-auto max-h-[520px]">
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>
-                <Th label="자재명"  field="item_name" />
-                <Th label="수량"    field="quantity" />
-                <Th label="대분류"  field="category_large" />
-                <Th label="중분류"  field="category_mid" />
-                <Th label="소분류"  field="category_small" />
-                {isHub(center) && <Th label="렉번호" />}
-                {isHub(center) && <Th label="단/박스" />}
-                <Th label="ERP코드" />
+                {canStock && (
+                  <th className="px-2 py-2 border-b w-8">
+                    <input type="checkbox" checked={selected.size === paged.length && paged.length > 0}
+                      onChange={() => setSelected(selected.size === paged.length ? new Set() : new Set(paged.map(r => r.id)))}
+                      className="cursor-pointer" />
+                  </th>
+                )}
+                {([
+                  ['자재명', 'item_name'], ['수량', 'quantity'],
+                  ['대분류', 'category_large'], ['중분류', 'category_mid'], ['소분류', 'category_small'],
+                ] as [string, SortField][]).map(([label, field]) => (
+                  <th key={field} onClick={() => handleSort(field)}
+                    className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap cursor-pointer hover:text-[#D3004F] select-none uppercase tracking-wide">
+                    {label}<SortIcon field={field} />
+                  </th>
+                ))}
+                {isHub && <th className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b">렉/단/박스</th>}
+                <th className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b">ERP코드</th>
               </tr>
             </thead>
             <tbody>
               {paged.map((item, i) => (
                 <tr key={item.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                  <td className="px-3 py-1.5 text-[#1E293B] max-w-[220px] truncate font-medium">
-                    {item.item_name}
+                  {canStock && (
+                    <td className="px-2 py-1.5 text-center">
+                      <input type="checkbox" checked={selected.has(item.id)}
+                        onChange={() => setSelected(prev => { const n = new Set(prev); n.has(item.id) ? n.delete(item.id) : n.add(item.id); return n })}
+                        className="cursor-pointer" />
+                    </td>
+                  )}
+                  <td className="px-3 py-1.5 max-w-[200px] truncate">
+                    <button onClick={() => setDetailItem(item)}
+                      className="text-[#1E293B] font-medium hover:text-[#D3004F] hover:underline text-left w-full truncate">
+                      {item.item_name}
+                    </button>
                   </td>
-                  <td className={`px-3 py-1.5 text-right font-mono font-bold ${qtyColor(item.quantity ?? 0)}`}>
+                  <td className={`px-3 py-1.5 text-right font-mono ${qtyColor(item.quantity ?? 0)}`}>
                     {(item.quantity ?? 0).toLocaleString()}
                   </td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">
-                    {item.category_large ?? ''}
-                  </td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">
-                    {item.category_mid ?? ''}
-                  </td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">
-                    {item.category_small ?? ''}
-                  </td>
-                  {isHub(center) && (
-                    <td className="px-3 py-1.5 text-[#64748B] whitespace-nowrap font-mono">
-                      {item.rack_no ?? ''}
+                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_large ?? ''}</td>
+                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_mid ?? ''}</td>
+                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_small ?? ''}</td>
+                  {isHub && (
+                    <td className="px-3 py-1.5 text-[#64748B] font-mono text-[11px] whitespace-nowrap">
+                      {[item.rack_no, item.shelf, item.box_no].filter(Boolean).join(' / ')}
                     </td>
                   )}
-                  {isHub(center) && (
-                    <td className="px-3 py-1.5 text-[#64748B] whitespace-nowrap font-mono text-[11px]">
-                      {[item.shelf, item.box_no].filter(Boolean).join(' / ')}
-                    </td>
-                  )}
-                  <td className="px-3 py-1.5 text-[#94A3B8] font-mono text-[11px]">
-                    {item.erp_code ?? ''}
-                  </td>
+                  <td className="px-3 py-1.5 text-[#94A3B8] font-mono text-[11px]">{item.erp_code ?? ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -357,15 +599,236 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm" disabled={currentPage <= 1}
-            onClick={() => setPage(p => p - 1)}>◀</Button>
-          <span className="text-sm text-gray-600">
-            {currentPage} / {totalPages} 페이지
-          </span>
-          <Button variant="outline" size="sm" disabled={currentPage >= totalPages}
-            onClick={() => setPage(p => p + 1)}>▶</Button>
+          <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>◀</Button>
+          <span className="text-[12px] text-gray-600">{currentPage} / {totalPages}</span>
+          <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>▶</Button>
         </div>
       )}
+
+      {detailItem && (
+        <ItemDetailModal item={detailItem} user={user} center={center}
+          onClose={() => setDetailItem(null)}
+          onUpdated={() => { fetchData(center); setDetailItem(null) }} />
+      )}
+    </div>
+  )
+}
+
+// ── 이동 신청 현황 탭 ─────────────────────────────────────────────────────────
+function TransferTab({ user }: { user: SessionUser }) {
+  const [data,    setData]    = useState<Transfer[]>([])
+  const [loading, setLoading] = useState(true)
+  const [acting,  setActing]  = useState<number | null>(null)
+
+  const userCenter = user.assigned_center ?? user.center
+  const role       = user.role
+
+  const canApprove = useCallback((tr: Transfer) => {
+    if (role === 'admin') return true
+    if (role === 'materials') return tr.to_center === '자재센터' || tr.from_center === '자재센터'
+    if (role === 'manager') return tr.to_center === userCenter
+    return false
+  }, [role, userCenter])
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/transfers')
+      const j   = await res.json()
+      setData(j.data ?? [])
+    } finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleAction = async (id: number, action: 'approved' | 'rejected' | 'cancelled') => {
+    setActing(id)
+    try {
+      await fetch('/api/transfers/action', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action }),
+      })
+      fetchData()
+    } finally { setActing(null) }
+  }
+
+  const filterByStatus = (status: string | null) =>
+    status ? data.filter(r => r.status === status) : data
+
+  const pendingCount = data.filter(r => r.status === 'pending').length
+
+  function TransferCard({ tr }: { tr: Transfer }) {
+    const st = TR_STATUS[tr.status] ?? { label: tr.status, color: '#555' }
+    const myRequest  = tr.requester?.id === user.id
+    const approvable = canApprove(tr) && tr.status === 'pending'
+
+    return (
+      <div className="border rounded-lg p-4 bg-white space-y-2">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-[13px] font-semibold text-[#1E293B]">
+              {tr.warehouse?.item_name ?? '자재 정보 없음'}
+            </div>
+            <div className="text-[12px] text-[#64748B] mt-0.5">
+              신청자: {tr.requester?.name ?? '-'} · {tsKst(tr.requested_at)}
+            </div>
+          </div>
+          <span className="text-[13px] font-bold flex-shrink-0 ml-2" style={{ color: st.color }}>{st.label}</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-[12px]">
+          <span className="bg-[#F8F9FA] border px-2 py-0.5 rounded text-[#475569]">{tr.from_center}</span>
+          <span className="text-[#94A3B8]">→</span>
+          <span className="bg-[#F8F9FA] border px-2 py-0.5 rounded text-[#475569]">{tr.to_center}</span>
+          <span className="ml-auto font-mono font-bold text-[#1E293B]">{tr.quantity}개</span>
+        </div>
+
+        {tr.status !== 'pending' && tr.approver?.name && (
+          <div className="text-[11px] text-[#94A3B8]">
+            처리자: {tr.approver.name}{tr.processed_at && ` · ${tsKst(tr.processed_at)}`}
+          </div>
+        )}
+
+        {tr.status === 'pending' && (
+          <div className="flex gap-2 pt-1">
+            {approvable && (
+              <>
+                <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
+                  disabled={acting === tr.id} onClick={() => handleAction(tr.id, 'approved')}>
+                  ✅ 승인
+                </Button>
+                <Button size="sm" variant="outline" disabled={acting === tr.id}
+                  onClick={() => handleAction(tr.id, 'rejected')}>
+                  ❌ 거절
+                </Button>
+              </>
+            )}
+            {myRequest && (
+              <Button size="sm" variant="outline" className="text-[#94A3B8]"
+                disabled={acting === tr.id} onClick={() => handleAction(tr.id, 'cancelled')}>
+                🚫 취소
+              </Button>
+            )}
+            {!approvable && !myRequest && (
+              <span className="text-[11px] text-[#94A3B8] self-center">🔒 승인 권한 없음</span>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[12px] text-[#64748B]">
+          {role === 'manager' && `📌 ${userCenter} 관련 이동 내역 · ${userCenter}으로 들어오는 이동만 승인 가능`}
+          {role === 'materials' && '📌 자재센터 관련 이동 내역'}
+          {role === 'user' && '📌 본인이 신청한 이동 내역'}
+        </p>
+        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="text-[12px]">
+          {loading ? '...' : '🔄'}
+        </Button>
+      </div>
+
+      <Tabs defaultValue="pending">
+        <TabsList className="flex-wrap h-auto">
+          {[
+            { key: 'pending',  label: `⏳ 대기중 (${pendingCount})` },
+            { key: 'approved', label: '✅ 승인됨' },
+            { key: 'rejected', label: '❌ 거절됨' },
+            { key: 'all',      label: '📋 전체' },
+          ].map(t => (
+            <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
+          ))}
+        </TabsList>
+        {['pending','approved','rejected','all'].map(key => (
+          <TabsContent key={key} value={key} className="space-y-2 mt-3">
+            {loading ? (
+              <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p>
+            ) : filterByStatus(key === 'all' ? null : key).length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">해당 신청 내역이 없습니다.</p>
+            ) : filterByStatus(key === 'all' ? null : key).map(tr => (
+              <TransferCard key={tr.id} tr={tr} />
+            ))}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  )
+}
+
+// ── 관리자 탭 ─────────────────────────────────────────────────────────────────
+function AdminTab({ center }: { center: string }) {
+  const [downloading, setDownloading] = useState(false)
+
+  const handleExport = async () => {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/warehouse?center=${encodeURIComponent(center)}`)
+      const j   = await res.json()
+      const rows: Item[] = j.data ?? []
+
+      const cols = ['자재명','수량','대분류','중분류','소분류','렉번호','단','박스번호','ERP코드','ERP품명','비고','센터']
+      const header = cols.join(',')
+      const body   = rows.map(r =>
+        [r.item_name, r.quantity, r.category_large ?? '', r.category_mid ?? '', r.category_small ?? '',
+         r.rack_no ?? '', r.shelf ?? '', r.box_no ?? '', r.erp_code ?? '', r.erp_name ?? '', r.notes ?? '', r.location]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+      ).join('\n')
+
+      const blob = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url; a.download = `재고현황_${center}_${new Date().toISOString().slice(0,10)}.csv`
+      a.click(); URL.revokeObjectURL(url)
+    } finally { setDownloading(false) }
+  }
+
+  return (
+    <div className="space-y-4 max-w-md">
+      <div className="border rounded-lg p-4 space-y-3">
+        <h3 className="text-[14px] font-bold text-[#1E293B]">💾 데이터 내보내기</h3>
+        <p className="text-[12px] text-[#64748B]">선택된 센터({center})의 재고를 CSV로 다운로드합니다.</p>
+        <Button onClick={handleExport} disabled={downloading} variant="outline">
+          {downloading ? '다운로드 중...' : '📥 CSV 다운로드'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
+export default function WarehouseContent({ user }: { user: SessionUser }) {
+  const viewable = getViewableCenters(user.role, user.assigned_center ?? user.center)
+  const [center, setCenter] = useState(viewable[0] ?? '자재센터')
+  const isAdmin = user.role === 'admin'
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-[#1E293B]">📦 재고 현황</h2>
+      <Tabs defaultValue="inventory">
+        <TabsList>
+          <TabsTrigger value="inventory" className="text-[13px]">📦 재고 현황</TabsTrigger>
+          <TabsTrigger value="transfers" className="text-[13px]">🚚 이동 신청 현황</TabsTrigger>
+          {isAdmin && <TabsTrigger value="admin" className="text-[13px]">⚙️ 관리자</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="inventory" className="mt-4">
+          <InventoryTab user={user} center={center} onCenterChange={setCenter} />
+        </TabsContent>
+
+        <TabsContent value="transfers" className="mt-4">
+          <TransferTab user={user} />
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="admin" className="mt-4">
+            <AdminTab center={center} />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }
