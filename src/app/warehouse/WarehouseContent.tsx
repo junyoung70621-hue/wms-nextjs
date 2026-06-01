@@ -798,40 +798,68 @@ function TransferTab({ user }: { user: SessionUser }) {
 }
 
 // ── 관리자 탭 ─────────────────────────────────────────────────────────────────
-function AdminTab({ center }: { center: string }) {
-  const [downloading, setDownloading] = useState(false)
+function AdminTab({ center, viewable }: { center: string; viewable: string[] }) {
+  const [downloading,    setDownloading]    = useState(false)
+  const [dlAllLoading,   setDlAllLoading]   = useState(false)
+
+  const buildCsv = (rows: Item[]) => {
+    const cols = ['자재명','수량','대분류','중분류','소분류','렉번호','단','박스번호','ERP코드','ERP품명','비고','센터']
+    const body = rows.map(r =>
+      [r.item_name, r.quantity, r.category_large ?? '', r.category_mid ?? '', r.category_small ?? '',
+       r.rack_no ?? '', r.shelf ?? '', r.box_no ?? '', r.erp_code ?? '', r.erp_name ?? '', r.notes ?? '', r.location]
+      .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+    ).join('\n')
+    return '﻿' + cols.join(',') + '\n' + body
+  }
+
+  const downloadCsv = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = filename; a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handleExport = async () => {
     setDownloading(true)
     try {
-      const res = await fetch(`/api/warehouse?center=${encodeURIComponent(center)}`)
-      const j   = await res.json()
-      const rows: Item[] = j.data ?? []
-
-      const cols = ['자재명','수량','대분류','중분류','소분류','렉번호','단','박스번호','ERP코드','ERP품명','비고','센터']
-      const header = cols.join(',')
-      const body   = rows.map(r =>
-        [r.item_name, r.quantity, r.category_large ?? '', r.category_mid ?? '', r.category_small ?? '',
-         r.rack_no ?? '', r.shelf ?? '', r.box_no ?? '', r.erp_code ?? '', r.erp_name ?? '', r.notes ?? '', r.location]
-        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
-      ).join('\n')
-
-      const blob = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8' })
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href = url; a.download = `재고현황_${center}_${new Date().toISOString().slice(0,10)}.csv`
-      a.click(); URL.revokeObjectURL(url)
+      const res  = await fetch(`/api/warehouse?center=${encodeURIComponent(center)}`)
+      const j    = await res.json()
+      downloadCsv(buildCsv(j.data ?? []), `재고현황_${center}_${new Date().toISOString().slice(0,10)}.csv`)
     } finally { setDownloading(false) }
+  }
+
+  const handleExportAll = async () => {
+    setDlAllLoading(true)
+    try {
+      const all: Item[] = []
+      for (const c of viewable) {
+        const res = await fetch(`/api/warehouse?center=${encodeURIComponent(c)}`)
+        const j   = await res.json()
+        all.push(...(j.data ?? []))
+      }
+      downloadCsv(buildCsv(all), `재고현황_전체_${new Date().toISOString().slice(0,10)}.csv`)
+    } finally { setDlAllLoading(false) }
   }
 
   return (
     <div className="space-y-4 max-w-md">
       <div className="border rounded-lg p-4 space-y-3">
         <h3 className="text-[14px] font-bold text-[#1E293B]">💾 데이터 내보내기</h3>
-        <p className="text-[12px] text-[#64748B]">선택된 센터({center})의 재고를 CSV로 다운로드합니다.</p>
-        <Button onClick={handleExport} disabled={downloading} variant="outline">
-          {downloading ? '다운로드 중...' : '📥 CSV 다운로드'}
-        </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-[#64748B]">현재 센터 ({center})</span>
+            <Button onClick={handleExport} disabled={downloading} variant="outline" className="text-[12px] h-8">
+              {downloading ? '다운로드 중...' : '📥 CSV'}
+            </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-[#64748B]">전체 센터 ({viewable.length}개)</span>
+            <Button onClick={handleExportAll} disabled={dlAllLoading} variant="outline" className="text-[12px] h-8">
+              {dlAllLoading ? '다운로드 중...' : '📥 전체 CSV'}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -839,7 +867,10 @@ function AdminTab({ center }: { center: string }) {
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
 export default function WarehouseContent({ user }: { user: SessionUser }) {
-  const viewable = getViewableCenters(user.role, user.assigned_center ?? user.center)
+  const viewable = useMemo(
+    () => getViewableCenters(user.role, user.assigned_center ?? user.center),
+    [user]
+  )
   const [center, setCenter] = useState(viewable[0] ?? '자재센터')
   const isAdmin = user.role === 'admin'
 
@@ -863,7 +894,7 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
 
         {isAdmin && (
           <TabsContent value="admin" className="mt-4">
-            <AdminTab center={center} />
+            <AdminTab center={center} viewable={viewable} />
           </TabsContent>
         )}
       </Tabs>

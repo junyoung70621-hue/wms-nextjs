@@ -67,11 +67,12 @@ function StatCard({
 }
 
 export default function DashboardContent({ user }: { user: SessionUser }) {
-  const [summary,  setSummary]  = useState<Summary | null>(null)
-  const [centers,  setCenters]  = useState<CenterRow[]>([])
-  const [history,  setHistory]  = useState<HistoryRow[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
+  const [summary,      setSummary]      = useState<Summary | null>(null)
+  const [centers,      setCenters]      = useState<CenterRow[]>([])
+  const [history,      setHistory]      = useState<HistoryRow[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState('')
+  const [unapproved,   setUnapproved]   = useState(0)
 
   useEffect(() => {
     fetch('/api/dashboard')
@@ -84,7 +85,18 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
       })
       .catch(() => setError('데이터 로드 실패'))
       .finally(() => setLoading(false))
-  }, [])
+
+    if (user.role === 'admin') {
+      fetch('/api/admin/users')
+        .then(r => r.json())
+        .then(d => {
+          if (!d.error) {
+            setUnapproved((d.data as Array<{ is_approved: boolean }>).filter(u => !u.is_approved).length)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [user.role])
 
   const isManager = user.role === 'admin' || user.role === 'materials'
 
@@ -104,6 +116,21 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-6">
+      {/* 미승인 계정 알림 (admin) */}
+      {user.role === 'admin' && unapproved > 0 && (
+        <Link href="/admin">
+          <div className="flex items-center gap-3 px-4 py-3 bg-[#fff8e1] border border-[#f57c00] rounded-lg hover:bg-[#fff3cd] transition-colors cursor-pointer">
+            <span className="text-[18px]">⚠️</span>
+            <div>
+              <span className="text-[13px] font-bold text-[#f57c00]">
+                미승인 계정 {unapproved}명
+              </span>
+              <span className="text-[12px] text-[#e65100] ml-2">승인 대기 중입니다. 관리자 페이지에서 확인하세요.</span>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
