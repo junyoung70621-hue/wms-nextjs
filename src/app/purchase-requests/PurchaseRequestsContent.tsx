@@ -19,6 +19,7 @@ type PurchaseRequest = {
   notes: string | null
   requested_at: string
   processed_at: string | null
+  reply_message: string | null
   processor: { name: string; center: string; assigned_center: string | null } | null
 }
 
@@ -114,8 +115,13 @@ function ManagerCard({
             </div>
           )}
 
-          {req.cost_note && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
-          {req.notes     && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.cost_note    && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
+          {req.notes        && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.reply_message && (
+            <p className="text-[12px] text-[#0284C7] bg-[#F0F9FF] border border-[#BAE6FD] rounded px-3 py-2">
+              💬 담당자: {req.reply_message}
+            </p>
+          )}
           {req.processor?.name && (
             <p className="text-[11px] text-[#94A3B8]">
               처리자: {req.processor.name}
@@ -241,8 +247,13 @@ function MyCard({
               </table>
             </div>
           )}
-          {req.cost_note && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
-          {req.notes     && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.cost_note    && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
+          {req.notes        && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.reply_message && (
+            <p className="text-[12px] text-[#0284C7] bg-[#F0F9FF] border border-[#BAE6FD] rounded px-3 py-2">
+              💬 담당자: {req.reply_message}
+            </p>
+          )}
 
           {canCancel && (
             <div className="pt-1">
