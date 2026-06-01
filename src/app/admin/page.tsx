@@ -1,16 +1,16 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import DashboardContent from './DashboardContent'
+import AdminContent from './AdminContent'
 
-export default async function DashboardPage() {
+export default async function AdminPage() {
   const session = await getSession()
   if (!session.user) redirect('/login')
-  const user = session.user!
+  if (session.user.role !== 'admin') redirect('/dashboard')
 
   return (
-    <DashboardLayout user={user} title="자재현황(전체)">
-      <DashboardContent user={user} />
+    <DashboardLayout user={session.user} title="관리자">
+      <AdminContent user={session.user} />
     </DashboardLayout>
   )
 }

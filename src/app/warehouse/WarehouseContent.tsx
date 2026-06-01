@@ -432,7 +432,7 @@ function InventoryTab({ user, center, onCenterChange }: {
       {/* 헤더 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Select value={center} onValueChange={onCenterChange}>
+          <Select value={center} onValueChange={v => v !== null && onCenterChange(v)}>
             <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>{viewable.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
@@ -468,15 +468,15 @@ function InventoryTab({ user, center, onCenterChange }: {
       <div className="flex flex-wrap gap-2 items-center">
         <Input className="w-[200px] h-8 text-[12px]" placeholder="자재명 / ERP코드 / 분류명..."
           value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
-        <Select value={filterLarge} onValueChange={v => { setFilterLarge(v); setFilterMid('전체'); setFilterSmall('전체'); setPage(1) }}>
+        <Select value={filterLarge} onValueChange={v => { if (v !== null) { setFilterLarge(v); setFilterMid('전체'); setFilterSmall('전체'); setPage(1) } }}>
           <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="대분류" /></SelectTrigger>
           <SelectContent>{largeList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
-        <Select value={filterMid} onValueChange={v => { setFilterMid(v); setFilterSmall('전체'); setPage(1) }}>
+        <Select value={filterMid} onValueChange={v => { if (v !== null) { setFilterMid(v); setFilterSmall('전체'); setPage(1) } }}>
           <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="중분류" /></SelectTrigger>
           <SelectContent>{midList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
-        <Select value={filterSmall} onValueChange={v => { setFilterSmall(v); setPage(1) }}>
+        <Select value={filterSmall} onValueChange={v => { if (v !== null) { setFilterSmall(v); setPage(1) } }}>
           <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="소분류" /></SelectTrigger>
           <SelectContent>{smallList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>

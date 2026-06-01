@@ -284,7 +284,7 @@ export default function LoginPage() {
                       <Label>소속 센터 *</Label>
                       <Select
                         value={reg.center}
-                        onValueChange={v => setReg({ ...reg, center: v })}
+                        onValueChange={v => v !== null && setReg({ ...reg, center: v })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="센터 선택" />

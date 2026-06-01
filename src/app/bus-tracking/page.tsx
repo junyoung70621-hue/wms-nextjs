@@ -1,16 +1,15 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import DashboardLayout from '@/components/layout/DashboardLayout'
-import DashboardContent from './DashboardContent'
+import BusTrackingContent from './BusTrackingContent'
 
-export default async function DashboardPage() {
+export default async function BusTrackingPage() {
   const session = await getSession()
   if (!session.user) redirect('/login')
-  const user = session.user!
 
   return (
-    <DashboardLayout user={user} title="자재현황(전체)">
-      <DashboardContent user={user} />
+    <DashboardLayout user={session.user} title="센터 단말현황(버스)">
+      <BusTrackingContent user={session.user} />
     </DashboardLayout>
   )
 }

@@ -119,7 +119,7 @@ export default function UsageContent({ user }: { user: SessionUser }) {
       <div className="flex flex-wrap gap-2 items-center">
         {/* 센터 */}
         {isAdminOrMaterials ? (
-          <Select value={center} onValueChange={setCenter}>
+          <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
             <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="전체">전체 센터</SelectItem>
@@ -154,7 +154,7 @@ export default function UsageContent({ user }: { user: SessionUser }) {
         />
 
         {/* 건수 */}
-        <Select value={limit} onValueChange={setLimit}>
+        <Select value={limit} onValueChange={v => v !== null && setLimit(v)}>
           <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             {['100','200','500','1000'].map(n =>

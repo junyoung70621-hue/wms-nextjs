@@ -147,7 +147,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
       {/* 필터 바 */}
       <div className="flex flex-wrap gap-2 items-center">
         {/* 작업 유형 */}
-        <Select value={filterAction} onValueChange={v => { setFilterAction(v) }}>
+        <Select value={filterAction} onValueChange={v => { if (v !== null) setFilterAction(v) }}>
           <SelectTrigger className="w-[140px]">
             <SelectValue />
           </SelectTrigger>
@@ -170,7 +170,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
 
         {/* 센터 (admin/materials만) */}
         {isAdminOrMaterials && (
-          <Select value={filterCenter} onValueChange={setFilterCenter}>
+          <Select value={filterCenter} onValueChange={v => v !== null && setFilterCenter(v)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue />
             </SelectTrigger>
@@ -184,7 +184,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         )}
 
         {/* 표시 건수 */}
-        <Select value={filterLimit} onValueChange={v => { setFilterLimit(v) }}>
+        <Select value={filterLimit} onValueChange={v => { if (v !== null) setFilterLimit(v) }}>
           <SelectTrigger className="w-[100px]">
             <SelectValue />
           </SelectTrigger>
