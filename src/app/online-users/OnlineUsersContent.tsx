@@ -23,7 +23,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 function relativeTime(ts: string | null) {
   if (!ts) return '활동 없음'
-  const diff = Date.now() - (new Date(ts).getTime() - 9 * 3600 * 1000)
+  const diff = Date.now() - new Date(ts).getTime()
   const m = Math.floor(diff / 60000)
   if (m < 1)  return '방금 전'
   if (m < 60) return `${m}분 전`

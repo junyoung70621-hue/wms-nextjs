@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
 
@@ -449,6 +450,7 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
   const [data,    setData]    = useState<PurchaseRequest[]>([])
   const [myData,  setMyData]  = useState<PurchaseRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
 
   const isManager = user.role === 'admin' || user.role === 'materials'
   const isAdmin   = user.role === 'admin'
@@ -496,6 +498,17 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
     fetchAll()
   }
 
+  const searchedData = useMemo(() => {
+    if (!search.trim()) return data
+    const q = search.toLowerCase()
+    return data.filter(r =>
+      r.requester_name.toLowerCase().includes(q) ||
+      r.requester_center.toLowerCase().includes(q) ||
+      r.reason.toLowerCase().includes(q) ||
+      (r.items ?? []).some((it: { 품명: string }) => it.품명?.toLowerCase().includes(q))
+    )
+  }, [data, search])
+
   const filterByStatus = (list: PurchaseRequest[], status: string | null) =>
     status ? list.filter(r => r.status === status) : list
 
@@ -526,11 +539,21 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
       </div>
 
       <Tabs defaultValue="new">
-        <TabsList className="flex-wrap h-auto gap-1">
-          {tabs.map(t => (
-            <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <TabsList className="flex-wrap h-auto gap-1">
+            {tabs.map(t => (
+              <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
+            ))}
+          </TabsList>
+          {isManager && (
+            <Input
+              placeholder="이름 / 센터 / 사유 / 품명 검색"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="h-8 text-[12px] w-52 ml-auto"
+            />
+          )}
+        </div>
 
         {/* 새 요청 작성 */}
         <TabsContent value="new" className="mt-4">
@@ -542,9 +565,9 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
           <TabsContent key={key} value={key} className="space-y-2 mt-3">
             {loading ? (
               <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p>
-            ) : filterByStatus(data, key === 'all' ? null : key).length === 0 ? (
+            ) : filterByStatus(searchedData, key === 'all' ? null : key).length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">해당 요청 내역이 없습니다.</p>
-            ) : filterByStatus(data, key === 'all' ? null : key).map(req => (
+            ) : filterByStatus(searchedData, key === 'all' ? null : key).map(req => (
               <ManagerCard key={req.id} req={req} isAdmin={isAdmin}
                 onStatusChange={handleStatusChange} onDelete={handleDelete} />
             ))}
