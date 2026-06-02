@@ -9,12 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { Upload, Pencil, ChevronDown, ChevronRight } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 import { CENTERS } from '@/constants/centers'
 import {
   classifyTerminal, normalizeTrcnId, findTrcnIndex,
   buildPivot, buildCenterPivot, countByCenter,
-  XLSX_ROW_ORDER,
+  XLSX_ROW_ORDER, DEVICE_ORDER, SUB_ORDER,
   type TerminalMovement, type DevicePivot, type CenterPivot,
 } from '@/lib/terminal'
 
@@ -292,7 +293,16 @@ function UploadPanel({
       {/* 엑셀 업로드 */}
       <div>
         <label className="text-[11px] text-[#64748B] block mb-0.5">엑셀 파일 (.xlsx / .xls)</label>
-        <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="text-[12px]" />
+        <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5"
+                  onClick={() => fileRef.current?.click()}>
+            <Upload size={14} strokeWidth={1.9} /> 파일 선택
+          </Button>
+          <span className="text-[11px] text-[#64748B] truncate max-w-[220px]">
+            {fileName || '선택된 파일 없음'}
+          </span>
+        </div>
       </div>
       {/* 직접 입력 */}
       <div>
@@ -346,6 +356,12 @@ function UploadPanel({
 
 function ManagePanel({ rows, perms, onChanged }: { rows: TerminalMovement[]; perms: Perms; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
+  const [open, setOpen] = useState(false)
+  // 수정 모달
+  const [editRec, setEditRec] = useState<TerminalMovement | null>(null)
+  const [editTrcn, setEditTrcn] = useState('')
+  const [editDevice, setEditDevice] = useState('')
+  const [editSub, setEditSub] = useState('')
 
   // upload_id 별 그룹
   const groups = useMemo(() => {
@@ -375,40 +391,104 @@ function ManagePanel({ rows, perms, onChanged }: { rows: TerminalMovement[]; per
     setBusy(false); onChanged()
   }
 
+  function openEdit(r: TerminalMovement) {
+    setEditRec(r); setEditTrcn(r.trcn_id); setEditDevice(r.device_type); setEditSub(r.sub_type)
+  }
+  async function saveEdit() {
+    if (!editRec) return
+    setBusy(true)
+    await fetch(`/api/terminal/movements/${editRec.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trcn_id: editTrcn, device_type: editDevice, sub_type: editSub }),
+    })
+    setBusy(false); setEditRec(null); onChanged()
+  }
+
   const canManage = (r: TerminalMovement) => perms.isAdmin || perms.isJjae || r.uploaded_by === perms.userId
 
-  if (!groups.length) return <div className="text-[11px] text-[#94A3B8] py-3 text-center">관리할 업로드 내역이 없습니다.</div>
-
   return (
-    <div className="space-y-2">
-      {groups.map(([uid, recs]) => {
-        const manageable = recs.some(canManage)
-        return (
-          <div key={uid} className="border border-[#E2E8F0] rounded-lg p-2.5 bg-white">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="text-[11px] text-[#475569]">
-                <b>{recs[0].file_name || '직접입력'}</b> · {recs.length}건 · {recs[0].upload_date}
-              </div>
-              {manageable && (
-                <Button type="button" variant="outline" disabled={busy}
-                        className="h-6 text-[10px] text-[#c62828]" onClick={() => delBatch(uid)}>배치 삭제</Button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {recs.slice(0, 60).map(r => (
-                <span key={r.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#F1F5F9] text-[10px] text-[#475569]">
-                  <span className="font-mono">{r.trcn_id}</span>
-                  <span className="text-[#94A3B8]">{r.device_type}/{r.sub_type}</span>
-                  {canManage(r) && (
-                    <button type="button" className="text-[#c62828] hover:underline" disabled={busy} onClick={() => delOne(r.id)}>×</button>
+    <div className="border border-[#E2E8F0] rounded-lg bg-white overflow-hidden">
+      {/* 접기/펼치기 헤더 */}
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#1E293B] hover:bg-[#f8f9ff] transition-colors">
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        업로드 내역 <span className="text-[#94A3B8] font-normal">({rows.length}건)</span>
+      </button>
+
+      {open && (
+        <div className="px-2.5 pb-2.5 space-y-2">
+          {groups.length === 0 ? (
+            <div className="text-[11px] text-[#94A3B8] py-3 text-center">관리할 업로드 내역이 없습니다.</div>
+          ) : groups.map(([uid, recs]) => {
+            const manageable = recs.some(canManage)
+            return (
+              <div key={uid} className="border border-[#E2E8F0] rounded-lg p-2.5 bg-[#f8f9ff]">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="text-[11px] text-[#475569]">
+                    <b>{recs[0].file_name || '직접입력'}</b> · {recs.length}건 · {recs[0].upload_date}
+                  </div>
+                  {manageable && (
+                    <Button type="button" variant="outline" disabled={busy}
+                            className="h-6 text-[10px] text-[#c62828]" onClick={() => delBatch(uid)}>배치 삭제</Button>
                   )}
-                </span>
-              ))}
-              {recs.length > 60 && <span className="text-[10px] text-[#94A3B8]">+{recs.length - 60}건</span>}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {recs.slice(0, 60).map(r => (
+                    <span key={r.id} className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded bg-white border border-[#E2E8F0] text-[10px] text-[#475569]">
+                      <span className="font-mono">{r.trcn_id}</span>
+                      <span className="text-[#94A3B8]">{r.device_type}/{r.sub_type}</span>
+                      {canManage(r) && (
+                        <span className="flex items-center gap-0.5">
+                          <button type="button" title="수정" disabled={busy} onClick={() => openEdit(r)}
+                            className="p-0.5 rounded text-[#3B82F6] hover:bg-[#eff6ff]">
+                            <Pencil size={11} strokeWidth={2} />
+                          </button>
+                          <button type="button" title="삭제" disabled={busy} onClick={() => delOne(r.id)}
+                            className="px-1 rounded text-[#c62828] hover:bg-[#fef2f2] leading-none text-[12px]">×</button>
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                  {recs.length > 60 && <span className="text-[10px] text-[#94A3B8] self-center">+{recs.length - 60}건</span>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {editRec && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditRec(null)}>
+          <div className="bg-white rounded-lg p-4 w-[330px] space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="text-[13px] font-bold text-[#1E293B]">레코드 수정</div>
+            <div>
+              <label className="text-[11px] text-[#64748B] block mb-0.5">TRCN_ID</label>
+              <Input value={editTrcn} onChange={e => setEditTrcn(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-[11px] text-[#64748B] block mb-0.5">기종</label>
+                <Select value={editDevice} onValueChange={v => v !== null && setEditDevice(v)}>
+                  <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{DEVICE_ORDER.map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-[11px] text-[#64748B] block mb-0.5">유형</label>
+                <Select value={editSub} onValueChange={v => v !== null && setEditSub(v)}>
+                  <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{SUB_ORDER.map(s => <SelectItem key={s} value={s} className="text-[12px]">{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={() => setEditRec(null)}>취소</Button>
+              <Button type="button" className="h-8 text-[12px]" disabled={busy} onClick={saveEdit}>저장</Button>
             </div>
           </div>
-        )
-      })}
+        </div>
+      )}
     </div>
   )
 }
