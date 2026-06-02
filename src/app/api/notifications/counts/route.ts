@@ -19,7 +19,6 @@ export async function GET() {
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending')
   if (!isManager2) matQ = matQ.eq('from_center', userCenter)
-  const { count: matPending } = await matQ
 
   // 대기 구매요청
   let purQ = supabase
@@ -27,7 +26,6 @@ export async function GET() {
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending')
   if (!isManager2) purQ = purQ.eq('requester_id', u.id)
-  const { count: purPending } = await purQ
 
   // 대기 이동신청
   let trQ = supabase
@@ -41,14 +39,22 @@ export async function GET() {
   } else if (!isAdmin) {
     trQ = trQ.eq('requester_id', u.id)
   }
-  const { count: trPending } = await trQ
 
-  // 미읽은 공지
-  const { data: notices } = await supabase
+  // 활성 공지
+  const noticesQ = supabase
     .from('notices')
     .select('id')
     .eq('is_active', true)
 
+  // 모든 카운트 쿼리 병렬 실행
+  const [
+    { count: matPending },
+    { count: purPending },
+    { count: trPending },
+    { data: notices },
+  ] = await Promise.all([matQ, purQ, trQ, noticesQ])
+
+  // 미읽은 공지 (활성 공지가 있을 때만 읽음 기록 조회)
   let unreadNotices = 0
   if (notices?.length) {
     const ids = notices.map(n => n.id)

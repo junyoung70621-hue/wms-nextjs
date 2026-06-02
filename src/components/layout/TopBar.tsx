@@ -11,6 +11,25 @@ const ROLE_LABEL: Record<string, string> = {
 
 const SESSION_MS = 8 * 60 * 60 * 1000
 
+// 경로 → 화면 제목
+const TITLE_MAP: Record<string, string> = {
+  '/dashboard': '자재현황(전체)',
+  '/warehouse': '재고 현황',
+  '/material-requests': '자재 요청',
+  '/purchase-requests': '구매 요청',
+  '/usage': '사용내역',
+  '/history': '입출고 이력',
+  '/rack-map': '위치 지도',
+  '/bus-tracking': '센터 단말현황(버스)',
+  '/terminal/bus': '버스단말기 현황',
+  '/terminal/taxi': '택시단말기 현황',
+  '/notices': '공지사항',
+  '/inquiry': '문의하기',
+  '/online-users': '접속 현황',
+  '/admin': '관리자',
+  '/mypage': '마이페이지',
+}
+
 type Counts = {
   mat_pending: number
   pur_pending: number
@@ -20,7 +39,6 @@ type Counts = {
 
 interface TopBarProps {
   user: SessionUser
-  title: string
   collapsed: boolean
   onToggle: () => void
 }
@@ -38,9 +56,10 @@ function today(): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function TopBar({ user, title, collapsed, onToggle }: TopBarProps) {
+export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const title = TITLE_MAP[pathname] ?? ''
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, tr_pending: 0, unread_notices: 0 })
   const [remaining, setRemaining] = useState<number | null>(null)
 

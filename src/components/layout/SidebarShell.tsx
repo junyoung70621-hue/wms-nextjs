@@ -8,11 +8,9 @@ import PageTransition from './PageTransition'
 
 export default function SidebarShell({
   user,
-  title,
   children,
 }: {
   user: SessionUser
-  title: string
   children: React.ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -30,7 +28,7 @@ export default function SidebarShell({
 
   return (
     <>
-      <TopBar user={user} title={title} collapsed={collapsed} onToggle={toggle} />
+      <TopBar user={user} collapsed={collapsed} onToggle={toggle} />
       <Sidebar user={user} collapsed={collapsed} />
       <main
         className={`mt-[58px] min-h-[calc(100vh-58px)] p-6 transition-all duration-200 ${
