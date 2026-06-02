@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UI 작업용 스크린샷
+_shot*.png
+_login_shot.png
