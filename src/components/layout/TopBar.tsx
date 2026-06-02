@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { Bell, Settings } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -98,7 +99,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
       {/* 로고 + 토글 */}
       <div
         className={`flex-shrink-0 flex items-center gap-2 px-3 border-r border-[rgba(0,0,0,0.08)] transition-all duration-200 ${
-          collapsed ? 'w-[48px]' : 'w-[220px]'
+          collapsed ? 'w-[48px]' : 'w-[240px]'
         }`}
       >
         <button
@@ -113,11 +114,12 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           </svg>
         </button>
         <span
-          className={`text-[14px] font-bold text-[#1E293B] tracking-tight whitespace-nowrap overflow-hidden transition-all duration-200 ${
+          className={`flex items-baseline gap-1 whitespace-nowrap overflow-hidden transition-all duration-200 ${
             collapsed ? 'w-0 opacity-0' : 'opacity-100'
           }`}
         >
-          ATEC 자재관리
+          <span className="text-[17px] font-extrabold tracking-tight text-[#b32646] font-heading">ATEC</span>
+          <span className="text-[15px] font-semibold tracking-tight text-[#1E293B] font-heading">Mobility</span>
         </span>
       </div>
 
@@ -173,22 +175,22 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           </div>
         </div>
 
-        {/* 세션 잔여시간 */}
-        <div className="flex items-center gap-1 px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
-          <span className="text-[11px] text-[#64748B] whitespace-nowrap">세션</span>
-          <span
-            className={`text-[11px] font-mono font-bold whitespace-nowrap ${
-              remaining !== null && remaining < 30 * 60 * 1000
-                ? 'text-[#B32646]'
-                : 'text-[#1E293B]'
-            }`}
-          >
-            {remaining !== null ? formatRemaining(remaining) : '--:--'}
+        {/* 세션 잔여시간 (pill) */}
+        <div className="flex items-center px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#eff4ff] border border-[#dce9ff]">
+            <span className="text-[9px] font-bold tracking-[0.1em] text-[#94A3B8]">SESSION</span>
+            <span
+              className={`text-[11px] font-mono font-bold whitespace-nowrap ${
+                remaining !== null && remaining < 30 * 60 * 1000 ? 'text-[#B32646]' : 'text-[#1E293B]'
+              }`}
+            >
+              {remaining !== null ? formatRemaining(remaining) : '--:--'}
+            </span>
           </span>
         </div>
 
         {/* 유저 정보 */}
-        <div className="flex items-center gap-[6px] pl-3 text-[12px]">
+        <div className="flex items-center gap-[6px] px-3 border-r border-[rgba(0,0,0,0.08)] text-[12px] h-full">
           <span className="font-semibold text-[#1E293B] whitespace-nowrap">{center}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span className="font-semibold text-[#1E293B] whitespace-nowrap">{user.name}</span>
@@ -196,6 +198,19 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           <span className="text-[#64748B] whitespace-nowrap">{ROLE_LABEL[user.role] ?? user.role}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span className="text-[#94A3B8] whitespace-nowrap font-mono text-[11px]">{today()}</span>
+        </div>
+
+        {/* 아이콘 + 아바타 */}
+        <div className="flex items-center gap-1 pl-3">
+          <button className="p-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="알림">
+            <Bell size={16} strokeWidth={1.9} />
+          </button>
+          <button onClick={() => router.push('/mypage')} className="p-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="설정">
+            <Settings size={16} strokeWidth={1.9} />
+          </button>
+          <div className="w-[28px] h-[28px] ml-1 rounded-full bg-[#b32646] text-white flex items-center justify-center text-[12px] font-bold">
+            {user.name.charAt(0)}
+          </div>
         </div>
       </div>
     </header>

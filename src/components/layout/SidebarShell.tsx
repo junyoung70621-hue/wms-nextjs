@@ -32,7 +32,7 @@ export default function SidebarShell({
       <Sidebar user={user} collapsed={collapsed} />
       <main
         className={`mt-[58px] min-h-[calc(100vh-58px)] p-6 transition-all duration-200 ${
-          collapsed ? 'ml-0' : 'ml-[220px]'
+          collapsed ? 'ml-0' : 'ml-[240px]'
         }`}
       >
         <PageTransition>{children}</PageTransition>
