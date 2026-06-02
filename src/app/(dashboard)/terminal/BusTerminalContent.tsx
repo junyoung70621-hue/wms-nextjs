@@ -9,15 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Upload, Pencil, ChevronDown, ChevronRight } from 'lucide-react'
+import { Upload, Pencil, ChevronDown, ChevronRight, FileDown } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 import { CENTERS } from '@/constants/centers'
 import {
   classifyTerminal, normalizeTrcnId, findTrcnIndex,
   buildPivot, buildCenterPivot, countByCenter,
-  XLSX_ROW_ORDER, DEVICE_ORDER, SUB_ORDER,
+  DEVICE_ORDER, SUB_ORDER,
   type TerminalMovement, type DevicePivot, type CenterPivot,
 } from '@/lib/terminal'
+import { downloadHandover } from '@/lib/handoverExcel'
 
 const HUB = '자재센터'
 const NON_HUB_CENTERS = CENTERS.filter(c => c !== HUB)
@@ -115,18 +116,24 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
   )
 }
 
-function CenterCrossTable({ pivot, date, title }: { pivot: CenterPivot | null; date: string; title: string }) {
+function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot | null; date: string; title: string; action?: React.ReactNode }) {
+  const header = (
+    <div className="flex items-center justify-between mb-1.5 gap-2">
+      <div className="text-[12px] font-bold text-[#1E293B]">{title}</div>
+      {action}
+    </div>
+  )
   if (!pivot || !pivot.rows.length) {
     return (
       <div>
-        <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">{title}</div>
+        {header}
         <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">데이터 없음</div>
       </div>
     )
   }
   return (
     <div>
-      <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">{title}</div>
+      {header}
       <div className="overflow-x-auto">
         <table className="border-collapse text-[12px]">
           <thead>
@@ -534,60 +541,6 @@ function exportMonthly(out: TerminalMovement[], inn: TerminalMovement[], daily: 
   XLSX.writeFile(wb, `단말기월간통계_${ym}.xlsx`)
 }
 
-// 인수인계증 (값 기반, 종류별 요약 + IH 목록)
-function safeSheetName(name: string): string {
-  return name.replace(/[\\/*?:[\]]/g, '_').slice(0, 31)
-}
-function buildCertSheet(rows: TerminalMovement[], fromC: string, toC: string, date: string, notes: string): XLSX.WorkSheet {
-  const counts = new Map<string, number>()
-  for (const r of rows) counts.set(`${r.device_type}|${r.sub_type}`, (counts.get(`${r.device_type}|${r.sub_type}`) ?? 0) + 1)
-  const aoa: unknown[][] = []
-  aoa.push(['인수인계증'])
-  aoa.push(['인계센터', fromC, '인수센터', toC])
-  aoa.push(['일자', date, '총수량', rows.length])
-  aoa.push([])
-  aoa.push(['No', '단말기종류', '유형', '수량'])
-  let no = 1
-  for (const [device, sub] of XLSX_ROW_ORDER) {
-    const c = counts.get(`${device}|${sub}`) ?? 0
-    if (c > 0) { aoa.push([no++, device, sub, c]); counts.delete(`${device}|${sub}`) }
-  }
-  for (const [k, c] of counts) {
-    const [device, sub] = k.split('|')
-    if (c > 0) aoa.push([no++, device, sub, c])
-  }
-  aoa.push(['', '', '합계', rows.length])
-  aoa.push([])
-  if (notes) { aoa.push(['비고', notes]); aoa.push([]) }
-  aoa.push(['단말기 IH 목록'])
-  aoa.push(['No', 'IH'])
-  const sorted = [...rows].map(r => r.trcn_id).sort()
-  sorted.forEach((ih, i) => aoa.push([i + 1, ih]))
-  const ws = XLSX.utils.aoa_to_sheet(aoa)
-  ws['!cols'] = [{ wch: 8 }, { wch: 16 }, { wch: 14 }, { wch: 10 }]
-  return ws
-}
-function exportHandover(rows: TerminalMovement[], fromC: string, toC: string, date: string, notes: string, perCenter: 'from' | 'to' | null) {
-  const wb = XLSX.utils.book_new()
-  if (perCenter) {
-    const field = perCenter === 'to' ? 'to_center' : 'from_center'
-    XLSX.utils.book_append_sheet(wb, buildCertSheet(rows, fromC, toC, date, notes), '전체요약')
-    const byCenter = new Map<string, TerminalMovement[]>()
-    for (const r of rows) {
-      const k = r[field]
-      if (!byCenter.has(k)) byCenter.set(k, [])
-      byCenter.get(k)!.push(r)
-    }
-    for (const [c, recs] of byCenter) {
-      const f = perCenter === 'to' ? fromC : c
-      const t = perCenter === 'to' ? c : toC
-      XLSX.utils.book_append_sheet(wb, buildCertSheet(recs, f, t, date, notes), safeSheetName(c))
-    }
-  } else {
-    XLSX.utils.book_append_sheet(wb, buildCertSheet(rows, fromC, toC, date, notes), '인수인계증')
-  }
-  XLSX.writeFile(wb, `인수인계증_${date}_${fromC}→${toC}.xlsx`)
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 메인
@@ -681,7 +634,21 @@ function TodayTab({ perms }: { perms: Perms }) {
               <CenterCountList rows={out} field="to_center" label="출고 센터별" />
             </div>
             <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-              <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황" />
+              <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황"
+                action={
+                  <Button type="button" variant="outline" className="h-7 text-[11px] gap-1 flex-shrink-0"
+                    disabled={!inn.length}
+                    onClick={() => {
+                      const isHub = perms.center === HUB
+                      const certRows = isHub ? inn : inn.filter(r => r.from_center === perms.center)
+                      if (!certRows.length) return
+                      const fromC = isHub ? '타센터' : perms.center
+                      downloadHandover(certRows, fromC, HUB, date, '', isHub ? 'from' : null)
+                    }}>
+                    <FileDown size={13} strokeWidth={1.9} /> 인수인계증
+                  </Button>
+                }
+              />
               <DevicePivotTable pivot={buildPivot(inn)} title="입고 기종별" />
               <CenterCountList rows={inn} field="from_center" label="입고 센터별" />
             </div>
@@ -919,7 +886,7 @@ function CertTab({ perms }: { perms: Perms }) {
     const fromC = dir === 'out' ? HUB : (centerFilter === '전체' ? '타센터' : centerFilter)
     const toC = dir === 'out' ? (centerFilter === '전체' ? '타센터' : centerFilter) : HUB
     const perCenter = centerFilter === '전체' ? (dir === 'out' ? 'to' : 'from') : null
-    exportHandover(rows, fromC, toC, date, notes, perCenter)
+    downloadHandover(rows, fromC, toC, date, notes, perCenter)
   }
 
   return (
