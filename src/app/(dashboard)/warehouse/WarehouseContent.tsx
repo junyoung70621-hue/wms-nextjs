@@ -8,6 +8,8 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { Boxes, ClipboardCheck, TriangleAlert, PackageX, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
 import { getViewableCenters, CENTERS } from '@/constants/centers'
 import MaterialRequestsContent from '../material-requests/MaterialRequestsContent'
@@ -78,14 +80,26 @@ const TR_STATUS: Record<string, { label: string; color: string }> = {
 }
 
 // ── KPI 카드 ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, color, active, onClick }: {
-  label: string; value: number; color: string; active?: boolean; onClick?: () => void
+function KpiCard({ enLabel, koLabel, value, unit = '개', color, icon: Icon, active, onClick }: {
+  enLabel: string; koLabel: string; value: number; unit?: string; color: string
+  icon: LucideIcon; active?: boolean; onClick?: () => void
 }) {
   return (
-    <div onClick={onClick} className="rounded-lg p-3 text-center cursor-pointer transition-all"
-      style={{ background: active ? `${color}22` : `${color}11`, border: active ? `2px solid ${color}` : `1px solid ${color}55` }}>
-      <div className="text-[11px] text-gray-400">{label}</div>
-      <div className="text-[22px] font-bold mt-0.5" style={{ color }}>{value.toLocaleString()}</div>
+    <div onClick={onClick}
+      className={cn(
+        'bg-white rounded-lg p-4 cursor-pointer transition-all',
+        active ? 'border-2 shadow-sm' : 'border border-[#e2e8f0] hover:border-[#cbd5e1]'
+      )}
+      style={active ? { borderColor: color } : undefined}>
+      <div className="flex items-start justify-between">
+        <span className="text-[10px] font-bold tracking-[0.08em] text-[#94A3B8] uppercase">{enLabel}</span>
+        <Icon size={18} strokeWidth={1.9} style={{ color }} />
+      </div>
+      <div className="mt-3 text-[11px] text-[#64748B]">{koLabel}</div>
+      <div className="flex items-baseline gap-1 mt-0.5">
+        <span className="text-[28px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
+        <span className="text-[12px] text-[#94A3B8]">{unit}</span>
+      </div>
     </div>
   )
 }
@@ -504,13 +518,13 @@ function InventoryTab({ user, center, onCenterChange }: {
 
       {/* KPI */}
       {!loading && data.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          <KpiCard label="📦 전체" value={kpi.all} color="#4A9EFF" active={kpiFilter === 'all'}
-            onClick={() => { setKpiFilter('all'); setPage(1) }} />
-          <KpiCard label="⚠️ 부족(1~9)" value={kpi.low} color="#FFAA00" active={kpiFilter === 'low'}
-            onClick={() => { setKpiFilter(kpiFilter === 'low' ? 'all' : 'low'); setPage(1) }} />
-          <KpiCard label="🚨 없음" value={kpi.zero} color="#FF4444" active={kpiFilter === 'zero'}
-            onClick={() => { setKpiFilter(kpiFilter === 'zero' ? 'all' : 'zero'); setPage(1) }} />
+        <div className="grid grid-cols-3 gap-3">
+          <KpiCard enLabel="Total Inventory" koLabel="전체" value={kpi.all} color="#3B82F6" icon={ClipboardCheck}
+            active={kpiFilter === 'all'} onClick={() => { setKpiFilter('all'); setPage(1) }} />
+          <KpiCard enLabel="Low Stock Alert" koLabel="부족 (1~9)" value={kpi.low} color="#f59e0b" icon={TriangleAlert}
+            active={kpiFilter === 'low'} onClick={() => { setKpiFilter(kpiFilter === 'low' ? 'all' : 'low'); setPage(1) }} />
+          <KpiCard enLabel="Out of Stock" koLabel="없음" value={kpi.zero} color="#B32646" icon={PackageX}
+            active={kpiFilter === 'zero'} onClick={() => { setKpiFilter(kpiFilter === 'zero' ? 'all' : 'zero'); setPage(1) }} />
         </div>
       )}
 
@@ -889,7 +903,16 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-[#1E293B]">📦 재고 현황</h2>
+      {/* 페이지 헤더 */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-[#b32646] flex items-center justify-center text-white flex-shrink-0">
+          <Boxes size={20} strokeWidth={1.9} />
+        </div>
+        <div>
+          <h2 className="text-[20px] font-bold text-[#0b1c30] font-heading leading-tight">재고 현황</h2>
+          <p className="text-[12px] text-[#64748B] mt-0.5">실시간 창고 자재 및 단말기 재고 데이터입니다.</p>
+        </div>
+      </div>
       <Tabs defaultValue="inventory">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inventory"  className="text-[13px]">📦 재고 현황</TabsTrigger>
