@@ -529,7 +529,7 @@ function InventoryTab({ user, center, onCenterChange }: {
       )}
 
       {/* 필터 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap gap-2 items-center">
         <Input className="w-[200px] h-8 text-[12px]" placeholder="자재명 / ERP코드 / 분류명..."
           value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
         <Select value={filterLarge} onValueChange={v => { if (v !== null) { setFilterLarge(v); setFilterMid('전체'); setFilterSmall('전체'); setPage(1) } }}>
@@ -586,6 +586,8 @@ function InventoryTab({ user, center, onCenterChange }: {
         </div>
       )}
 
+      {/* 테이블 카드 */}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
       {/* 테이블 정보 */}
       <div className="flex items-center justify-between text-[12px] text-gray-500">
         <span><b className="text-[#1E293B]">{center}</b> — {sorted.length.toLocaleString()}개 품목</span>
@@ -601,7 +603,7 @@ function InventoryTab({ user, center, onCenterChange }: {
       ) : sorted.length === 0 ? (
         <div className="flex items-center justify-center h-48 text-gray-400 border rounded">📭 해당 조건의 재고가 없습니다.</div>
       ) : (
-        <div className="border rounded overflow-auto max-h-[520px]">
+        <div className="rounded-md overflow-auto max-h-[520px] border border-[#e2e8f0]">
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>
@@ -668,6 +670,7 @@ function InventoryTab({ user, center, onCenterChange }: {
           <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>▶</Button>
         </div>
       )}
+      </div>
 
       {detailItem && (
         <ItemDetailModal item={detailItem} user={user} center={center}
