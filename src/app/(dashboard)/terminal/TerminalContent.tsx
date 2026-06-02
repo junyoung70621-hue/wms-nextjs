@@ -96,6 +96,7 @@ export default function TerminalContent({ type }: Props) {
       </div>
 
       {/* 필터 */}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="품명 / ERP코드 검색"
@@ -115,6 +116,7 @@ export default function TerminalContent({ type }: Props) {
         </Select>
         <span className="text-[11px] text-[#94A3B8] ml-auto">{center} · {filtered.length}개 품목</span>
       </div>
+      </div>
 
       {/* 테이블 */}
       {loading ? (
@@ -122,7 +124,7 @@ export default function TerminalContent({ type }: Props) {
       ) : error ? (
         <div className="text-red-500 text-[12px]">{error}</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <table className="w-full text-[12px]">
             <thead>
               <tr className="bg-[#F8F9FA] text-[#64748B]">

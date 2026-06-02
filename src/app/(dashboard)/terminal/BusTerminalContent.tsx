@@ -581,11 +581,13 @@ function TodayTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <input type="date" value={date} onChange={e => setDate(e.target.value)}
-               className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-        <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
-        <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+        <div className="flex items-center gap-2">
+          <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
+          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+        </div>
       </div>
 
       {loading ? (
@@ -593,12 +595,12 @@ function TodayTab({ perms }: { perms: Perms }) {
       ) : (
         <>
           <div className="grid md:grid-cols-2 gap-5">
-            <div className="space-y-3">
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
               <CenterCrossTable pivot={outCenterPivot} date={date} title="📤 센터별 출고 현황" />
               <DevicePivotTable pivot={buildPivot(out)} title="출고 기종별" />
               <CenterCountList rows={out} field="to_center" label="출고 센터별" />
             </div>
-            <div className="space-y-3">
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
               <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황" />
               <DevicePivotTable pivot={buildPivot(inn)} title="입고 기종별" />
               <CenterCountList rows={inn} field="from_center" label="입고 센터별" />
@@ -608,14 +610,14 @@ function TodayTab({ perms }: { perms: Perms }) {
           {(perms.canUpOut || perms.canUpIn) && (
             <div className="grid md:grid-cols-2 gap-5 pt-2">
               {perms.canUpOut && (
-                <div className="space-y-2">
+                <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
                   <div className="text-[12px] font-bold text-[#1E293B]">📤 출고 업로드</div>
                   <UploadPanel direction="out" perms={perms} onSaved={load} />
                   <ManagePanel rows={out} perms={perms} onChanged={load} />
                 </div>
               )}
               {perms.canUpIn && (
-                <div className="space-y-2">
+                <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
                   <div className="text-[12px] font-bold text-[#1E293B]">📥 입고 업로드</div>
                   <UploadPanel direction="in" perms={perms} onSaved={load} />
                   <ManagePanel rows={inn} perms={perms} onChanged={load} />
@@ -663,28 +665,30 @@ function MonthlyTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={String(year)} onValueChange={v => v !== null && setYear(Number(v))}>
-          <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
-          <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)} className="text-[12px]">{y}년</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={String(month)} onValueChange={v => v !== null && setMonth(Number(v))}>
-          <SelectTrigger className="h-8 text-[12px] w-20"><SelectValue /></SelectTrigger>
-          <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(m => <SelectItem key={m} value={String(m)} className="text-[12px]">{m}월</SelectItem>)}</SelectContent>
-        </Select>
-        <Button type="button" variant="outline" className="h-8 text-[12px]"
-                disabled={!out.length && !inn.length}
-                onClick={() => exportMonthly(out, inn, daily, `${year}${String(month).padStart(2, '0')}`)}>
-          엑셀 내보내기
-        </Button>
-        <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={String(year)} onValueChange={v => v !== null && setYear(Number(v))}>
+            <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)} className="text-[12px]">{y}년</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={String(month)} onValueChange={v => v !== null && setMonth(Number(v))}>
+            <SelectTrigger className="h-8 text-[12px] w-20"><SelectValue /></SelectTrigger>
+            <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(m => <SelectItem key={m} value={String(m)} className="text-[12px]">{m}월</SelectItem>)}</SelectContent>
+          </Select>
+          <Button type="button" variant="outline" className="h-8 text-[12px]"
+                  disabled={!out.length && !inn.length}
+                  onClick={() => exportMonthly(out, inn, daily, `${year}${String(month).padStart(2, '0')}`)}>
+            엑셀 내보내기
+          </Button>
+          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+        </div>
       </div>
 
       {loading ? (
         <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
       ) : (
         <>
-          <div>
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
             <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">일별 추이</div>
             {daily.length ? (
               <div className="overflow-x-auto rounded border border-[#E2E8F0]">
@@ -708,8 +712,12 @@ function MonthlyTab() {
             ) : <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">데이터 없음</div>}
           </div>
           <div className="grid md:grid-cols-2 gap-5">
-            <DevicePivotTable pivot={buildPivot(out)} title="기종별 출고" />
-            <DevicePivotTable pivot={buildPivot(inn)} title="기종별 입고" />
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+              <DevicePivotTable pivot={buildPivot(out)} title="기종별 출고" />
+            </div>
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+              <DevicePivotTable pivot={buildPivot(inn)} title="기종별 입고" />
+            </div>
           </div>
         </>
       )}
@@ -748,26 +756,29 @@ function HistoryTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-        <span className="text-[#94A3B8]">~</span>
-        <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-        <Select value={dir} onValueChange={v => v !== null && setDir(v)}>
-          <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {['전체', '출고', '입고'].map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
-        <Input placeholder="검색 (ID/센터/종류)" value={search} onChange={e => setSearch(e.target.value)} className="h-8 text-[12px] w-44" />
-        <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={!filtered.length}
-                onClick={() => exportHistory(filtered, from, to)}>엑셀</Button>
-        <span className="text-[11px] text-[#94A3B8] ml-auto">{filtered.length}건</span>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <span className="text-[#94A3B8]">~</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <Select value={dir} onValueChange={v => v !== null && setDir(v)}>
+            <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {['전체', '출고', '입고'].map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
+          <Input placeholder="검색 (ID/센터/종류)" value={search} onChange={e => setSearch(e.target.value)} className="h-8 text-[12px] w-44" />
+          <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={!filtered.length}
+                  onClick={() => exportHistory(filtered, from, to)}>엑셀</Button>
+          <span className="text-[11px] text-[#94A3B8] ml-auto">{filtered.length}건</span>
+        </div>
       </div>
 
       {loading ? (
         <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
       ) : (
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
         <div className="overflow-x-auto rounded border border-[#E2E8F0]">
           <table className="w-full text-[11px]">
             <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
@@ -796,6 +807,7 @@ function HistoryTab() {
             </tbody>
           </table>
           {filtered.length > 1000 && <div className="text-[10px] text-[#94A3B8] p-2 text-center">상위 1000건만 표시 (엑셀로 전체 내보내기)</div>}
+        </div>
         </div>
       )}
     </div>
@@ -832,31 +844,35 @@ function CertTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-        <Select value={dir} onValueChange={v => v !== null && setDir(v as 'in' | 'out')}>
-          <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="out" className="text-[12px]">출고</SelectItem>
-            <SelectItem value="in" className="text-[12px]">입고</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={centerFilter} onValueChange={v => v !== null && setCenterFilter(v)}>
-          <SelectTrigger className="h-8 text-[12px] w-36"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {['전체', ...NON_HUB_CENTERS].map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
-        <Button type="button" className="h-8 text-[12px]" disabled={!rows.length} onClick={download}>인수인계증 다운로드</Button>
-        <span className="text-[11px] text-[#94A3B8] ml-auto">{rows.length}건</span>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <Select value={dir} onValueChange={v => v !== null && setDir(v as 'in' | 'out')}>
+            <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="out" className="text-[12px]">출고</SelectItem>
+              <SelectItem value="in" className="text-[12px]">입고</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={centerFilter} onValueChange={v => v !== null && setCenterFilter(v)}>
+            <SelectTrigger className="h-8 text-[12px] w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {['전체', ...NON_HUB_CENTERS].map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
+          <Button type="button" className="h-8 text-[12px]" disabled={!rows.length} onClick={download}>인수인계증 다운로드</Button>
+          <span className="text-[11px] text-[#94A3B8] ml-auto">{rows.length}건</span>
+        </div>
+        <Input placeholder="비고 (선택)" value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px] max-w-md" />
       </div>
-      <Input placeholder="비고 (선택)" value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px] max-w-md" />
 
       {loading ? (
         <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
       ) : (
-        <DevicePivotTable pivot={buildPivot(rows)} title={`${dir === 'out' ? '출고' : '입고'} · ${centerFilter} · ${dateLabel(date)}`} />
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+          <DevicePivotTable pivot={buildPivot(rows)} title={`${dir === 'out' ? '출고' : '입고'} · ${centerFilter} · ${dateLabel(date)}`} />
+        </div>
       )}
     </div>
   )
@@ -889,18 +905,21 @@ function AdminTab() {
 
   return (
     <div className="space-y-3">
-      <div className="text-[12px] text-[#64748B]">'모뎀'으로 저장된 단말기를 현재 분류 규칙으로 재분류합니다.</div>
-      <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={busy} onClick={preview}>미리보기</Button>
-        {changes && changes.length > 0 && (
-          <Button type="button" className="h-8 text-[12px]" disabled={busy} onClick={apply}>{changes.length}건 일괄 변경</Button>
-        )}
-        {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
+        <div className="text-[12px] text-[#64748B]">'모뎀'으로 저장된 단말기를 현재 분류 규칙으로 재분류합니다.</div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={busy} onClick={preview}>미리보기</Button>
+          {changes && changes.length > 0 && (
+            <Button type="button" className="h-8 text-[12px]" disabled={busy} onClick={apply}>{changes.length}건 일괄 변경</Button>
+          )}
+          {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+        </div>
       </div>
       {changes && (
         changes.length === 0 ? (
           <div className="text-[11px] text-[#94A3B8]">변경할 항목이 없습니다.</div>
         ) : (
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
           <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-96">
             <table className="w-full text-[11px]">
               <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
@@ -916,6 +935,7 @@ function AdminTab() {
                 </tr>
               ))}</tbody>
             </table>
+          </div>
           </div>
         )
       )}

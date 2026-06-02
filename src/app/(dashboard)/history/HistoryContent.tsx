@@ -149,6 +149,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
       <h2 className="text-xl font-bold text-[#1E293B]">📋 입출고 이력</h2>
 
       {/* 필터 바 */}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {/* 작업 유형 */}
         <Select value={filterAction} onValueChange={v => { if (v !== null) setFilterAction(v) }}>
@@ -238,6 +239,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
           ⬇️ CSV
         </Button>
       </div>
+      </div>
 
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">
@@ -251,26 +253,28 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         const outQty = filtered.filter(h => h.action_type === 'out').reduce((s, h) => s + h.quantity, 0)
         const trQty  = filtered.filter(h => h.action_type === 'transfer').reduce((s, h) => s + h.quantity, 0)
         return (
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
           <div className="flex flex-wrap gap-3 text-[12px]">
             <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
             {inQty  > 0 && <span className="text-[#2e7d32]">📥 입고 <b>{inQty.toLocaleString()}</b>개</span>}
             {outQty > 0 && <span className="text-[#c62828]">📤 출고 <b>{outQty.toLocaleString()}</b>개</span>}
             {trQty  > 0 && <span className="text-[#1565c0]">🚚 이동 <b>{trQty.toLocaleString()}</b>개</span>}
           </div>
+          </div>
         )
       })()}
 
       {/* 테이블 */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">
           데이터 로딩 중...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">
           이력이 없습니다.
         </div>
       ) : (
-        <div className="border rounded overflow-auto max-h-[600px]">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-auto max-h-[600px]">
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>

@@ -482,6 +482,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
       {/* ── 유저 관리 탭 ── */}
       <TabsContent value="users" className="space-y-3">
         {/* 필터 */}
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
         <div className="flex flex-wrap gap-2 items-center">
           <Input
             placeholder="이름 / 아이디 / 이메일 검색"
@@ -523,6 +524,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
             </Button>
           )}
         </div>
+        </div>
 
         {loading ? (
           <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중...</div>
@@ -531,6 +533,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         ) : filtered.length === 0 ? (
           <div className="text-[12px] text-[#94A3B8] py-8 text-center">해당 조건의 유저 없음</div>
         ) : (
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
           <div className="space-y-2">
             {filtered.map(u => (
               <UserRow
@@ -541,6 +544,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
                 onDelete={handleDelete}
               />
             ))}
+          </div>
           </div>
         )}
       </TabsContent>

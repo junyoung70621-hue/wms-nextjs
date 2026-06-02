@@ -128,7 +128,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
 
       {/* 관리자 작성/수정 폼 */}
       {isAdmin && showForm && (
-        <div className="border rounded-lg p-4 bg-[#F8F9FA] space-y-3">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <h3 className="font-semibold text-[#1E293B]">
             {editTarget ? '공지 수정' : '새 공지 작성'}
           </h3>
@@ -173,7 +173,8 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
           등록된 공지사항이 없습니다.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+          <div className="space-y-2">
           {notices.map(n => {
             const isRead   = readIds.has(n.id)
             const isOpen   = openId === n.id
@@ -240,6 +241,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
               </div>
             )
           })}
+          </div>
         </div>
       )}
     </div>

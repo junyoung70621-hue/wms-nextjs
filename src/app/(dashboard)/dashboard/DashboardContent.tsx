@@ -196,7 +196,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* 센터별 재고 현황 */}
-        <div className="lg:col-span-1 bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="lg:col-span-1 bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#1E293B]">
               {isManager ? '센터별 재고' : '내 센터 재고'}
@@ -234,7 +234,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
         </div>
 
         {/* 최근 입출고 */}
-        <div className="lg:col-span-1 bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="lg:col-span-1 bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#1E293B]">최근 입출고</span>
             <Link href="/history" className="text-[11px] text-[#B32646] hover:underline">
@@ -275,7 +275,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
         </div>
 
         {/* 재고 없는 품목 */}
-        <div className="lg:col-span-1 bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="lg:col-span-1 bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#1E293B]">
               📭 재고 없는 품목

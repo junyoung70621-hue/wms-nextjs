@@ -557,7 +557,9 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
 
         {/* 새 요청 작성 */}
         <TabsContent value="new" className="mt-4">
-          <NewRequestForm user={user} onSubmitted={fetchAll} />
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+            <NewRequestForm user={user} onSubmitted={fetchAll} />
+          </div>
         </TabsContent>
 
         {/* 관리자: 상태별 탭 */}

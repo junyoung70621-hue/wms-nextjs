@@ -496,22 +496,24 @@ function TabAssignments({
   return (
     <div className="space-y-3">
       {/* 상단 버튼 + 직원 선택 */}
-      <div className="flex flex-wrap items-center gap-2">
-        {canWrite && (
-          <Button onClick={() => setModal('assign')} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
-            ➕ 새 배정
-          </Button>
-        )}
-        {canManage && users.length > 0 && (
-          <Select value={viewEmp} onValueChange={v => v !== null && setViewEmp(v)}>
-            <SelectTrigger className="h-8 text-[12px] w-36"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__" className="text-[12px]">(전체 보기)</SelectItem>
-              {users.map(u => <SelectItem key={u.id} value={u.id} className="text-[12px]">{u.name || u.username}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
-        <Button variant="outline" onClick={fetchData} className="text-[12px] h-8">🔄</Button>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {canWrite && (
+            <Button onClick={() => setModal('assign')} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+              ➕ 새 배정
+            </Button>
+          )}
+          {canManage && users.length > 0 && (
+            <Select value={viewEmp} onValueChange={v => v !== null && setViewEmp(v)}>
+              <SelectTrigger className="h-8 text-[12px] w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__" className="text-[12px]">(전체 보기)</SelectItem>
+                {users.map(u => <SelectItem key={u.id} value={u.id} className="text-[12px]">{u.name || u.username}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="outline" onClick={fetchData} className="text-[12px] h-8">🔄</Button>
+        </div>
       </div>
 
       {/* 선택 액션 버튼 */}
@@ -658,7 +660,7 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
 
       {/* 피벗 테이블 */}
       {pivot.allKeys.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 overflow-x-auto">
           <table className="text-[11px] border-collapse w-auto">
             <thead>
               <tr className="bg-[#F8F9FA]">
@@ -940,7 +942,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
       </div>
 
       {subTab === 'request' && (
-        <div className="space-y-3">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <p className="text-[11px] text-[#64748B]">본인 센터 단말기를 선택해 다른 센터로 이동 신청합니다.</p>
           <Select value={toCtr} onValueChange={v => v !== null && setToCtr(v)}>
             <SelectTrigger className="h-8 text-[12px] w-48"><SelectValue placeholder="목적 센터 선택" /></SelectTrigger>
@@ -1037,7 +1039,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
             </div>
           )}
 
-          <div>
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 overflow-x-auto">
             <p className="text-[12px] font-bold text-[#1E293B] mb-2">📋 이동 신청 이력</p>
             {requests.length === 0
               ? <p className="text-[12px] text-[#94A3B8]">이동 신청 내역이 없습니다.</p>
@@ -1127,7 +1129,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 items-end">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap gap-2 items-end">
         <div>
           <label className="text-[11px] text-[#64748B] block mb-1">시작일</label>
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 text-[12px] w-36" />
@@ -1153,7 +1155,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
         ? <p className="text-[12px] text-[#94A3B8] py-4">조회 버튼을 눌러 이력을 확인하세요.</p>
         : loading ? <p className="text-[12px] text-[#94A3B8] py-4">로딩 중...</p>
         : (
-          <>
+          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#64748B]">총 {filtered.length}건{search ? ` (검색: '${search}')` : ''}</p>
               <Button variant="outline" onClick={() => {
@@ -1173,7 +1175,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
                 XLSX.writeFile(wb, `단말기이력_${selCenter}_${dateFrom}_${dateTo}.xlsx`)
               }} className="text-[12px] h-8">📥 엑셀 다운로드</Button>
             </div>
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden overflow-x-auto">
+            <div className="rounded-lg border border-[#e2e8f0] overflow-hidden overflow-x-auto">
               <table className="w-full text-[12px]">
                 <thead className="bg-[#F8F9FA]">
                   <tr>
@@ -1215,7 +1217,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         )
       }
     </div>
@@ -1335,23 +1337,25 @@ function TabInit({ selCenter, userId, userName, canManage }: {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="flex items-start gap-3">
-        <p className="text-[12px] text-[#64748B] flex-1">
-          엑셀 파일(IH번호 + 직원명 컬럼)을 업로드하면 일괄 등록합니다.{' '}
-          {canManage ? '관리자는 센터 컬럼도 사용 가능합니다.' : `업로드 시 [${selCenter}]에 귀속됩니다.`}
-        </p>
-        <Button variant="outline" onClick={downloadTemplate} className="text-[12px] h-8 flex-shrink-0">📥 양식 다운로드</Button>
-      </div>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-4">
+        <div className="flex items-start gap-3">
+          <p className="text-[12px] text-[#64748B] flex-1">
+            엑셀 파일(IH번호 + 직원명 컬럼)을 업로드하면 일괄 등록합니다.{' '}
+            {canManage ? '관리자는 센터 컬럼도 사용 가능합니다.' : `업로드 시 [${selCenter}]에 귀속됩니다.`}
+          </p>
+          <Button variant="outline" onClick={downloadTemplate} className="text-[12px] h-8 flex-shrink-0">📥 양식 다운로드</Button>
+        </div>
 
-      <div>
-        <label className="text-[11px] text-[#64748B] block mb-1">등록 기준일</label>
-        <Input type="date" value={regDate} onChange={e => setRegDate(e.target.value)} className="h-8 text-[12px] w-40" />
-      </div>
+        <div>
+          <label className="text-[11px] text-[#64748B] block mb-1">등록 기준일</label>
+          <Input type="date" value={regDate} onChange={e => setRegDate(e.target.value)} className="h-8 text-[12px] w-40" />
+        </div>
 
-      <div>
-        <label className="text-[11px] text-[#64748B] block mb-1">엑셀 파일 (.xlsx / .xls)</label>
-        <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile}
-          className="text-[12px] text-[#475569] file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-[rgba(0,0,0,0.12)] file:text-[12px] file:bg-white file:text-[#475569] hover:file:bg-[#F8F9FA]" />
+        <div>
+          <label className="text-[11px] text-[#64748B] block mb-1">엑셀 파일 (.xlsx / .xls)</label>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile}
+            className="text-[12px] text-[#475569] file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-[rgba(0,0,0,0.12)] file:text-[12px] file:bg-white file:text-[#475569] hover:file:bg-[#F8F9FA]" />
+        </div>
       </div>
 
       {cols.length > 0 && (

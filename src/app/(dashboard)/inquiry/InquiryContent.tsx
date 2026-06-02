@@ -189,19 +189,23 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="pending">미답변 ({pendingCount})</TabsTrigger>
             <TabsTrigger value="all">전체 ({data.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="pending" className="space-y-2 mt-3">
+          <TabsContent value="pending" className="mt-3">
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
             {data.filter(i => i.status === 'pending').length === 0
               ? <p className="text-gray-400 text-sm text-center py-8">미답변 문의가 없습니다.</p>
               : data.filter(i => i.status === 'pending').map(inq => (
                 <InquiryCard key={inq.id} inq={inq} isAdmin onReplySubmit={handleReplySubmit} />
               ))}
+            </div>
           </TabsContent>
-          <TabsContent value="all" className="space-y-2 mt-3">
+          <TabsContent value="all" className="mt-3">
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
             {data.length === 0
               ? <p className="text-gray-400 text-sm text-center py-8">문의 내역이 없습니다.</p>
               : data.map(inq => (
                 <InquiryCard key={inq.id} inq={inq} isAdmin onReplySubmit={handleReplySubmit} />
               ))}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -215,7 +219,7 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 문의 작성 */}
-        <div className="space-y-3">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <h3 className="font-semibold text-[#1E293B]">문의 작성</h3>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1">
@@ -241,7 +245,7 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {/* 내 문의 내역 */}
-        <div className="space-y-3">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <h3 className="font-semibold text-[#1E293B]">내 문의 내역</h3>
           {loading ? (
             <p className="text-gray-400 text-sm">로딩 중...</p>

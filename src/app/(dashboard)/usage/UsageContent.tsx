@@ -140,6 +140,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
       </div>
 
       {/* 센터 선택 (admin only) + 파일 */}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isAdmin && (
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
@@ -163,12 +164,13 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
           <Button variant="ghost" className="text-[12px] h-8 text-[#94A3B8]" onClick={reset}>✕ 초기화</Button>
         )}
       </div>
+      </div>
 
       {msg && <p className="text-[12px]">{msg}</p>}
 
       {/* 미리보기 */}
       {rows.length > 0 && (
-        <div className="space-y-3">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-semibold text-[#1E293B]">
               미리보기 — {rows.length}행 · 센터: <b>{isAdmin ? center : userCenter}</b>
@@ -205,7 +207,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
 
       {/* 처리 결과 */}
       {results && results.length > 0 && (
-        <div className="space-y-2">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
           <p className="text-[12px] font-semibold text-[#1E293B]">처리 결과</p>
           <div className="border rounded overflow-auto max-h-[300px]">
             <table className="w-full text-[12px] border-collapse">
@@ -307,6 +309,7 @@ function HistoryTab({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-3">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isAdminOrMaterials ? (
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
@@ -333,22 +336,25 @@ function HistoryTab({ user }: { user: SessionUser }) {
         <Button variant="outline" onClick={fetchData} disabled={loading}>{loading ? '로딩 중...' : '🔄 새로고침'}</Button>
         <Button variant="outline" onClick={handleCsvDownload} disabled={loading || filtered.length === 0}>⬇️ CSV</Button>
       </div>
+      </div>
 
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{error}</p>}
 
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-3 text-[12px]">
         <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
         {filtered.length > 0 && (
           <span className="text-[#c62828]">출고 합계 <b>{filtered.reduce((s, h) => s + h.quantity, 0).toLocaleString()}</b>개</span>
         )}
       </div>
+      </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">데이터 로딩 중...</div>
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">데이터 로딩 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">사용내역이 없습니다.</div>
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">사용내역이 없습니다.</div>
       ) : (
-        <div className="border rounded overflow-auto max-h-[600px]">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-auto max-h-[600px]">
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>

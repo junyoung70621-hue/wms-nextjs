@@ -155,6 +155,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
   return (
     <div className="space-y-4">
       {/* 필터 바 */}
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isManager && (
           <Select value={center} onValueChange={v => v !== null && handleCenterChange(v)}>
@@ -178,6 +179,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
           {filtered.length}개 품목 · {racks.length}개 랙
         </span>
       </div>
+      </div>
 
       {loading ? (
         <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중...</div>
@@ -188,6 +190,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
           {center} 센터에 등록된 자재 없음
         </div>
       ) : (
+        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
         <div className="space-y-3">
           {racks.map(rack => {
             const shelvesSorted = Object.entries(rack.shelves)
@@ -241,6 +244,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
               </div>
             </div>
           )}
+        </div>
         </div>
       )}
 

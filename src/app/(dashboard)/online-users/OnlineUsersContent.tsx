@@ -54,7 +54,7 @@ export default function OnlineUsersContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
@@ -74,7 +74,7 @@ export default function OnlineUsersContent() {
       ) : error ? (
         <div className="text-red-500 text-[12px]">{error}</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <table className="w-full text-[12px]">
             <thead>
               <tr className="bg-[#F8F9FA] text-[#64748B]">
