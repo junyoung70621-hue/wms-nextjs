@@ -139,7 +139,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           <span className="text-[11px] text-[#64748B] whitespace-nowrap">공지</span>
           <span
             className={`text-[11px] font-bold whitespace-nowrap ${
-              counts.unread_notices > 0 ? 'text-[#D3004F]' : 'text-[#94A3B8]'
+              counts.unread_notices > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'
             }`}
           >
             {counts.unread_notices}건
@@ -152,21 +152,21 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           <div className="flex items-center gap-2">
             <button onClick={() => router.push('/warehouse?tab=transfers')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
               <span className="text-[#64748B]">이동</span>{' '}
-              <span className={`font-bold ${counts.tr_pending > 0 ? 'text-[#D3004F]' : 'text-[#94A3B8]'}`}>
+              <span className={`font-bold ${counts.tr_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
                 {counts.tr_pending}건
               </span>
             </button>
             <span className="text-[#CBD5E1]">·</span>
             <button onClick={() => router.push('/material-requests')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
               <span className="text-[#64748B]">자재</span>{' '}
-              <span className={`font-bold ${counts.mat_pending > 0 ? 'text-[#D3004F]' : 'text-[#94A3B8]'}`}>
+              <span className={`font-bold ${counts.mat_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
                 {counts.mat_pending}건
               </span>
             </button>
             <span className="text-[#CBD5E1]">·</span>
             <button onClick={() => router.push('/purchase-requests')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
               <span className="text-[#64748B]">구매</span>{' '}
-              <span className={`font-bold ${counts.pur_pending > 0 ? 'text-[#D3004F]' : 'text-[#94A3B8]'}`}>
+              <span className={`font-bold ${counts.pur_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
                 {counts.pur_pending}건
               </span>
             </button>
@@ -179,7 +179,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           <span
             className={`text-[11px] font-mono font-bold whitespace-nowrap ${
               remaining !== null && remaining < 30 * 60 * 1000
-                ? 'text-[#D3004F]'
+                ? 'text-[#B32646]'
                 : 'text-[#1E293B]'
             }`}
           >

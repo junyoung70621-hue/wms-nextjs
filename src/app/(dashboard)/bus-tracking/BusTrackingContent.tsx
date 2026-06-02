@@ -56,7 +56,7 @@ function DeviceSummary({ rows }: { rows: Assignment[] }) {
       ))}
       <div className="flex justify-between text-[12px] border-t border-[rgba(0,0,0,0.08)] pt-1 mt-1">
         <span className="font-bold text-[#64748B]">합계</span>
-        <span className="font-bold text-[#D3004F]">{total}대</span>
+        <span className="font-bold text-[#B32646]">{total}대</span>
       </div>
     </div>
   )
@@ -150,7 +150,7 @@ function AssignModal({
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1">
           <label className="text-[11px] text-[#64748B]">배정 가능 단말기 {available.length}건</label>
-          <button onClick={toggleAll} className="text-[11px] text-[#D3004F] underline">
+          <button onClick={toggleAll} className="text-[11px] text-[#B32646] underline">
             {selected.size === available.length ? '전체 해제' : '전체 선택'}
           </button>
         </div>
@@ -170,9 +170,9 @@ function AssignModal({
                 <tbody>
                   {available.map((t, i) => (
                     <tr key={t.ih_code} onClick={() => toggle(t.ih_code)}
-                      className={`cursor-pointer ${selected.has(t.ih_code) ? 'bg-[rgba(211,0,79,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                      className={`cursor-pointer ${selected.has(t.ih_code) ? 'bg-[rgba(179, 38, 70,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
                       <td className="px-2 py-1 text-center">
-                        <input type="checkbox" readOnly checked={selected.has(t.ih_code)} className="accent-[#D3004F]" />
+                        <input type="checkbox" readOnly checked={selected.has(t.ih_code)} className="accent-[#B32646]" />
                       </td>
                       <td className="px-2 py-1 font-mono text-[#1E293B]">{t.ih_code}</td>
                       <td className="px-2 py-1 text-[#475569]">{`${t.device_type} ${t.sub_type}`.trim() || '-'}</td>
@@ -188,7 +188,7 @@ function AssignModal({
       {msg && <p className="text-[12px] text-red-500 mb-2">{msg}</p>}
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || !selected.size}
-          className="flex-1 bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
           {saving ? '저장 중...' : `✅ ${targetName || '?'}에게 ${selected.size}건 배정`}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -249,7 +249,7 @@ function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => v
       </div>
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || !typeOk || defIh.trim() === rec.ih_code}
-          className="flex-1 bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
           {saving ? '처리 중...' : '교체 확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -300,7 +300,7 @@ function TransferModal({
       </Select>
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || !targetName}
-          className="flex-1 bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
           {saving ? '처리 중...' : '이동 확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -337,7 +337,7 @@ function ConfirmModal({
       <p className="text-[12px] text-[#475569] mb-4">{desc}</p>
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving}
-          className="flex-1 bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
           {saving ? '처리 중...' : '확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -430,7 +430,7 @@ function EditModal({
       </div>
       <div className="flex gap-2 mt-4">
         <Button onClick={handleSave} disabled={saving || !ih.trim()}
-          className="flex-1 bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
           {saving ? '저장 중...' : '저장'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -498,7 +498,7 @@ function TabAssignments({
       {/* 상단 버튼 + 직원 선택 */}
       <div className="flex flex-wrap items-center gap-2">
         {canWrite && (
-          <Button onClick={() => setModal('assign')} className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          <Button onClick={() => setModal('assign')} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
             ➕ 새 배정
           </Button>
         )}
@@ -516,8 +516,8 @@ function TabAssignments({
 
       {/* 선택 액션 버튼 */}
       {selIds.length > 0 && (
-        <div className="flex flex-wrap gap-2 bg-[rgba(211,0,79,0.04)] border border-[rgba(211,0,79,0.15)] rounded-lg p-2">
-          <span className="text-[12px] font-bold text-[#D3004F] self-center">{selIds.length}건 선택</span>
+        <div className="flex flex-wrap gap-2 bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-2">
+          <span className="text-[12px] font-bold text-[#B32646] self-center">{selIds.length}건 선택</span>
           <Button variant="outline" onClick={() => setModal('swap')} disabled={!swapOk} className="text-[12px] h-7">🔄 불량 교체</Button>
           <Button variant="outline" onClick={() => setModal('transfer')} className="text-[12px] h-7">👤 직원 이동</Button>
           <Button variant="outline" onClick={() => setModal('return')} className="text-[12px] h-7">↩️ 반납</Button>
@@ -540,7 +540,7 @@ function TabAssignments({
               <thead className="bg-[#F8F9FA]">
                 <tr>
                   <th className="px-2 py-2 w-8 text-center">
-                    <input type="checkbox" onChange={toggleAll} checked={selected.size === visibleRows.length && visibleRows.length > 0} className="accent-[#D3004F]" />
+                    <input type="checkbox" onChange={toggleAll} checked={selected.size === visibleRows.length && visibleRows.length > 0} className="accent-[#B32646]" />
                   </th>
                   <th className="px-3 py-2 text-left font-medium text-[#64748B]">IH</th>
                   <th className="px-3 py-2 text-left font-medium text-[#64748B]">기종</th>
@@ -554,9 +554,9 @@ function TabAssignments({
                   ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#94A3B8]">보유 단말기 없음</td></tr>
                   : visibleRows.map((r, i) => (
                     <tr key={r.id} onClick={() => toggleRow(r.id)}
-                      className={`cursor-pointer ${selected.has(r.id) ? 'bg-[rgba(211,0,79,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                      className={`cursor-pointer ${selected.has(r.id) ? 'bg-[rgba(179, 38, 70,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
                       <td className="px-2 py-1.5 text-center">
-                        <input type="checkbox" readOnly checked={selected.has(r.id)} className="accent-[#D3004F]" />
+                        <input type="checkbox" readOnly checked={selected.has(r.id)} className="accent-[#B32646]" />
                       </td>
                       <td className="px-3 py-1.5 font-mono text-[#1E293B]">{r.ih_code}</td>
                       <td className="px-3 py-1.5 text-[#475569]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
@@ -791,7 +791,7 @@ function DeleteSection({ selCenter, onDone }: { selCenter: string; onDone: () =>
   return (
     <div className="space-y-2">
       <label className="flex items-center gap-2 text-[12px] text-[#475569]">
-        <input type="checkbox" checked={selAll} onChange={e => { setSelAll(e.target.checked); setSelIds(new Set()) }} className="accent-[#D3004F]" />
+        <input type="checkbox" checked={selAll} onChange={e => { setSelAll(e.target.checked); setSelIds(new Set()) }} className="accent-[#B32646]" />
         전체 선택 ({rows.length}건)
       </label>
       <div className="border rounded overflow-hidden max-h-48 overflow-y-auto">
@@ -932,7 +932,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
       <div className="flex gap-2 mb-2">
         {(['request','status'] as const).map(t => (
           <button key={t} onClick={() => setSubTab(t)}
-            className={`text-[12px] px-3 py-1.5 rounded border transition-colors ${subTab === t ? 'bg-[#D3004F] text-white border-[#D3004F]' : 'border-[rgba(0,0,0,0.12)] text-[#64748B] hover:bg-[#F8F9FA]'}`}>
+            className={`text-[12px] px-3 py-1.5 rounded border transition-colors ${subTab === t ? 'bg-[#B32646] text-white border-[#B32646]' : 'border-[rgba(0,0,0,0.12)] text-[#64748B] hover:bg-[#F8F9FA]'}`}>
             {t === 'request' ? '📤 이동 신청' : `📋 이동 현황${pendingIn.length > 0 ? ` (대기 ${pendingIn.length})` : ''}`}
           </button>
         ))}
@@ -954,7 +954,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
                     <th className="px-2 py-1.5 w-8">
                       <input type="checkbox" onChange={() =>
                         setSelIhs(prev => prev.size === movable.length ? new Set() : new Set(movable.map(t => t.ih_code)))
-                      } className="accent-[#D3004F]" />
+                      } className="accent-[#B32646]" />
                     </th>
                     <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">보유직원</th>
                     <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">IH</th>
@@ -967,9 +967,9 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
                     ? <tr><td colSpan={5} className="px-3 py-4 text-center text-[#94A3B8]">이동 신청할 단말기 없음</td></tr>
                     : movable.map((t, i) => (
                       <tr key={t.ih_code} onClick={() => toggleIh(t.ih_code)}
-                        className={`cursor-pointer ${selIhs.has(t.ih_code)?'bg-[rgba(211,0,79,0.06)]':i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                        className={`cursor-pointer ${selIhs.has(t.ih_code)?'bg-[rgba(179, 38, 70,0.06)]':i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
                         <td className="px-2 py-1 text-center">
-                          <input type="checkbox" readOnly checked={selIhs.has(t.ih_code)} className="accent-[#D3004F]" />
+                          <input type="checkbox" readOnly checked={selIhs.has(t.ih_code)} className="accent-[#B32646]" />
                         </td>
                         <td className="px-3 py-1 text-[#475569]">{t.employee_name}</td>
                         <td className="px-3 py-1 font-mono">{t.ih_code}</td>
@@ -988,7 +988,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
             <p className="text-[12px] text-[#64748B]">선택 <strong>{selIhs.size}건</strong> → {toCtr}</p>
           )}
           <Button onClick={handleSubmit} disabled={submitting || selIhs.size === 0 || !toCtr}
-            className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+            className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
             {submitting ? '신청 중...' : '📤 이동 신청'}
           </Button>
         </div>
@@ -1146,7 +1146,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
           </Select>
         </div>
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="IH · 직원명 · 처리자" className="h-8 text-[12px] w-44" />
-        <Button onClick={fetch_data} className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">조회</Button>
+        <Button onClick={fetch_data} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">조회</Button>
       </div>
 
       {!queried
@@ -1202,7 +1202,7 @@ function TabHistory({ selCenter }: { selCenter: string }) {
                       return (
                         <tr key={i} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
                           <td className="px-3 py-1.5 text-[#94A3B8] whitespace-nowrap">{tsKst(r.acted_at)}</td>
-                          <td className="px-3 py-1.5"><Badge text={ACTION_LABEL[r.action]??r.action} color="#D3004F" /></td>
+                          <td className="px-3 py-1.5"><Badge text={ACTION_LABEL[r.action]??r.action} color="#B32646" /></td>
                           <td className="px-3 py-1.5 font-mono text-[#1E293B]">{ihDisplay}</td>
                           <td className="px-3 py-1.5 text-[#64748B]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
                           <td className="px-3 py-1.5 text-[#475569]">{empDisplay||'-'}</td>
@@ -1367,7 +1367,7 @@ function TabInit({ selCenter, userId, userName, canManage }: {
             </div>
             <div>
               <label className="flex items-center gap-1.5 text-[11px] text-[#64748B] mb-1">
-                <input type="checkbox" checked={useNameCol} onChange={e => setUseNameCol(e.target.checked)} className="accent-[#D3004F]" />
+                <input type="checkbox" checked={useNameCol} onChange={e => setUseNameCol(e.target.checked)} className="accent-[#B32646]" />
                 직원명 컬럼
               </label>
               <Select value={useNameCol ? (nameCol || cols[0]) : '__none__'}
@@ -1382,7 +1382,7 @@ function TabInit({ selCenter, userId, userName, canManage }: {
             {canManage && (
               <div className="col-span-2 space-y-1">
                 <label className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
-                  <input type="checkbox" checked={useCtrCol} onChange={e => setUseCtrCol(e.target.checked)} className="accent-[#D3004F]" />
+                  <input type="checkbox" checked={useCtrCol} onChange={e => setUseCtrCol(e.target.checked)} className="accent-[#B32646]" />
                   센터 컬럼 사용 (허용: {TRACKING_CENTERS.join(', ')})
                 </label>
                 {useCtrCol && (
@@ -1435,11 +1435,11 @@ function TabInit({ selCenter, userId, userName, canManage }: {
             </div>
           </div>
           <label className="flex items-center gap-2 text-[12px] text-[#475569]">
-            <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#D3004F]" />
+            <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#B32646]" />
             저장 전 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 보유중 데이터 삭제
           </label>
           <Button onClick={handleSave} disabled={saving}
-            className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px] h-8">
+            className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
             {saving ? '저장 중...' : `✅ ${parsed.length}건 초기 등록 저장`}
           </Button>
         </>

@@ -15,7 +15,7 @@ type OnlineUser = {
 }
 
 const ROLE_COLOR: Record<string, string> = {
-  admin: '#D3004F', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
+  admin: '#B32646', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
 }
 const ROLE_LABEL: Record<string, string> = {
   admin: 'ADMIN', materials: 'MATERIALS', manager: 'MANAGER', user: 'USER', guest: 'GUEST',

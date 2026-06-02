@@ -80,10 +80,10 @@ export default function MypageContent({ user }: { user: SessionUser }) {
       <h2 className="text-xl font-bold text-[#1E293B]">👤 마이페이지</h2>
 
       {/* 계정 정보 요약 */}
-      <div className="bg-[rgba(211,0,79,0.04)] border border-[rgba(211,0,79,0.15)] rounded-lg p-3 text-sm space-y-1">
+      <div className="bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-3 text-sm space-y-1">
         <div className="flex gap-4 flex-wrap">
           <span><span className="text-[#64748B]">아이디</span> <b className="text-[#1E293B]">{user.username}</b></span>
-          <span><span className="text-[#64748B]">권한</span> <b className="text-[#D3004F]">{ROLE_LABEL[user.role] ?? user.role}</b></span>
+          <span><span className="text-[#64748B]">권한</span> <b className="text-[#B32646]">{ROLE_LABEL[user.role] ?? user.role}</b></span>
           <span><span className="text-[#64748B]">소속</span> <b className="text-[#1E293B]">{center}</b></span>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function MypageContent({ user }: { user: SessionUser }) {
                 </div>
                 {infoErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{infoErr}</p>}
                 {infoMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{infoMsg}</p>}
-                <Button type="submit" className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white" disabled={infoLoad}>
+                <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={infoLoad}>
                   {infoLoad ? '저장 중...' : '저장'}
                 </Button>
               </form>
@@ -136,7 +136,7 @@ export default function MypageContent({ user }: { user: SessionUser }) {
                 </div>
                 {pwErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{pwErr}</p>}
                 {pwMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{pwMsg}</p>}
-                <Button type="submit" className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white" disabled={pwLoad}>
+                <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={pwLoad}>
                   {pwLoad ? '변경 중...' : '비밀번호 변경'}
                 </Button>
               </form>

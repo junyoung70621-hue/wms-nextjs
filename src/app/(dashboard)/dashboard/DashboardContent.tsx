@@ -155,7 +155,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
 
       {/* 요약 카드 6개 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="자재 종류"    value={summary?.total_items ?? 0} sub="등록 품목 수"   href="/warehouse"          color="#D3004F" />
+        <StatCard label="자재 종류"    value={summary?.total_items ?? 0} sub="등록 품목 수"   href="/warehouse"          color="#B32646" />
         <StatCard label="총 재고량"    value={summary?.total_qty   ?? 0} sub="전체 수량 합계" href="/warehouse"          color="#1565c0" />
         <StatCard label="재고 없음"    value={summary?.zero_stock  ?? 0} sub="수량 0 품목"    href="/warehouse"
           alert={(summary?.zero_stock ?? 0) > 0} color="#94A3B8" />
@@ -201,7 +201,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
             <span className="text-[13px] font-semibold text-[#1E293B]">
               {isManager ? '센터별 재고' : '내 센터 재고'}
             </span>
-            <Link href="/warehouse" className="text-[11px] text-[#D3004F] hover:underline">
+            <Link href="/warehouse" className="text-[11px] text-[#B32646] hover:underline">
               상세 →
             </Link>
           </div>
@@ -237,7 +237,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
         <div className="lg:col-span-1 bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#1E293B]">최근 입출고</span>
-            <Link href="/history" className="text-[11px] text-[#D3004F] hover:underline">
+            <Link href="/history" className="text-[11px] text-[#B32646] hover:underline">
               전체 →
             </Link>
           </div>

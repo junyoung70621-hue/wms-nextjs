@@ -92,7 +92,7 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
               {pivot.subTypes.map(s => (
                 <th key={s} className="px-2 py-1.5 text-center font-semibold border-b border-[#E2E8F0]">{s}</th>
               ))}
-              <th className="px-2 py-1.5 text-center font-semibold border-b border-[#E2E8F0] bg-[#FEF3F6] text-[#D3004F]">합계</th>
+              <th className="px-2 py-1.5 text-center font-semibold border-b border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">합계</th>
             </tr>
           </thead>
           <tbody>
@@ -104,7 +104,7 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
                     {c > 0 ? c : ''}
                   </td>
                 ))}
-                <td className="px-2 py-1.5 text-center font-bold text-[#D3004F]">{r.total}</td>
+                <td className="px-2 py-1.5 text-center font-bold text-[#B32646]">{r.total}</td>
               </tr>
             ))}
           </tbody>
@@ -131,7 +131,7 @@ function CenterCrossTable({ pivot, date, title }: { pivot: CenterPivot | null; d
           <thead>
             <tr>
               <th colSpan={pivot.centers.length + 1}
-                  className="px-3 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#D3004F]">
+                  className="px-3 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">
                 {dateLabel(date)}
               </th>
             </tr>
@@ -145,7 +145,7 @@ function CenterCrossTable({ pivot, date, title }: { pivot: CenterPivot | null; d
           <tbody>
             {pivot.rows.map(r => (
               <tr key={r.rowKey}>
-                <td className="px-2.5 py-1.5 text-left font-semibold border border-[#E2E8F0] bg-[#FEF3F6] text-[#D3004F]">{r.rowKey}</td>
+                <td className="px-2.5 py-1.5 text-left font-semibold border border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">{r.rowKey}</td>
                 {r.cells.map((c, i) => (
                   <td key={i} className={`px-2 py-1.5 text-center border border-[#E2E8F0] ${c > 0 ? 'text-[#1E293B]' : 'text-[#CBD5E1]'}`}>
                     {c > 0 ? c : ''}
@@ -169,7 +169,7 @@ function CenterCountList({ rows, field, label }: { rows: TerminalMovement[]; fie
       <div className="flex flex-wrap gap-1.5">
         {counts.map(c => (
           <span key={c.center} className="px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569]">
-            {c.center} <b className="text-[#D3004F]">{c.count}</b>
+            {c.center} <b className="text-[#B32646]">{c.count}</b>
           </span>
         ))}
       </div>
@@ -700,7 +700,7 @@ function MonthlyTab() {
                       <td className="px-2 py-1.5 text-[#1E293B]">{d.date}</td>
                       <td className="px-2 py-1.5 text-right text-[#1565c0]">{d.out}</td>
                       <td className="px-2 py-1.5 text-right text-[#16a34a]">{d.in}</td>
-                      <td className="px-2 py-1.5 text-right font-bold text-[#D3004F]">{d.out + d.in}</td>
+                      <td className="px-2 py-1.5 text-right font-bold text-[#B32646]">{d.out + d.in}</td>
                     </tr>
                   ))}</tbody>
                 </table>
@@ -912,7 +912,7 @@ function AdminTab() {
                 <tr key={c.id} className="border-t border-[#F1F5F9]">
                   <td className="px-2 py-1.5 font-mono text-[#475569]">{c.trcn_id}</td>
                   <td className="px-2 py-1.5 text-[#94A3B8]">{c.old_device}/{c.old_sub}</td>
-                  <td className="px-2 py-1.5 text-[#D3004F] font-semibold">{c.new_device}/{c.new_sub}</td>
+                  <td className="px-2 py-1.5 text-[#B32646] font-semibold">{c.new_device}/{c.new_sub}</td>
                 </tr>
               ))}</tbody>
             </table>

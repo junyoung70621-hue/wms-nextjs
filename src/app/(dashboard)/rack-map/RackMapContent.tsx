@@ -198,7 +198,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
                 className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden"
               >
                 <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-[#D3004F]">
+                  <span className="text-[12px] font-bold text-[#B32646]">
                     📍 {rack.rack_no}
                   </span>
                   <span className="text-[10px] text-[#94A3B8]">

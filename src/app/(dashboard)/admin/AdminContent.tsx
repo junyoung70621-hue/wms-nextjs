@@ -30,7 +30,7 @@ const ROLE_LABEL: Record<string, string> = {
   admin: 'ADMIN', materials: 'MATERIALS', manager: 'MANAGER', user: 'USER', guest: 'GUEST',
 }
 const ROLE_COLOR: Record<string, string> = {
-  admin: '#D3004F', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
+  admin: '#B32646', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
 }
 
 function tsKst(ts: string) {
@@ -204,7 +204,7 @@ function UserRow({
               size="sm"
               onClick={handleSave}
               disabled={saving || isSelf}
-              className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[11px]"
+              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[11px]"
             >
               {saving ? '저장 중...' : '저장'}
             </Button>
@@ -365,7 +365,7 @@ function AddItemForm({ onAdded }: { onAdded: () => void }) {
       <Button
         onClick={handleSubmit}
         disabled={saving}
-        className="bg-[#D3004F] hover:bg-[#a8003c] text-white text-[12px]"
+        className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px]"
       >
         {saving ? '추가 중...' : '자재 추가'}
       </Button>

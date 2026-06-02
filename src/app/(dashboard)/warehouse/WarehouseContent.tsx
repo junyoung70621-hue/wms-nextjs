@@ -216,7 +216,7 @@ function ItemDetailModal({
         <div className="flex border-b text-[12px]">
           {modalTabs.map(t => (
             <button key={t} onClick={() => setTab(t as typeof tab)}
-              className={`px-4 py-2 font-medium border-b-2 transition-colors ${tab === t ? 'border-[#D3004F] text-[#D3004F]' : 'border-transparent text-[#64748B] hover:text-[#1E293B]'}`}>
+              className={`px-4 py-2 font-medium border-b-2 transition-colors ${tab === t ? 'border-[#B32646] text-[#B32646]' : 'border-transparent text-[#64748B] hover:text-[#1E293B]'}`}>
               {tabLabel(t)}
             </button>
           ))}
@@ -260,7 +260,7 @@ function ItemDetailModal({
               <div>
                 <label className="text-[11px] font-semibold text-[#64748B] block mb-1">도착 센터 *</label>
                 <select value={trDest} onChange={e => setTrDest(e.target.value)}
-                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]">
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]">
                   <option value="">선택하세요</option>
                   {destinations.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -269,11 +269,11 @@ function ItemDetailModal({
                 <label className="text-[11px] font-semibold text-[#64748B] block mb-1">수량 * (현재 {item.quantity}개)</label>
                 <input type="number" min={1} max={item.quantity} value={trQty}
                   onChange={e => setTrQty(Math.min(item.quantity, Math.max(1, parseInt(e.target.value) || 1)))}
-                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]" />
               </div>
               {trMsg && <p className="text-[12px]">{trMsg}</p>}
               <Button onClick={handleTransfer} disabled={trSaving || !trDest}
-                className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white">
+                className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white">
                 {trSaving ? '신청 중...' : '🚚 이동 신청'}
               </Button>
             </div>
@@ -293,7 +293,7 @@ function ItemDetailModal({
                     <label className="text-[11px] font-semibold text-[#64748B] block mb-1">{label}</label>
                     <input value={String(editData[key] ?? '')} type={key === 'quantity' ? 'number' : 'text'}
                       onChange={e => setEditData(p => ({ ...p, [key]: key === 'quantity' ? parseInt(e.target.value) || 0 : e.target.value }))}
-                      className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+                      className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646]" />
                   </div>
                 ))}
               </div>
@@ -301,7 +301,7 @@ function ItemDetailModal({
                 <label className="text-[11px] font-semibold text-[#64748B] block mb-1">센터 (위치 변경)</label>
                 <select value={String(editData.location ?? item.location)}
                   onChange={e => setEditData(p => ({ ...p, location: e.target.value }))}
-                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] bg-white">
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] bg-white">
                   {CENTERS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -309,11 +309,11 @@ function ItemDetailModal({
                 <label className="text-[11px] font-semibold text-[#64748B] block mb-1">비고</label>
                 <textarea value={String(editData.notes ?? '')} rows={2}
                   onChange={e => setEditData(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
               </div>
               {editMsg && <p className="text-[12px]">{editMsg}</p>}
               <div className="flex items-center gap-3 flex-wrap">
-                <Button onClick={handleEdit} disabled={editSaving} className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
+                <Button onClick={handleEdit} disabled={editSaving} className="bg-[#B32646] hover:bg-[#B0003D] text-white">
                   {editSaving ? '저장 중...' : '💾 저장'}
                 </Button>
                 <div className="ml-auto">
@@ -448,7 +448,7 @@ function InventoryTab({ user, center, onCenterChange }: {
 
   function SortIcon({ field }: { field: string }) {
     if (sortField !== field) return <span className="text-gray-300 ml-1">↕</span>
-    return <span className="ml-1" style={{ color: '#D3004F' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+    return <span className="ml-1" style={{ color: '#B32646' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   function qtyColor(q: number) {
@@ -531,7 +531,7 @@ function InventoryTab({ user, center, onCenterChange }: {
           <SelectContent>{smallList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
         {(filterLarge !== '전체' || filterMid !== '전체' || filterSmall !== '전체' || search || kpiFilter !== 'all') && (
-          <Button variant="ghost" className="text-[#D3004F] text-[12px] h-8"
+          <Button variant="ghost" className="text-[#B32646] text-[12px] h-8"
             onClick={() => { setFilterLarge('전체'); setFilterMid('전체'); setFilterSmall('전체'); setSearch(''); setKpiFilter('all'); setPage(1) }}>
             ✕ 초기화
           </Button>
@@ -559,7 +559,7 @@ function InventoryTab({ user, center, onCenterChange }: {
           <div>
             <label className="text-[11px] font-semibold text-[#64748B] block mb-1">사유 *</label>
             <input value={stockReason} onChange={e => setStockReason(e.target.value)}
-              placeholder="입출고 사유" className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D3004F]" />
+              placeholder="입출고 사유" className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]" />
           </div>
           {stockMsg && <p className="text-[12px]">{stockMsg}</p>}
           <div className="flex gap-2">
@@ -603,7 +603,7 @@ function InventoryTab({ user, center, onCenterChange }: {
                   ['대분류', 'category_large'], ['중분류', 'category_mid'], ['소분류', 'category_small'],
                 ] as [string, SortField][]).map(([label, field]) => (
                   <th key={field} onClick={() => handleSort(field)}
-                    className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap cursor-pointer hover:text-[#D3004F] select-none uppercase tracking-wide">
+                    className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap cursor-pointer hover:text-[#B32646] select-none uppercase tracking-wide">
                     {label}<SortIcon field={field} />
                   </th>
                 ))}
@@ -623,7 +623,7 @@ function InventoryTab({ user, center, onCenterChange }: {
                   )}
                   <td className="px-3 py-1.5 max-w-[200px] truncate">
                     <button onClick={() => setDetailItem(item)}
-                      className="text-[#1E293B] font-medium hover:text-[#D3004F] hover:underline text-left w-full truncate">
+                      className="text-[#1E293B] font-medium hover:text-[#B32646] hover:underline text-left w-full truncate">
                       {item.item_name}
                     </button>
                   </td>

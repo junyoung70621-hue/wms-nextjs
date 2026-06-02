@@ -144,10 +144,10 @@ function RequestCard({
                     onChange={e => setReplyText(e.target.value)}
                     rows={2}
                     placeholder="신청자에게 보낼 메시지 (선택)"
-                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-[#D3004F] resize-none"
+                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-[#B32646] resize-none"
                   />
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#D3004F] hover:bg-[#B0003D] text-white"
+                    <Button size="sm" className="bg-[#B32646] hover:bg-[#B0003D] text-white"
                       disabled={actionLoad} onClick={() => pendingAction && handleAction(pendingAction)}>
                       {actionLoad ? '처리 중...' : '확인 처리'}
                     </Button>
@@ -285,7 +285,7 @@ function NewRequestForm({
         <div className="flex items-center justify-between mb-2">
           <label className="text-[11px] text-[#64748B] font-medium">자재센터 재고에서 선택 *</label>
           {selectedCount > 0 && (
-            <span className="text-[11px] text-[#D3004F] font-bold">{selectedCount}종 선택됨</span>
+            <span className="text-[11px] text-[#B32646] font-bold">{selectedCount}종 선택됨</span>
           )}
         </div>
         <Input
@@ -312,7 +312,7 @@ function NewRequestForm({
                 ) : filtered.map((item, i) => {
                   const qty = selected[item.id] ?? 0
                   return (
-                    <tr key={item.id} className={qty > 0 ? 'bg-[rgba(211,0,79,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
+                    <tr key={item.id} className={qty > 0 ? 'bg-[rgba(179, 38, 70,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
                       <td className="px-3 py-1.5 text-[#1E293B]">{item.item_name}</td>
                       <td className={`px-3 py-1.5 text-right font-mono ${item.quantity === 0 ? 'text-red-400' : 'text-[#475569]'}`}>
                         {item.quantity.toLocaleString()}
@@ -325,7 +325,7 @@ function NewRequestForm({
                           value={qty || ''}
                           placeholder="0"
                           onChange={e => handleQtyChange(item.id, parseInt(e.target.value) || 0)}
-                          className="w-20 border rounded px-2 py-0.5 text-[11px] text-center focus:outline-none focus:border-[#D3004F]"
+                          className="w-20 border rounded px-2 py-0.5 text-[11px] text-center focus:outline-none focus:border-[#B32646]"
                         />
                       </td>
                     </tr>
@@ -339,8 +339,8 @@ function NewRequestForm({
 
       {/* 선택된 자재 요약 */}
       {selectedCount > 0 && (
-        <div className="bg-[rgba(211,0,79,0.04)] border border-[rgba(211,0,79,0.15)] rounded-lg p-3">
-          <div className="text-[11px] font-bold text-[#D3004F] mb-2">선택된 자재 ({selectedCount}종)</div>
+        <div className="bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-3">
+          <div className="text-[11px] font-bold text-[#B32646] mb-2">선택된 자재 ({selectedCount}종)</div>
           <div className="space-y-1">
             {Object.entries(selected).map(([idStr, qty]) => {
               const item = warehouseItems.find(i => i.id === Number(idStr))
@@ -348,7 +348,7 @@ function NewRequestForm({
               return (
                 <div key={idStr} className="flex items-center justify-between text-[12px]">
                   <span className="text-[#1E293B]">{item.item_name}</span>
-                  <span className="text-[#D3004F] font-bold">{qty}개 요청</span>
+                  <span className="text-[#B32646] font-bold">{qty}개 요청</span>
                 </div>
               )
             })}
@@ -364,7 +364,7 @@ function NewRequestForm({
           onChange={e => setNotes(e.target.value)}
           rows={2}
           placeholder="추가 사항을 입력하세요..."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none"
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none"
         />
       </div>
 
@@ -373,7 +373,7 @@ function NewRequestForm({
       <Button
         onClick={handleSubmit}
         disabled={saving || selectedCount === 0}
-        className="bg-[#D3004F] hover:bg-[#a8003c] text-white"
+        className="bg-[#B32646] hover:bg-[#a8003c] text-white"
       >
         {saving ? '제출 중...' : '📦 자재요청 제출'}
       </Button>

@@ -78,7 +78,7 @@ export default function TerminalContent({ type }: Props) {
       {/* 요약 */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: '품목 수',    value: filtered.length, color: '#D3004F' },
+          { label: '품목 수',    value: filtered.length, color: '#B32646' },
           { label: '총 수량',   value: totalQty,         color: '#1565c0' },
           { label: '재고 없음', value: zeroStock,         color: zeroStock > 0 ? '#c62828' : '#94A3B8' },
         ].map(c => (

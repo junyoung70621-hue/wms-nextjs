@@ -174,7 +174,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
               미리보기 — {rows.length}행 · 센터: <b>{isAdmin ? center : userCenter}</b>
             </span>
             <Button onClick={handleSubmit} disabled={saving}
-              className="bg-[#D3004F] hover:bg-[#B0003D] text-white text-[12px] h-8">
+              className="bg-[#B32646] hover:bg-[#B0003D] text-white text-[12px] h-8">
               {saving ? '처리 중...' : `📤 ${rows.length}건 차감 확정`}
             </Button>
           </div>
@@ -193,7 +193,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
                     <td className="px-3 py-1.5 text-[#94A3B8]">{i + 1}</td>
                     <td className="px-3 py-1.5 font-medium text-[#1E293B]">{r.item_name}</td>
                     <td className="px-3 py-1.5 font-mono text-[#64748B] text-[11px]">{r.erp_code}</td>
-                    <td className="px-3 py-1.5 text-right font-mono font-bold text-[#D3004F]">{r.quantity}</td>
+                    <td className="px-3 py-1.5 text-right font-mono font-bold text-[#B32646]">{r.quantity}</td>
                     <td className="px-3 py-1.5 text-[#475569]">{r.reason}</td>
                   </tr>
                 ))}
@@ -320,10 +320,10 @@ function HistoryTab({ user }: { user: SessionUser }) {
           <div className="px-3 py-1.5 border rounded text-sm text-[#1E293B] bg-gray-50 min-w-[120px]">{userCenter}</div>
         )}
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#D3004F]" />
+          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646]" />
         <span className="text-gray-400 text-sm">~</span>
         <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#D3004F]" />
+          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646]" />
         <Input className="w-[200px]" placeholder="자재명 / 담당자 / 사유..."
           value={search} onChange={e => setSearch(e.target.value)} />
         <Select value={limit} onValueChange={v => v !== null && setLimit(v)}>
@@ -364,7 +364,7 @@ function HistoryTab({ user }: { user: SessionUser }) {
                   <td className="px-3 py-1.5 whitespace-nowrap text-[#64748B]">{h.from_center ?? h.warehouse?.location ?? ''}</td>
                   <td className="px-3 py-1.5 whitespace-nowrap text-[#1E293B]">{h.users?.name ?? ''}</td>
                   <td className="px-3 py-1.5 text-[#1E293B] max-w-[200px] truncate font-medium">{h.warehouse?.item_name ?? ''}</td>
-                  <td className="px-3 py-1.5 text-right font-mono font-bold text-[#D3004F]">{h.quantity.toLocaleString()}</td>
+                  <td className="px-3 py-1.5 text-right font-mono font-bold text-[#B32646]">{h.quantity.toLocaleString()}</td>
                   <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">{h.snapshot_qty_before ?? ''}</td>
                   <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">{h.snapshot_qty_after ?? ''}</td>
                   <td className="px-3 py-1.5 text-[#475569] max-w-[220px] truncate">{h.reason ?? ''}</td>

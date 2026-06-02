@@ -114,13 +114,13 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
         <h2 className="text-xl font-bold text-[#1E293B]">
           📢 공지사항
           {unreadCount > 0 && (
-            <span className="ml-2 text-sm bg-[#D3004F] text-white rounded-full px-2 py-0.5">
+            <span className="ml-2 text-sm bg-[#B32646] text-white rounded-full px-2 py-0.5">
               {unreadCount}
             </span>
           )}
         </h2>
         {isAdmin && (
-          <Button onClick={openCreateForm} className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
+          <Button onClick={openCreateForm} className="bg-[#B32646] hover:bg-[#B0003D] text-white">
             ✏️ 공지 작성
           </Button>
         )}
@@ -142,7 +142,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
               value={formContent}
               onChange={e => setFormContent(e.target.value)}
               rows={5}
-              className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#D3004F] resize-none"
+              className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
               placeholder="공지 내용을 입력하세요."
             />
           </div>
@@ -156,7 +156,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
           {formError && <p className="text-sm text-red-600">{formError}</p>}
           <div className="flex gap-2">
             <Button onClick={handleFormSave} disabled={formLoading}
-              className="bg-[#D3004F] hover:bg-[#B0003D] text-white">
+              className="bg-[#B32646] hover:bg-[#B0003D] text-white">
               {formLoading ? '저장 중...' : '💾 저장'}
             </Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
@@ -188,7 +188,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                   className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    {!isRead && <span className="w-2 h-2 rounded-full bg-[#D3004F] flex-shrink-0" />}
+                    {!isRead && <span className="w-2 h-2 rounded-full bg-[#B32646] flex-shrink-0" />}
                     <span className={`text-[13px] font-medium truncate ${inactive ? 'text-gray-400' : 'text-[#1E293B]'}`}>
                       {n.title}{inactive && <span className="ml-1 text-[11px] text-gray-400">[비활성]</span>}
                     </span>
@@ -204,7 +204,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                 {isOpen && (
                   <div className="px-4 pb-4 bg-white border-t border-[rgba(0,0,0,0.06)]">
                     <div
-                      className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#D3004F] text-[13px] text-[#1E293B] whitespace-pre-wrap"
+                      className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#B32646] text-[13px] text-[#1E293B] whitespace-pre-wrap"
                     >
                       {n.content}
                     </div>

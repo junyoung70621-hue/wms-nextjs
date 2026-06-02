@@ -146,7 +146,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
         {/* 헤더 */}
@@ -208,7 +208,7 @@ export default function LoginPage() {
                   )}
                   <Button
                     type="submit"
-                    className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white"
+                    className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
                     disabled={loginLoading}
                   >
                     {loginLoading ? '로그인 중...' : '로그인'}
@@ -305,7 +305,7 @@ export default function LoginPage() {
                     )}
                     <Button
                       type="submit"
-                      className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white"
+                      className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
                       disabled={regLoading}
                     >
                       {regLoading ? '신청 중...' : '회원가입 신청'}
@@ -346,7 +346,7 @@ export default function LoginPage() {
                     )}
                     <Button
                       type="submit"
-                      className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white"
+                      className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
                       disabled={resetLoading}
                     >
                       {resetLoading ? '발송 중...' : '임시 비밀번호 발송'}

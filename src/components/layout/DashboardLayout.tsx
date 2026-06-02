@@ -12,7 +12,7 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f8f9ff]">
       <SessionGuard />
       <SidebarShell user={user}>{children}</SidebarShell>
     </div>

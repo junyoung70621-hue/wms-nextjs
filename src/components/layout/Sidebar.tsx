@@ -106,13 +106,13 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
           'flex items-center w-full px-3 py-[7px] rounded text-[14px] transition-colors',
           'border-l-[3px]',
           isActive
-            ? 'font-bold text-[#1E293B] bg-[rgba(211,0,79,0.08)] border-l-[#D3004F]'
-            : 'font-normal text-[#1E293B] border-l-transparent hover:bg-[rgba(0,0,0,0.04)] hover:border-l-[rgba(211,0,79,0.4)]'
+            ? 'font-bold text-[#1E293B] bg-[rgba(179, 38, 70,0.08)] border-l-[#B32646]'
+            : 'font-normal text-[#1E293B] border-l-transparent hover:bg-[rgba(0,0,0,0.04)] hover:border-l-[rgba(179, 38, 70,0.4)]'
         )}
       >
         <span className="flex-1">{label}</span>
         {badge > 0 && (
-          <span className="ml-1 bg-[#D3004F] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
+          <span className="ml-1 bg-[#B32646] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
             {badge > 99 ? '99+' : badge}
           </span>
         )}
@@ -123,7 +123,7 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
   function SectionLabel({ title }: { title: string }) {
     return (
       <div className="flex items-center gap-2 px-[14px] py-[12px] mt-1">
-        <div className="w-[14px] h-px bg-[rgba(211,0,79,0.5)] flex-shrink-0" />
+        <div className="w-[14px] h-px bg-[rgba(179, 38, 70,0.5)] flex-shrink-0" />
         <span className="text-[10px] font-bold text-[#64748B] tracking-[0.15em] uppercase whitespace-nowrap">
           {title}
         </span>
@@ -134,7 +134,7 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
 
   return (
     <aside
-      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-[#F8F9FA] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
+      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-[#eff4ff] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
         collapsed
           ? 'w-0 border-transparent'
           : 'w-[220px] border-r border-[rgba(0,0,0,0.08)]'
@@ -164,16 +164,16 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
         <hr className="my-2 border-[rgba(0,0,0,0.08)]" />
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-3 py-[7px] rounded text-[14px] border-l-[3px] border-l-transparent text-[#1E293B] hover:bg-[rgba(0,0,0,0.04)] hover:border-l-[rgba(211,0,79,0.4)] transition-colors"
+          className="flex items-center w-full px-3 py-[7px] rounded text-[14px] border-l-[3px] border-l-transparent text-[#1E293B] hover:bg-[rgba(0,0,0,0.04)] hover:border-l-[rgba(179, 38, 70,0.4)] transition-colors"
         >
           🚪 로그아웃
         </button>
       </div>
 
       {/* 유저 카드 */}
-      <div className="mx-[6px] mb-[10px] p-[8px_10px] bg-white rounded border border-[rgba(0,0,0,0.1)] border-l-[3px] border-l-[#D3004F]">
+      <div className="mx-[6px] mb-[10px] p-[8px_10px] bg-white rounded border border-[rgba(0,0,0,0.1)] border-l-[3px] border-l-[#B32646]">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-[26px] h-[26px] flex-shrink-0 rounded bg-[rgba(211,0,79,0.08)] border border-[rgba(211,0,79,0.25)] flex items-center justify-center text-[12px] font-bold text-[#D3004F]">
+          <div className="w-[26px] h-[26px] flex-shrink-0 rounded bg-[rgba(179, 38, 70,0.08)] border border-[rgba(179, 38, 70,0.25)] flex items-center justify-center text-[12px] font-bold text-[#B32646]">
             {user.name.charAt(0)}
           </div>
           <div className="min-w-0">
@@ -181,7 +181,7 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
               {user.name}
             </div>
             <div className="flex items-center gap-1 mt-[2px] min-w-0">
-              <span className="text-[9px] font-bold text-[#D3004F] tracking-wide font-mono flex-shrink-0">
+              <span className="text-[9px] font-bold text-[#B32646] tracking-wide font-mono flex-shrink-0">
                 {ROLE_LABEL[user.role] ?? user.role.toUpperCase()}
               </span>
               <span className="text-[9px] text-[#CBD5E1] flex-shrink-0">·</span>

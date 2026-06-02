@@ -58,7 +58,7 @@ function InquiryCard({
         className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-[11px] font-bold flex-shrink-0 ${isPending ? 'text-[#D3004F]' : 'text-[#0284C7]'}`}>
+          <span className={`text-[11px] font-bold flex-shrink-0 ${isPending ? 'text-[#B32646]' : 'text-[#0284C7]'}`}>
             {isPending ? '⏳ 미답변' : '✅ 답변완료'}
           </span>
           <span className="text-[13px] font-medium text-[#1E293B] truncate">{inq.title}</span>
@@ -73,7 +73,7 @@ function InquiryCard({
       {open && (
         <div className="px-4 pb-4 bg-white border-t border-[rgba(0,0,0,0.06)] space-y-3">
           {/* 문의 내용 */}
-          <div className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#D3004F] text-[13px] text-[#1E293B] whitespace-pre-wrap">
+          <div className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#B32646] text-[13px] text-[#1E293B] whitespace-pre-wrap">
             {inq.content}
           </div>
 
@@ -101,13 +101,13 @@ function InquiryCard({
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
                     rows={4}
-                    className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#D3004F] resize-none"
+                    className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
                     placeholder="답변 내용을 입력하세요."
                   />
                   {replyErr && <p className="text-sm text-red-600">{replyErr}</p>}
                   <div className="flex gap-2">
                     <Button onClick={handleReply} disabled={replyLoad}
-                      className="bg-[#D3004F] hover:bg-[#B0003D] text-white" size="sm">
+                      className="bg-[#B32646] hover:bg-[#B0003D] text-white" size="sm">
                       {replyLoad ? '등록 중...' : '답변 등록'}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setReplyOpen(false)}>취소</Button>
@@ -228,13 +228,13 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 rows={6}
-                className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#D3004F] resize-none"
+                className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
                 placeholder="문의 내용을 상세히 입력해주세요."
               />
             </div>
             {submitErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{submitErr}</p>}
             {submitMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{submitMsg}</p>}
-            <Button type="submit" className="w-full bg-[#D3004F] hover:bg-[#B0003D] text-white" disabled={submitLoad}>
+            <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={submitLoad}>
               {submitLoad ? '제출 중...' : '📨 제출'}
             </Button>
           </form>

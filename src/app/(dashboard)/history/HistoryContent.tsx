@@ -206,19 +206,19 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
             type="date"
             value={dateFrom}
             onChange={e => setDateFrom(e.target.value)}
-            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] h-8"
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] h-8"
           />
           <span className="text-[#94A3B8]">~</span>
           <input
             type="date"
             value={dateTo}
             onChange={e => setDateTo(e.target.value)}
-            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F] h-8"
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] h-8"
           />
           {(dateFrom || dateTo) && (
             <button
               onClick={() => { setDateFrom(''); setDateTo('') }}
-              className="text-[#94A3B8] hover:text-[#D3004F] text-[11px] px-1"
+              className="text-[#94A3B8] hover:text-[#B32646] text-[11px] px-1"
             >
               ✕
             </button>

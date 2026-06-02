@@ -137,7 +137,7 @@ function ManagerCard({
               <select
                 value={selStatus}
                 onChange={e => setSelStatus(e.target.value)}
-                className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D3004F]"
+                className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646]"
               >
                 {STATUS_OPTIONS.map(s => (
                   <option key={s} value={s}>{STATUS_KO[s]?.label ?? s}</option>
@@ -150,11 +150,11 @@ function ManagerCard({
                 onChange={e => setReplyMsg(e.target.value)}
                 rows={2}
                 placeholder="신청자에게 보낼 메시지 (선택)"
-                className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none"
+                className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none"
               />
             )}
             {selStatus !== req.status && (
-              <Button size="sm" className="bg-[#D3004F] hover:bg-[#B0003D] text-white"
+              <Button size="sm" className="bg-[#B32646] hover:bg-[#B0003D] text-white"
                 disabled={saving} onClick={handleSave}>
                 {saving ? '저장 중...' : '💾 저장'}
               </Button>
@@ -414,7 +414,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
         <label className="block text-[11px] font-semibold text-[#64748B] mb-1">구매사유 *</label>
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
           placeholder="품의서에 들어갈 구매사유 문구를 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
       </div>
 
       {/* 원가반영 */}
@@ -422,7 +422,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
         <label className="block text-[11px] font-semibold text-[#64748B] mb-1">원가반영 *</label>
         <textarea value={costNote} onChange={e => setCostNote(e.target.value)} rows={3}
           placeholder="원가반영 내용을 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
       </div>
 
       {/* 비고 */}
@@ -430,7 +430,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
         <label className="block text-[11px] font-semibold text-[#64748B] mb-1">비고 (선택)</label>
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
           placeholder="추가 전달사항이 있으면 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D3004F] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
       </div>
 
       {error && (
@@ -438,7 +438,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
       )}
 
       <Button onClick={handleSubmit} disabled={submitting}
-        className="bg-[#D3004F] hover:bg-[#B0003D] text-white w-full">
+        className="bg-[#B32646] hover:bg-[#B0003D] text-white w-full">
         {submitting ? '제출 중...' : '📨 요청 제출'}
       </Button>
     </div>
