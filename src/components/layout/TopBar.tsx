@@ -95,7 +95,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const center = user.assigned_center ?? user.center
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[58px] bg-white/95 backdrop-blur-sm border-b border-[rgba(0,0,0,0.08)] shadow-sm z-50 flex items-stretch">
+    <header className="fixed top-0 left-0 right-0 h-[58px] bg-[#fbf9f1]/95 backdrop-blur-sm border-b border-[rgba(0,0,0,0.08)] shadow-sm z-50 flex items-stretch">
       {/* 로고 + 토글 */}
       <div
         className={`flex-shrink-0 flex items-center gap-2 px-3 border-r border-[rgba(0,0,0,0.08)] transition-all duration-200 ${
@@ -119,7 +119,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           }`}
         >
           <span className="text-[17px] font-extrabold tracking-tight text-[#b32646] font-heading">ATEC</span>
-          <span className="text-[15px] font-semibold tracking-tight text-[#1E293B] font-heading">Mobility</span>
+          <span className="text-[15px] font-semibold tracking-tight text-[#1E293B] font-heading">에이텍모빌리티</span>
         </span>
       </div>
 

@@ -125,23 +125,12 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
 
   return (
     <aside
-      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-[#eff4ff] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
-        collapsed ? 'w-0 border-transparent' : 'w-[240px] border-r border-[#dce9ff]'
+      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-white flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
+        collapsed ? 'w-0 border-transparent' : 'w-[240px] border-r border-[#e2e8f0]'
       }`}
     >
-      {/* 로고 블록 */}
-      <div className="px-4 pt-4 pb-3 border-b border-[#dce9ff]">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[18px] font-extrabold tracking-tight text-[#b32646] font-heading">ATEC</span>
-          <span className="text-[12px] font-semibold text-[#475569]">에이텍모빌리티</span>
-        </div>
-        <div className="text-[9px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase mt-1">
-          Enterprise Asset Management
-        </div>
-      </div>
-
       {/* 섹션별 메뉴 */}
-      <div className="flex-1 px-2 pt-2 pb-2 space-y-[2px]">
+      <div className="flex-1 px-2 pt-3 pb-2 space-y-[2px]">
         {sections.map(section => (
           <div key={section.title} className="mb-1">
             <div className="px-2 pt-3 pb-1.5">
@@ -157,7 +146,7 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
       </div>
 
       {/* 유저 카드 */}
-      <div className="mx-2 mb-2 p-2 bg-white rounded-lg border border-[#dce9ff] flex items-center gap-2 min-w-0">
+      <div className="mx-2 mb-2 p-2 bg-[#f8f9ff] rounded-lg border border-[#e2e8f0] flex items-center gap-2 min-w-0">
         <div className="w-[28px] h-[28px] flex-shrink-0 rounded-full bg-[#fbe9ee] border border-[rgba(179,38,70,0.25)] flex items-center justify-center text-[12px] font-bold text-[#b32646]">
           {user.name.charAt(0)}
         </div>
