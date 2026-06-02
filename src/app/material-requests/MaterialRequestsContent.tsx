@@ -452,7 +452,6 @@ export default function MaterialRequestsContent({ user }: { user: SessionUser })
 
   const tabs = isManager
     ? [
-        { key: 'pending',  label: `⏳ 대기중 (${filterByStatus('pending').length})` },
         { key: 'approved', label: '✅ 승인' },
         { key: 'rejected', label: '❌ 거절' },
         { key: 'on_hold',  label: '⏸️ 보류' },
@@ -514,6 +513,21 @@ export default function MaterialRequestsContent({ user }: { user: SessionUser })
               <h3 className="text-[13px] font-semibold text-[#1E293B] mb-4">자재센터에 자재 요청</h3>
               <NewRequestForm user={user} onSubmitted={fetchData} />
             </div>
+          </TabsContent>
+        )}
+
+        {/* 대기중 탭 (관리자) */}
+        {isManager && (
+          <TabsContent value="pending" className="space-y-2 mt-2">
+            {loading ? (
+              <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p>
+            ) : filterByStatus('pending').length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">대기 중인 요청이 없습니다.</p>
+            ) : (
+              filterByStatus('pending').map(req => (
+                <RequestCard key={req.id} {...cardProps(req)} />
+              ))
+            )}
           </TabsContent>
         )}
 

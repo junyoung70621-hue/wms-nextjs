@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/select'
 import type { SessionUser } from '@/lib/session'
 import { getViewableCenters, CENTERS } from '@/constants/centers'
+import MaterialRequestsContent from '@/app/material-requests/MaterialRequestsContent'
+import UsageContent from '@/app/usage/UsageContent'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type Item = {
@@ -882,16 +884,19 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
     [user]
   )
   const [center, setCenter] = useState(viewable[0] ?? '자재센터')
-  const isAdmin = user.role === 'admin'
+  const isAdmin  = user.role === 'admin'
+  const isGuest  = user.role === 'guest'
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-[#1E293B]">📦 재고 현황</h2>
       <Tabs defaultValue="inventory">
-        <TabsList>
-          <TabsTrigger value="inventory" className="text-[13px]">📦 재고 현황</TabsTrigger>
-          <TabsTrigger value="transfers" className="text-[13px]">🚚 이동 신청 현황</TabsTrigger>
-          {isAdmin && <TabsTrigger value="admin" className="text-[13px]">⚙️ 관리자</TabsTrigger>}
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="inventory"  className="text-[13px]">📦 재고 현황</TabsTrigger>
+          <TabsTrigger value="transfers"  className="text-[13px]">🚚 이동 신청 현황</TabsTrigger>
+          {!isGuest && <TabsTrigger value="material-requests" className="text-[13px]">📋 자재요청</TabsTrigger>}
+          {!isGuest && <TabsTrigger value="usage"             className="text-[13px]">📊 사용내역</TabsTrigger>}
+          {isAdmin  && <TabsTrigger value="admin"             className="text-[13px]">⚙️ 관리자</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="inventory" className="mt-4">
@@ -901,6 +906,18 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
         <TabsContent value="transfers" className="mt-4">
           <TransferTab user={user} />
         </TabsContent>
+
+        {!isGuest && (
+          <TabsContent value="material-requests" className="mt-4">
+            <MaterialRequestsContent user={user} />
+          </TabsContent>
+        )}
+
+        {!isGuest && (
+          <TabsContent value="usage" className="mt-4">
+            <UsageContent user={user} />
+          </TabsContent>
+        )}
 
         {isAdmin && (
           <TabsContent value="admin" className="mt-4">

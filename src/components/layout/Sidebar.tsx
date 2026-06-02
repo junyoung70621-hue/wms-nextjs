@@ -71,7 +71,7 @@ const ROLE_LABEL: Record<string, string> = {
   manager: 'MANAGER', user: 'USER', guest: 'GUEST',
 }
 
-export default function Sidebar({ user }: { user: SessionUser }) {
+export default function Sidebar({ user, collapsed }: { user: SessionUser; collapsed: boolean }) {
   const pathname = usePathname()
   const router   = useRouter()
   const sections = getMenuSections(user)
@@ -133,7 +133,13 @@ export default function Sidebar({ user }: { user: SessionUser }) {
   }
 
   return (
-    <aside className="fixed top-[58px] left-0 h-[calc(100vh-58px)] w-[220px] bg-[#F8F9FA] border-r border-[rgba(0,0,0,0.08)] flex flex-col overflow-y-auto z-40">
+    <aside
+      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-[#F8F9FA] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
+        collapsed
+          ? 'w-0 border-transparent'
+          : 'w-[220px] border-r border-[rgba(0,0,0,0.08)]'
+      }`}
+    >
 
       {/* 상단 퀵 버튼 */}
       <div className="px-1 pt-3 pb-1 space-y-[2px]">

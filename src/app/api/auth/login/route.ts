@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       center: user.center,
       assigned_center: user.assigned_center ?? null,
     }
+    session.loginAt = Date.now()
     await session.save()
 
     return NextResponse.json({ ok: true, name: user.name })

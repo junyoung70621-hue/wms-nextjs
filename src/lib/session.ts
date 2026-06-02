@@ -14,6 +14,7 @@ export interface SessionUser {
 
 export interface SessionData {
   user?: SessionUser
+  loginAt?: number
 }
 
 export const sessionOptions: SessionOptions = {

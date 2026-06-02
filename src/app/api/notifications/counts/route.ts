@@ -7,15 +7,18 @@ export async function GET() {
   if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
   const u = session.user
-  const isManager = u.role === 'admin' || u.role === 'materials'
-  const userCenter = u.assigned_center ?? u.center
+  const isAdmin     = u.role === 'admin'
+  const isMaterials = u.role === 'materials'
+  const isManager   = u.role === 'manager'
+  const isManager2  = isAdmin || isMaterials
+  const userCenter  = u.assigned_center ?? u.center
 
   // 대기 자재요청
   let matQ = supabase
     .from('material_requests')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending')
-  if (!isManager) matQ = matQ.eq('from_center', userCenter)
+  if (!isManager2) matQ = matQ.eq('from_center', userCenter)
   const { count: matPending } = await matQ
 
   // 대기 구매요청
@@ -23,8 +26,22 @@ export async function GET() {
     .from('purchase_requests')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending')
-  if (!isManager) purQ = purQ.eq('requester_id', u.id)
+  if (!isManager2) purQ = purQ.eq('requester_id', u.id)
   const { count: purPending } = await purQ
+
+  // 대기 이동신청
+  let trQ = supabase
+    .from('transfers')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+  if (isMaterials) {
+    trQ = trQ.or(`from_center.eq.자재센터,to_center.eq.자재센터`)
+  } else if (isManager) {
+    trQ = trQ.or(`from_center.eq.${userCenter},to_center.eq.${userCenter}`)
+  } else if (!isAdmin) {
+    trQ = trQ.eq('requester_id', u.id)
+  }
+  const { count: trPending } = await trQ
 
   // 미읽은 공지
   const { data: notices } = await supabase
@@ -46,8 +63,9 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    mat_pending:    matPending  ?? 0,
-    pur_pending:    purPending  ?? 0,
-    unread_notices: unreadNotices,
+    mat_pending:     matPending   ?? 0,
+    pur_pending:     purPending   ?? 0,
+    tr_pending:      trPending    ?? 0,
+    unread_notices:  unreadNotices,
   })
 }
