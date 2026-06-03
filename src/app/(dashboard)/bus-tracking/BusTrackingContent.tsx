@@ -14,6 +14,7 @@ import {
   classifyTerminal, tsKst,
   type Assignment, type AvailableTerminal, type TransferRequest, type HistoryRow,
 } from '@/lib/busTracking'
+import { extractFaultPair, findContentCol, type FaultPair } from '@/lib/faultSwap'
 
 type CenterUser = { id: string; name: string; username: string; role: string }
 
@@ -1452,6 +1453,179 @@ function TabInit({ selCenter, userId, canManage }: {
   )
 }
 
+// ── 탭: 장애목록 자동교체 ──────────────────────────────────────────────────────
+type FaultMatch = { id: string; ih_code: string; center: string; employee_id: string | null; employee_name: string | null; status: string }
+type FaultPreview = FaultPair & { oldDevice: string; newDevice: string; deviceMatch: boolean; matches: FaultMatch[] }
+
+function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
+  const [fileName, setFileName] = useState('')
+  const [rows, setRows] = useState<FaultPreview[]>([])
+  const [sel, setSel] = useState<Record<number, boolean>>({})
+  const [pick, setPick] = useState<Record<number, number>>({})
+  const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFileName(file.name); setMsg(''); setRows([]); setSel({}); setPick({}); setLoading(true)
+    try {
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(new Uint8Array(buf), { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' })
+      const col = findContentCol((aoa[0] as unknown[]) ?? [])
+      const pairs: FaultPair[] = []
+      for (let r = 1; r < aoa.length; r++) {
+        const p = extractFaultPair(String((aoa[r] as unknown[])?.[col] ?? ''), r + 1)
+        if (p) pairs.push(p)
+      }
+      if (!pairs.length) { setMsg('교체 IH쌍을 찾지 못했습니다. (처리내용/AL열을 확인하세요)'); setLoading(false); return }
+      const res = await fetch('/api/bus-tracking/fault-swap', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'preview', pairs }),
+      })
+      const d = await res.json()
+      if (d.error) { setMsg(d.error); setLoading(false); return }
+      const pv: FaultPreview[] = d.data ?? []
+      setRows(pv)
+      const s: Record<number, boolean> = {}
+      pv.forEach((row, i) => { if (row.matches.length >= 1) s[i] = true })
+      setSel(s)
+    } catch { setMsg('파일 읽기 실패') }
+    setLoading(false)
+  }
+
+  async function apply() {
+    const items = rows.flatMap((row, i) => {
+      if (!sel[i]) return []
+      const m = row.matches[pick[i] ?? 0]
+      if (!m) return []
+      return [{
+        recordId: m.id, oldIh: row.oldIh, newIh: row.newIh,
+        center: m.center, employee_id: m.employee_id, employee_name: m.employee_name, oldStatus: m.status,
+      }]
+    })
+    if (!items.length) { setMsg('적용할(매칭된) 항목이 없습니다.'); return }
+    setBusy(true); setMsg('')
+    try {
+      const res = await fetch('/api/bus-tracking/fault-swap', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'apply', items }),
+      })
+      const d = await res.json()
+      if (d.error) { setMsg(d.error); setBusy(false); return }
+      setMsg(`✅ 자동 교체 완료: ${d.applied}건${d.errors?.length ? ` (실패 ${d.errors.length})` : ''}`)
+      setRows([]); setSel({}); setPick({}); setFileName('')
+      if (fileRef.current) fileRef.current.value = ''
+      onRefresh()
+    } catch { setMsg('적용 실패') }
+    setBusy(false)
+  }
+
+  const matchedCount = rows.filter(r => r.matches.length >= 1).length
+  const selectedCount = Object.entries(sel).filter(([, v]) => v).length
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-[#FAFAFA] border border-[#E2E8F0] rounded-lg p-3 space-y-2">
+        <div className="text-[12px] font-bold text-[#1E293B]">📥 단말기장애목록 업로드 → 자동 교체</div>
+        <p className="text-[11px] text-[#64748B] leading-relaxed">
+          장애목록의 <b>처리내용(AL열)</b>에서 <b>「교체 (불량IH → 신규IH)」</b>를 자동 추출합니다.
+          불량 IH를 <b>보유 중인 직원/센터</b>를 찾아, 그 보유분을 <b>신규 IH</b>로 교체(불량은 교체완료 처리)합니다.
+          아래 미리보기에서 확인 후 적용하세요.
+        </p>
+        <input ref={fileRef} type="file" accept=".xls,.xlsx" onChange={handleFile} className="hidden" />
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={() => fileRef.current?.click()}>
+            파일 선택
+          </Button>
+          <span className="text-[11px] text-[#64748B] truncate max-w-[260px]">{fileName || '선택된 파일 없음'}</span>
+          {loading && <span className="text-[11px] text-[#94A3B8]">분석 중…</span>}
+        </div>
+      </div>
+
+      {rows.length > 0 && (
+        <>
+          <div className="text-[11px] flex flex-wrap gap-3">
+            <span className="text-[#1565c0]">교체 추출 <b>{rows.length}</b></span>
+            <span className="text-[#2e7d32]">보유자 매칭 <b>{matchedCount}</b></span>
+            <span className="text-[#c62828]">미발견 <b>{rows.length - matchedCount}</b></span>
+            <span className="text-[#94A3B8]">선택 {selectedCount}</span>
+          </div>
+          <div className="overflow-x-auto border border-[#E2E8F0] rounded-lg">
+            <table className="w-full text-[11px]">
+              <thead className="bg-[#F8F9FA]">
+                <tr className="text-[#64748B]">
+                  <th className="px-2 py-1.5 w-8"></th>
+                  <th className="px-2 py-1.5 text-left">불량 IH → 신규 IH</th>
+                  <th className="px-2 py-1.5 text-left">기종</th>
+                  <th className="px-2 py-1.5 text-left">보유자(센터·직원·상태)</th>
+                  <th className="px-2 py-1.5 text-left">처리내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => {
+                  const has = row.matches.length >= 1
+                  const m = row.matches[pick[i] ?? 0]
+                  return (
+                    <tr key={i} className={`border-t border-[#E2E8F0] ${!has ? 'bg-[#fff7f7]' : ''}`}>
+                      <td className="px-2 py-1.5 text-center">
+                        <input type="checkbox" disabled={!has}
+                          checked={!!sel[i]} onChange={e => setSel(s => ({ ...s, [i]: e.target.checked }))} />
+                      </td>
+                      <td className="px-2 py-1.5 font-mono whitespace-nowrap">
+                        <span className="text-[#c62828]">{row.oldIh}</span>
+                        <span className="text-[#94A3B8]"> → </span>
+                        <span className="text-[#2e7d32]">{row.newIh}</span>
+                      </td>
+                      <td className="px-2 py-1.5 whitespace-nowrap text-[#475569]">
+                        {row.newDevice || '미분류'}
+                        {!row.deviceMatch && (row.oldDevice || row.newDevice) && (
+                          <span className="ml-1 text-[#b45309]" title={`불량 ${row.oldDevice || '미분류'} / 신규 ${row.newDevice || '미분류'}`}>⚠</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {!has ? (
+                          <span className="text-[#c62828]">❌ 보유자 미발견</span>
+                        ) : row.matches.length === 1 ? (
+                          <span className="text-[#475569]">
+                            {m.center} · {m.employee_name || '센터보관'} · {STATUS_LABEL[m.status] ?? m.status}
+                          </span>
+                        ) : (
+                          <select className="text-[11px] border border-[#E2E8F0] rounded px-1 py-0.5 bg-white"
+                            value={pick[i] ?? 0} onChange={e => setPick(pk => ({ ...pk, [i]: Number(e.target.value) }))}>
+                            {row.matches.map((mm, mi) => (
+                              <option key={mi} value={mi}>
+                                {mm.center} · {mm.employee_name || '센터보관'} · {STATUS_LABEL[mm.status] ?? mm.status}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 text-[#94A3B8] max-w-[280px] truncate" title={row.raw}>{row.raw}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" disabled={busy || !selectedCount} onClick={apply}
+              className="h-8 text-[12px] bg-[#B32646] hover:bg-[#a8003c] text-white">
+              {busy ? '교체 중…' : `선택 ${selectedCount}건 자동 교체`}
+            </Button>
+            {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+          </div>
+        </>
+      )}
+      {rows.length === 0 && msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
+    </div>
+  )
+}
+
 // ── 메인 컴포넌트 ──────────────────────────────────────────────────────────────
 export default function BusTrackingContent({ user }: { user: SessionUser }) {
   const userCenter = user.assigned_center ?? user.center
@@ -1493,6 +1667,7 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
           <TabsTrigger value="center"      className="text-[12px]">🏢 센터 보유현황</TabsTrigger>
           <TabsTrigger value="transfer"    className="text-[12px]">🚛 센터간이동</TabsTrigger>
           <TabsTrigger value="history"     className="text-[12px]">📜 변경이력</TabsTrigger>
+          {canInit && <TabsTrigger value="faultswap" className="text-[12px]">🔄 장애목록 자동교체</TabsTrigger>}
           {canInit && <TabsTrigger value="init" className="text-[12px]">📤 초기 등록</TabsTrigger>}
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
@@ -1509,6 +1684,11 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
         <TabsContent value="history" className="mt-4">
           <TabHistory key={`hist-${selCenter}`} selCenter={selCenter} />
         </TabsContent>
+        {canInit && (
+          <TabsContent value="faultswap" className="mt-4">
+            <TabFaultSwap key={`faultswap-${refreshKey}`} onRefresh={() => setRefreshKey(k => k + 1)} />
+          </TabsContent>
+        )}
         {canInit && (
           <TabsContent value="init" className="mt-4">
             <TabInit key={`init-${selCenter}`} selCenter={selCenter}
