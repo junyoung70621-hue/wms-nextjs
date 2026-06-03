@@ -129,6 +129,44 @@ function MetricCard({ icon: Icon, label, value, sub, color }: {
   )
 }
 
+// ── 표 정렬 (재사용) ─────────────────────────────────────────────────────────
+type SortDir = 'asc' | 'desc'
+function useSort<T extends Record<string, unknown>>(items: T[]) {
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const sorted = useMemo(() => {
+    if (!sortKey) return items
+    const k = sortKey
+    return [...items].sort((a, b) => {
+      const va = a[k], vb = b[k]
+      let c: number
+      if (typeof va === 'boolean' || typeof vb === 'boolean') c = (va ? 1 : 0) - (vb ? 1 : 0)
+      else if (typeof va === 'number' && typeof vb === 'number') c = va - vb
+      else c = String(va ?? '').localeCompare(String(vb ?? ''), 'ko', { numeric: true })
+      return sortDir === 'asc' ? c : -c
+    })
+  }, [items, sortKey, sortDir])
+  const toggle = (key: string) => {
+    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
+  }
+  return { sorted, sortKey, sortDir, toggle }
+}
+
+function SortTh({ label, field, sortKey, sortDir, onSort, className }: {
+  label: string; field: string; sortKey: string | null; sortDir: SortDir; onSort: (k: string) => void; className?: string
+}) {
+  const active = sortKey === field
+  return (
+    <th className={`${className ?? 'px-2 py-1.5 text-left font-semibold'} cursor-pointer select-none hover:text-[#1E293B]`}
+        onClick={() => onSort(field)} title="클릭하여 정렬">
+      <span className="inline-flex items-center gap-0.5">{label}
+        <span className="text-[8px] text-[#94A3B8]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
+      </span>
+    </th>
+  )
+}
+
 function StatusTab({ perms }: { perms: Perms }) {
   const [st, setSt] = useState<TaxiStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -396,6 +434,7 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
   onToggle?: (id: string) => void
   onToggleAll?: (ids: string[]) => void
 }) {
+  const { sorted, sortKey, sortDir, toggle } = useSort(items)
   if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">없음</div>
   const ids = items.map(i => i.id)
   return (
@@ -409,14 +448,15 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
                   onChange={() => onToggleAll?.(ids)} className="cursor-pointer" />
               </th>
             )}
-            <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
-            <th className="px-2 py-1.5 text-left font-semibold">기종</th>
-            <th className="px-2 py-1.5 text-left font-semibold">입고일</th>
-            <th className="px-2 py-1.5 text-center font-semibold">해지</th>
+            <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+            <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+            <SortTh label="입고일" field="upload_date" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+            <SortTh label="해지" field="is_terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle}
+              className="px-2 py-1.5 text-center font-semibold" />
           </tr>
         </thead>
         <tbody>
-          {items.map(it => (
+          {sorted.map(it => (
             <tr key={it.id} className="border-t border-[#F1F5F9]">
               {selectable && (
                 <td className="px-2 py-1.5 text-center">
@@ -479,6 +519,7 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
   const [dealer, setDealer] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const { sorted, sortKey, sortDir, toggle } = useSort(group.items)
 
   async function submit() {
     const rows = group.items.filter(i => sel.has(i.trcn_id))
@@ -523,11 +564,11 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
                     onChange={() => setSel(sel.size === group.items.length ? new Set() : new Set(group.items.map(i => i.trcn_id)))}
                     className="cursor-pointer" />
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
-                <th className="px-2 py-1.5 text-left font-semibold">기종</th>
+                <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
               </tr></thead>
               <tbody>
-                {group.items.map(it => (
+                {sorted.map(it => (
                   <tr key={it.out_id} className="border-t border-[#F1F5F9]">
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={sel.has(it.trcn_id)}
@@ -569,6 +610,7 @@ function InboundPanel({ onSaved }: { onSaved: () => void }) {
 
   const classified = useMemo(() => rows.map(r => ({ ...r, device: classifyTaxi(r.id) })), [rows])
   const invalid = classified.filter(c => c.device === '미분류').length
+  const { sorted: sortedRows, sortKey, sortDir, toggle } = useSort(classified)
 
   function setIds(ids: string[]) {
     setRows(ids.map(id => ({ id, terminated: false })))
@@ -656,18 +698,19 @@ function InboundPanel({ onSaved }: { onSaved: () => void }) {
           <div className="max-h-52 overflow-y-auto rounded border border-[#E2E8F0]">
             <table className="w-full text-[11px]">
               <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
-                <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
-                <th className="px-2 py-1.5 text-left font-semibold">기종</th>
-                <th className="px-2 py-1.5 text-center font-semibold">해지</th>
+                <SortTh label="TRCN_ID" field="id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="기종" field="device" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="해지" field="terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle}
+                  className="px-2 py-1.5 text-center font-semibold" />
               </tr></thead>
               <tbody>
-                {classified.map((c, i) => (
+                {sortedRows.map((c, i) => (
                   <tr key={`${c.id}-${i}`} className="border-t border-[#F1F5F9]">
                     <td className="px-2 py-1 font-mono text-[#475569]">{c.id}</td>
                     <td className={`px-2 py-1 ${c.device === '미분류' ? 'text-[#c62828]' : 'text-[#1E293B]'}`}>{c.device}</td>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={c.terminated} className="cursor-pointer"
-                        onChange={() => setRows(prev => prev.map((r, idx) => idx === i ? { ...r, terminated: !r.terminated } : r))} />
+                        onChange={() => setRows(prev => prev.map(r => r.id === c.id ? { ...r, terminated: !r.terminated } : r))} />
                     </td>
                   </tr>
                 ))}
