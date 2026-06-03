@@ -1,9 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { supabase } from '@/lib/supabase'
+
+const ATTACH_BUCKET = 'notice-attachments'
+const MAX_ATTACH = 10
+const MAX_FILE_MB = 20
 
 type Notice = {
   id: string
@@ -37,6 +42,8 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
   const [formActive,  setFormActive]  = useState(true)
   const [formLoading, setFormLoading] = useState(false)
   const [formError,   setFormError]   = useState('')
+  const [formAttachments, setFormAttachments] = useState<{ name: string; url: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchNotices = async () => {
     setLoading(true)
@@ -71,13 +78,46 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
 
   const openCreateForm = () => {
     setEditTarget(null); setFormTitle(''); setFormContent('')
-    setFormActive(true); setFormError(''); setShowForm(true)
+    setFormActive(true); setFormError(''); setFormAttachments([]); setShowForm(true)
   }
 
   const openEditForm = (n: Notice) => {
     setEditTarget(n); setFormTitle(n.title); setFormContent(n.content)
-    setFormActive(n.is_active); setFormError(''); setShowForm(true)
+    setFormActive(n.is_active); setFormError(''); setFormAttachments(n.attachments ?? []); setShowForm(true)
   }
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = '' // 같은 파일 재선택 허용
+    if (files.length === 0) return
+    if (formAttachments.length + files.length > MAX_ATTACH) {
+      setFormError(`첨부파일은 최대 ${MAX_ATTACH}개까지 가능합니다.`); return
+    }
+    for (const f of files) {
+      if (f.size > MAX_FILE_MB * 1024 * 1024) {
+        setFormError(`"${f.name}" 파일이 너무 큽니다 (최대 ${MAX_FILE_MB}MB).`); return
+      }
+    }
+
+    setFormLoading(true); setFormError('')
+    try {
+      const uploaded: { name: string; url: string }[] = []
+      for (const f of files) {
+        const ext  = f.name.includes('.') ? '.' + f.name.split('.').pop() : ''
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`
+        const { error: upErr } = await supabase.storage
+          .from(ATTACH_BUCKET)
+          .upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined })
+        if (upErr) { setFormError(`업로드 실패: ${upErr.message}`); return }
+        const { data } = supabase.storage.from(ATTACH_BUCKET).getPublicUrl(path)
+        uploaded.push({ name: f.name, url: data.publicUrl })
+      }
+      setFormAttachments(prev => [...prev, ...uploaded])
+    } finally { setFormLoading(false) }
+  }
+
+  const removeAttachment = (idx: number) =>
+    setFormAttachments(prev => prev.filter((_, i) => i !== idx))
 
   const handleFormSave = async () => {
     if (!formTitle.trim()) { setFormError('제목을 입력하세요.'); return }
@@ -85,8 +125,8 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
     try {
       const method = editTarget ? 'PATCH' : 'POST'
       const body   = editTarget
-        ? { id: editTarget.id, title: formTitle, content: formContent, is_active: formActive }
-        : { title: formTitle, content: formContent }
+        ? { id: editTarget.id, title: formTitle, content: formContent, is_active: formActive, attachments: formAttachments }
+        : { title: formTitle, content: formContent, attachments: formAttachments }
       const res = await fetch('/api/notices', {
         method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })
@@ -146,6 +186,29 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
               placeholder="공지 내용을 입력하세요."
             />
           </div>
+          {/* 첨부파일 */}
+          <div className="space-y-2">
+            <Label>첨부파일</Label>
+            {formAttachments.length > 0 && (
+              <div className="space-y-1">
+                {formAttachments.map((att, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[13px] bg-[#F8F9FA] rounded px-3 py-1.5">
+                    <span className="truncate text-[#1E293B] flex-1">📎 {att.name}</span>
+                    <button type="button" onClick={() => removeAttachment(i)}
+                      className="text-red-500 hover:text-red-600 text-xs flex-shrink-0">삭제</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" multiple className="hidden"
+              onChange={handleFilePick} />
+            <Button type="button" variant="outline" size="sm" disabled={formLoading}
+              onClick={() => fileInputRef.current?.click()}>
+              📎 파일 추가
+            </Button>
+            <p className="text-[11px] text-[#94A3B8]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB</p>
+          </div>
+
           {editTarget && (
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={formActive}

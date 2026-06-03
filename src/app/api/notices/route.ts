@@ -3,6 +3,15 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { firePush, sendPushToAll } from '@/lib/push'
 
+// 첨부파일 정규화 — { name, url } 형태만 허용 (최대 10개)
+function sanitizeAttachments(input: unknown): { name: string; url: string }[] {
+  if (!Array.isArray(input)) return []
+  return input
+    .filter(a => a && typeof a.name === 'string' && typeof a.url === 'string')
+    .slice(0, 10)
+    .map(a => ({ name: String(a.name).slice(0, 200), url: String(a.url) }))
+}
+
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET() {
   const session = await getSession()
@@ -39,12 +48,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '권한 없음' }, { status: 403 })
   }
 
-  const { title, content } = await request.json()
+  const { title, content, attachments } = await request.json()
   if (!title?.trim()) return NextResponse.json({ error: '제목을 입력하세요.' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('notices')
-    .insert({ title: title.trim(), content: content?.trim() ?? '', author_id: session.user.id, is_active: true, attachments: [] })
+    .insert({ title: title.trim(), content: content?.trim() ?? '', author_id: session.user.id, is_active: true, attachments: sanitizeAttachments(attachments) })
     .select('id')
     .single()
 
@@ -66,12 +75,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: '권한 없음' }, { status: 403 })
   }
 
-  const { id, title, content, is_active } = await request.json()
+  const { id, title, content, is_active, attachments } = await request.json()
   if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+
+  const patch: Record<string, unknown> = { title: title?.trim(), content: content?.trim(), is_active }
+  if (attachments !== undefined) patch.attachments = sanitizeAttachments(attachments)
 
   const { error } = await supabase
     .from('notices')
-    .update({ title: title?.trim(), content: content?.trim(), is_active })
+    .update(patch)
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
