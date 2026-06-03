@@ -21,11 +21,16 @@ export default function SidebarShell({
   const pathname = usePathname()
 
   useEffect(() => {
-    if (localStorage.getItem('sidebar-collapsed') === 'true') setCollapsed(true)
+    // 모바일은 기본 닫힘(드로어), 데스크톱은 저장값 따름
+    if (window.innerWidth < 768) setCollapsed(true)
+    else if (localStorage.getItem('sidebar-collapsed') === 'true') setCollapsed(true)
   }, [])
 
-  // 페이지 이동(경로 변경)마다 시범운영 안내를 다시 표시
-  useEffect(() => { setTrialOpen(true) }, [pathname])
+  // 페이지 이동마다: 시범운영 안내 재표시 + 모바일에선 드로어 닫기
+  useEffect(() => {
+    setTrialOpen(true)
+    if (typeof window !== 'undefined' && window.innerWidth < 768) setCollapsed(true)
+  }, [pathname])
 
   const dismissTrial = () => setTrialOpen(false)
 
@@ -41,11 +46,16 @@ export default function SidebarShell({
       <IdleLogout />
       <TopBar user={user} collapsed={collapsed} onToggle={toggle} />
       <Sidebar user={user} collapsed={collapsed} />
+      {/* 모바일 드로어 backdrop — 사이드바 열렸을 때 뒤 어둡게(탭하면 닫힘) */}
+      {!collapsed && (
+        <div className="fixed left-0 right-0 bottom-0 top-[58px] z-30 bg-black/40 md:hidden"
+          onClick={toggle} aria-hidden="true" />
+      )}
       {/* 시범운영 안내 띠 — 탑바 바로 아래, 콘텐츠 영역에 맞춤 (닫기 시 사라짐) */}
       {trialOpen && (
         <div
           className={`fixed top-[58px] right-0 z-30 h-[24px] flex items-center justify-center gap-1.5 bg-[#FEF3F6] border-b border-[#f3c6d1] transition-all duration-200 ${
-            collapsed ? 'left-0' : 'left-[240px]'
+            collapsed ? 'left-0' : 'left-0 md:left-[240px]'
           }`}
         >
           <span className="text-[11px] font-bold tracking-wide text-[#b32646]">시범운영 중</span>
@@ -60,9 +70,9 @@ export default function SidebarShell({
         </div>
       )}
       <main
-        className={`min-h-[calc(100vh-58px)] p-6 transition-all duration-200 ${
+        className={`min-h-[calc(100vh-58px)] p-3 md:p-6 transition-all duration-200 ${
           trialOpen ? 'mt-[82px]' : 'mt-[58px]'
-        } ${collapsed ? 'ml-0' : 'ml-[240px]'}`}
+        } ${collapsed ? 'ml-0' : 'ml-0 md:ml-[240px]'}`}
       >
         <PageTransition>{children}</PageTransition>
       </main>

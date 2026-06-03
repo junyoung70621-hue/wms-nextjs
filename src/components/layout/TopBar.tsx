@@ -127,7 +127,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
       {/* 로고 + 토글 */}
       <div
         className={`flex-shrink-0 flex items-center gap-2 px-3 border-r border-[rgba(0,0,0,0.08)] transition-all duration-200 ${
-          collapsed ? 'w-[48px]' : 'w-[240px]'
+          collapsed ? 'w-[48px]' : 'w-[48px] md:w-[240px]'
         }`}
       >
         <button
@@ -142,7 +142,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           </svg>
         </button>
         <span
-          className={`flex items-baseline gap-1 whitespace-nowrap overflow-hidden transition-all duration-200 ${
+          className={`hidden md:flex items-baseline gap-1 whitespace-nowrap overflow-hidden transition-all duration-200 ${
             collapsed ? 'w-0 opacity-0' : 'opacity-100'
           }`}
         >
@@ -177,7 +177,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
         </button>
 
         {/* 처리대기 */}
-        <div className="flex items-center gap-3 px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
+        <div className="hidden lg:flex items-center gap-3 px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
           <span className="text-[11px] text-[#64748B] whitespace-nowrap flex-shrink-0">처리대기</span>
           <div className="flex items-center gap-2">
             <button onClick={() => router.push('/warehouse?tab=transfers')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
@@ -204,7 +204,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
         </div>
 
         {/* 세션 잔여시간 (pill) — 활동 상태별 색상 */}
-        <div className="flex items-center px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
+        <div className="hidden sm:flex items-center px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${ACTIVITY_STYLE[activity].pill}`}>
             <span className={`text-[9px] font-bold tracking-[0.1em] ${ACTIVITY_STYLE[activity].text}`}>
               {ACTIVITY_LABEL[activity]}
@@ -216,7 +216,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
         </div>
 
         {/* 유저 정보 */}
-        <div className="flex items-center gap-[6px] px-3 border-r border-[rgba(0,0,0,0.08)] text-[12px] h-full">
+        <div className="hidden md:flex items-center gap-[6px] px-3 border-r border-[rgba(0,0,0,0.08)] text-[12px] h-full">
           <span className="font-semibold text-[#1E293B] whitespace-nowrap">{center}</span>
           <span className="text-[#CBD5E1]">·</span>
           <span className="font-semibold text-[#1E293B] whitespace-nowrap">{user.name}</span>
@@ -230,11 +230,11 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
         <div className="flex items-center gap-1.5 pl-3">
           <button onClick={() => router.push('/mypage')} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="마이페이지">
             <Settings size={16} strokeWidth={1.9} />
-            <span className="text-[12px] font-medium whitespace-nowrap">마이페이지</span>
+            <span className="hidden sm:inline text-[12px] font-medium whitespace-nowrap">마이페이지</span>
           </button>
           <button onClick={handleLogout} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#b32646] text-white hover:bg-[#9a1f3c] transition-colors" aria-label="로그아웃">
             <LogOut size={16} strokeWidth={1.9} />
-            <span className="text-[12px] font-semibold whitespace-nowrap">Logout</span>
+            <span className="hidden sm:inline text-[12px] font-semibold whitespace-nowrap">Logout</span>
           </button>
         </div>
       </div>

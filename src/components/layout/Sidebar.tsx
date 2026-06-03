@@ -118,8 +118,8 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
 
   return (
     <aside
-      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] bg-white flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-all duration-200 ${
-        collapsed ? 'w-0 border-transparent' : 'w-[240px] border-r border-[#e2e8f0]'
+      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] w-[240px] bg-white border-r border-[#e2e8f0] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-transform duration-200 ${
+        collapsed ? '-translate-x-full' : 'translate-x-0'
       }`}
     >
       {/* 섹션별 메뉴 */}
