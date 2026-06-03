@@ -722,7 +722,7 @@ function InventoryTab({ user, center, onCenterChange }: {
         <div className="flex items-center justify-center h-48 text-gray-400 border rounded">📭 해당 조건의 재고가 없습니다.</div>
       ) : (
         <div className="rounded-md overflow-auto max-h-[520px] border border-[#e2e8f0]">
-          <table className="w-full text-[12px] border-collapse">
+          <table className="w-full text-[12px] border-collapse min-w-[720px]">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>
                 {canSelect && (
