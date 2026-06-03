@@ -82,6 +82,129 @@ function DeviceChips({ items }: { items: { device_type: string }[] }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // 메인
 // ══════════════════════════════════════════════════════════════════════════════
+// ── 탭: 월간 현황 ─────────────────────────────────────────────────────────────
+function MonthlyTab() {
+  const [ym, setYm] = useState(kstToday().slice(0, 7)) // 'YYYY-MM'
+  const [rows, setRows] = useState<TaxiMovement[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [y, mo] = ym.split('-').map(Number)
+    const lastDay = new Date(y, mo, 0).getDate()
+    setRows(await fetchMovements({ from: `${ym}-01`, to: `${ym}-${String(lastDay).padStart(2, '0')}`, limit: '10000' }))
+    setLoading(false)
+  }, [ym])
+  useEffect(() => { load() }, [load])
+
+  const out = useMemo(() => rows.filter(r => r.direction === 'out'), [rows])
+  const inn = useMemo(() => rows.filter(r => r.direction === 'in'), [rows])
+  const terminated = useMemo(() => inn.filter(r => r.is_terminated).length, [inn])
+
+  const devicePivot = useMemo(() => {
+    const map = new Map<string, { out: number; in: number }>()
+    for (const r of rows) {
+      const d = r.device_type || '미분류'
+      const e = map.get(d) ?? { out: 0, in: 0 }
+      if (r.direction === 'out') e.out++; else e.in++
+      map.set(d, e)
+    }
+    const ordered = [...TAXI_DEVICE_ORDER.filter(d => map.has(d)), ...[...map.keys()].filter(d => !TAXI_DEVICE_ORDER.includes(d))]
+    return ordered.map(d => ({ device: d, ...map.get(d)! }))
+  }, [rows])
+
+  const dailyPivot = useMemo(() => {
+    const map = new Map<string, { out: number; in: number }>()
+    for (const r of rows) {
+      const e = map.get(r.upload_date) ?? { out: 0, in: 0 }
+      if (r.direction === 'out') e.out++; else e.in++
+      map.set(r.upload_date, e)
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, v]) => ({ date, ...v }))
+  }, [rows])
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap items-center gap-2">
+        <input type="month" value={ym} onChange={e => setYm(e.target.value)}
+          className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+        <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
+        <span className="text-[11px] text-[#94A3B8] ml-auto">{ym} · 총 {rows.length}건</span>
+      </div>
+
+      {loading ? (
+        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <MetricCard icon={Truck} label="📤 출고 합계" value={out.length} color="#16a34a" />
+            <MetricCard icon={PackageX} label="📥 입고 합계" value={inn.length}
+              sub={terminated ? `해지 ${terminated}` : undefined} color="#B32646" />
+            <MetricCard icon={PackageCheck} label="순증감 (출−입)" value={out.length - inn.length} color="#1565c0" />
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+              <div className="text-[13px] font-bold text-[#1E293B] mb-2">기종별 출·입고</div>
+              <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+                <table className="w-full text-[11px]">
+                  <thead className="bg-[#F8F9FA] text-[#64748B]"><tr>
+                    <th className="px-2 py-1.5 text-left font-semibold">기종</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">출고</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">입고</th>
+                  </tr></thead>
+                  <tbody>
+                    {devicePivot.length === 0 ? (
+                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                    ) : (<>
+                      {devicePivot.map(r => (
+                        <tr key={r.device} className="border-t border-[#F1F5F9]">
+                          <td className="px-2 py-1.5 text-[#1E293B]">{r.device}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{r.out || ''}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{r.in || ''}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t border-[#E2E8F0] bg-[#F8F9FA] font-bold">
+                        <td className="px-2 py-1.5">합계</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{out.length}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{inn.length}</td>
+                      </tr>
+                    </>)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+              <div className="text-[13px] font-bold text-[#1E293B] mb-2">일자별 출·입고</div>
+              <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-80">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
+                    <th className="px-2 py-1.5 text-left font-semibold">날짜</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">출고</th>
+                    <th className="px-2 py-1.5 text-right font-semibold">입고</th>
+                  </tr></thead>
+                  <tbody>
+                    {dailyPivot.length === 0 ? (
+                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                    ) : dailyPivot.map(r => (
+                      <tr key={r.date} className="border-t border-[#F1F5F9]">
+                        <td className="px-2 py-1.5 text-[#475569]">{r.date}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{r.out || ''}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{r.in || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function TaxiTerminalContent({ user }: { user: SessionUser }) {
   const center = user.assigned_center ?? user.center
   const perms: Perms = useMemo(() => {
@@ -95,11 +218,13 @@ export default function TaxiTerminalContent({ user }: { user: SessionUser }) {
       <Tabs defaultValue="status">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="status" className="text-[12px]">📊 현황</TabsTrigger>
+          <TabsTrigger value="monthly" className="text-[12px]">📅 월간 현황</TabsTrigger>
           <TabsTrigger value="history" className="text-[12px]">📋 이력 조회</TabsTrigger>
           <TabsTrigger value="delivery" className="text-[12px]">🚚 배송 이력</TabsTrigger>
         </TabsList>
 
         <TabsContent value="status" className="mt-4"><StatusTab perms={perms} /></TabsContent>
+        <TabsContent value="monthly" className="mt-4"><MonthlyTab /></TabsContent>
         <TabsContent value="history" className="mt-4"><HistoryTab perms={perms} /></TabsContent>
         <TabsContent value="delivery" className="mt-4"><DeliveryTab perms={perms} /></TabsContent>
       </Tabs>
@@ -131,14 +256,14 @@ function MetricCard({ icon: Icon, label, value, sub, color }: {
 
 // ── 표 정렬 (재사용) ─────────────────────────────────────────────────────────
 type SortDir = 'asc' | 'desc'
-function useSort<T extends Record<string, unknown>>(items: T[]) {
+function useSort<T extends object>(items: T[]) {
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const sorted = useMemo(() => {
     if (!sortKey) return items
     const k = sortKey
     return [...items].sort((a, b) => {
-      const va = a[k], vb = b[k]
+      const va = (a as Record<string, unknown>)[k], vb = (b as Record<string, unknown>)[k]
       let c: number
       if (typeof va === 'boolean' || typeof vb === 'boolean') c = (va ? 1 : 0) - (vb ? 1 : 0)
       else if (typeof va === 'number' && typeof vb === 'number') c = va - vb
@@ -889,6 +1014,7 @@ function HistoryTab({ perms }: { perms: Perms }) {
     const q = search.toLowerCase()
     return rows.filter(r => [r.trcn_id, r.device_type, r.driver_name ?? '', r.file_name ?? ''].some(v => String(v).toLowerCase().includes(q)))
   }, [rows, search])
+  const { sorted, sortKey, sortDir, toggle } = useSort(filtered)
 
   async function delOne(id: string) {
     if (!confirm('이 레코드를 삭제할까요?')) return
@@ -924,19 +1050,19 @@ function HistoryTab({ perms }: { perms: Perms }) {
           <div className="overflow-x-auto rounded border border-[#E2E8F0]">
             <table className="w-full text-[11px]">
               <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
-                <th className="px-2 py-1.5 text-left font-semibold">날짜</th>
-                <th className="px-2 py-1.5 text-left font-semibold">방향</th>
-                <th className="px-2 py-1.5 text-left font-semibold">기종</th>
-                <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
-                <th className="px-2 py-1.5 text-left font-semibold">담당기사</th>
-                <th className="px-2 py-1.5 text-center font-semibold">해지</th>
-                <th className="px-2 py-1.5 text-center font-semibold">수리완료</th>
+                <SortTh label="날짜" field="upload_date" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="방향" field="direction" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="담당기사" field="driver_name" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                <SortTh label="해지" field="is_terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle} className="px-2 py-1.5 text-center font-semibold" />
+                <SortTh label="수리완료" field="is_repair_done" sortKey={sortKey} sortDir={sortDir} onSort={toggle} className="px-2 py-1.5 text-center font-semibold" />
                 {perms.canWrite && <th className="px-2 py-1.5 text-center font-semibold">관리</th>}
               </tr></thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={perms.canWrite ? 8 : 7} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
-                ) : filtered.slice(0, 1500).map(r => (
+                ) : sorted.slice(0, 1500).map(r => (
                   <tr key={r.id} className="border-t border-[#F1F5F9]">
                     <td className="px-2 py-1.5 text-[#475569]">{r.upload_date}</td>
                     <td className={`px-2 py-1.5 ${r.direction === 'out' ? 'text-[#16a34a]' : 'text-[#B32646]'}`}>{r.direction === 'out' ? '출고' : '입고'}</td>
