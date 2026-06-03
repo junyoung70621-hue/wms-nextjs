@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { classifyTerminal, normalizeTrcnId, TERMINAL_TABLE } from '@/lib/terminal'
+import { TRACKING_CENTERS } from '@/lib/busTracking'
 
 const ASSIGN = 'bus_terminal_assignments'
 const HIST = 'bus_terminal_history'
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from(TERMINAL_TABLE).insert(rows)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 입고 시 단말기 배정 자동 반납 (center_defective → returned)
+  // 입고 시 단말기 배정 자동 반납 (center_defective/미배정 → returned)
   let autoReturned = 0
   if (direction === 'in') {
     try {
@@ -132,12 +133,53 @@ export async function POST(request: Request) {
     } catch { /* 자동반납 실패는 업로드를 막지 않음 */ }
   }
 
+  // 출고 시 도착 센터(추적대상)의 보유현황에 '미배정(센터보관)'으로 자동 추가
+  let stocked = 0
+  if (direction === 'out' && TRACKING_CENTERS.includes(toCenter)) {
+    try {
+      stocked = await stockToCenter(toInsert, toCenter, u, now)
+    } catch { /* 보유 추가 실패는 업로드를 막지 않음 */ }
+  }
+
   return NextResponse.json({
     inserted: rows.length,
     unclassified,
     dups: dupSet.size,
     autoReturned,
+    stocked,
   })
+}
+
+// 출고 도착 센터의 bus_terminal_assignments 에 '미배정' 레코드 생성 (이미 있는 IH는 제외)
+async function stockToCenter(
+  items: { id: string; device: string; sub: string }[],
+  center: string,
+  u: { id: string },
+  now: string,
+): Promise<number> {
+  const ihs = items.map(r => r.id)
+  const existing = new Set<string>()
+  for (let i = 0; i < ihs.length; i += 200) {
+    const chunk = ihs.slice(i, i + 200)
+    const { data } = await supabase.from(ASSIGN)
+      .select('ih_code').eq('center', center).in('ih_code', chunk)
+    for (const r of data ?? []) existing.add(r.ih_code)
+  }
+  const fresh = items.filter(r => !existing.has(r.id))
+  if (!fresh.length) return 0
+
+  await supabase.from(ASSIGN).insert(fresh.map(r => ({
+    ih_code: r.id,
+    device_type: r.device,
+    sub_type: r.sub,
+    center,
+    employee_id: null,
+    employee_name: '(미배정)',
+    assigned_at: now,
+    assigned_by: u.id,
+    status: 'unassigned',
+  })))
+  return fresh.length
 }
 
 async function autoReturnAssignments(
@@ -146,15 +188,15 @@ async function autoReturnAssignments(
   u: { id: string; name: string },
   now: string,
 ): Promise<number> {
-  const matched: { id: string; ih_code: string; device_type: string | null; sub_type: string | null; employee_name: string | null }[] = []
+  const matched: { id: string; ih_code: string; device_type: string | null; sub_type: string | null; employee_name: string | null; status: string }[] = []
   for (let i = 0; i < ihCodes.length; i += 200) {
     const chunk = ihCodes.slice(i, i + 200)
     const { data } = await supabase
       .from(ASSIGN)
-      .select('id, ih_code, device_type, sub_type, employee_name')
+      .select('id, ih_code, device_type, sub_type, employee_name, status')
       .in('ih_code', chunk)
       .eq('center', fromCenter)
-      .eq('status', 'center_defective')
+      .in('status', ['center_defective', 'unassigned'])
     if (data) matched.push(...data)
   }
   if (!matched.length) return 0
@@ -170,7 +212,7 @@ async function autoReturnAssignments(
     device_type: m.device_type,
     sub_type: m.sub_type,
     from_employee: m.employee_name,
-    from_status: 'center_defective',
+    from_status: m.status,
     to_status: 'returned',
     acted_by: u.id,
     acted_by_name: u.name,
