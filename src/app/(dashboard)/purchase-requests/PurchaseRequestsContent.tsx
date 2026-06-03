@@ -283,6 +283,63 @@ function MyCard({
   )
 }
 
+// ── 네이버 쇼핑 검색 모달 ─────────────────────────────────────────────────────
+type NaverItem = { title: string; link: string; image: string; lprice: string; mallName: string }
+function NaverSearchModal({ onSelect, onClose }: { onSelect: (title: string, link: string) => void; onClose: () => void }) {
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<NaverItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const search = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!q.trim()) return
+    setLoading(true); setMsg('')
+    try {
+      const res = await fetch(`/api/naver-search?query=${encodeURIComponent(q.trim())}`)
+      const d = await res.json()
+      if (!res.ok) { setMsg(d.error || '검색 실패'); setResults([]); return }
+      setResults(d.items ?? [])
+      if (!(d.items?.length)) setMsg('검색 결과가 없습니다.')
+    } catch { setMsg('검색 실패') } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <span className="text-[14px] font-bold text-[#1E293B]">🔍 네이버 쇼핑 검색</span>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-xl leading-none">×</button>
+        </div>
+        <form onSubmit={search} className="p-3 flex gap-2 border-b">
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="상품명 검색 (예: 전동드릴)"
+            className="flex-1 border rounded px-3 py-1.5 text-[13px] focus:outline-none focus:border-[#03C75A]" />
+          <Button type="submit" disabled={loading} className="bg-[#03C75A] hover:bg-[#02b350] text-white text-[12px] h-9 px-4">
+            {loading ? '검색…' : '검색'}
+          </Button>
+        </form>
+        <div className="overflow-y-auto flex-1 p-2 min-h-[120px]">
+          {msg && <p className="text-[12px] text-[#94A3B8] text-center py-6">{msg}</p>}
+          {results.map((r, i) => (
+            <button key={i} type="button" onClick={() => { onSelect(r.title, r.link); onClose() }}
+              className="w-full flex items-center gap-3 p-2 hover:bg-[#F1F5F9] rounded text-left">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {r.image && <img src={r.image} alt="" className="w-12 h-12 object-cover rounded border border-[#E2E8F0] flex-shrink-0" />}
+              <div className="min-w-0 flex-1">
+                <div className="text-[12px] text-[#1E293B] line-clamp-2">{r.title}</div>
+                <div className="text-[11px] text-[#64748B] mt-0.5">
+                  {r.lprice ? `${Number(r.lprice).toLocaleString()}원` : ''}{r.mallName ? ` · ${r.mallName}` : ''}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="px-4 py-2 border-t text-[10px] text-[#94A3B8]">상품을 누르면 품명·링크가 자동 입력됩니다.</div>
+      </div>
+    </div>
+  )
+}
+
 // ── 새 요청 작성 폼 ──────────────────────────────────────────────────────────
 function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted: () => void }) {
   const [items, setItems]       = useState<PurchaseItem[]>([{ 품명: '', 수량: 1, 링크: '' }])
@@ -292,6 +349,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]       = useState('')
   const [success, setSuccess]   = useState(false)
+  const [searchRow, setSearchRow] = useState<number | null>(null)
   const lastSubmitRef = useRef<number>(0)
 
   const addRow = () => setItems(prev => [...prev, { 품명: '', 수량: 1, 링크: '' }])
@@ -382,9 +440,13 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="px-2 py-1 text-[#94A3B8] text-center">{i + 1}</td>
                   <td className="px-2 py-1">
-                    <input value={it.품명} onChange={e => updateItem(i, '품명', e.target.value)}
-                      placeholder="품명 입력"
-                      className="w-full border-0 bg-transparent text-[12px] focus:outline-none focus:bg-blue-50 rounded px-1 py-0.5" />
+                    <div className="flex items-center gap-1">
+                      <input value={it.품명} onChange={e => updateItem(i, '품명', e.target.value)}
+                        placeholder="품명 입력"
+                        className="flex-1 min-w-0 border-0 bg-transparent text-[12px] focus:outline-none focus:bg-blue-50 rounded px-1 py-0.5" />
+                      <button type="button" onClick={() => setSearchRow(i)} title="네이버 검색으로 자동입력"
+                        className="flex-shrink-0 text-[13px] px-1 rounded hover:bg-[#e8f7ee]">🔍</button>
+                    </div>
                   </td>
                   <td className="px-2 py-1">
                     <input type="number" min={1} value={it.수량}
@@ -441,6 +503,16 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
         className="bg-[#B32646] hover:bg-[#B0003D] text-white w-full">
         {submitting ? '제출 중...' : '📨 요청 제출'}
       </Button>
+
+      {searchRow !== null && (
+        <NaverSearchModal
+          onSelect={(title, link) => {
+            updateItem(searchRow, '품명', title)
+            updateItem(searchRow, '링크', link)
+          }}
+          onClose={() => setSearchRow(null)}
+        />
+      )}
     </div>
   )
 }
