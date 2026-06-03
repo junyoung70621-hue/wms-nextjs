@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { firePush, sendPushToUsers } from '@/lib/push'
 
 // ── GET: 이동 신청 목록 ───────────────────────────────────────────────────
 export async function GET(request: Request) {
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
 
   // 현재 재고 확인
   const { data: item } = await supabase
-    .from('warehouse').select('quantity').eq('id', item_id).single()
+    .from('warehouse').select('quantity, item_name').eq('id', item_id).single()
   if (!item) return NextResponse.json({ error: '자재를 찾을 수 없습니다.' }, { status: 404 })
   if (item.quantity < quantity) {
     return NextResponse.json({ error: `재고 부족 (현재: ${item.quantity}개)` }, { status: 400 })
@@ -82,5 +83,21 @@ export async function POST(request: Request) {
     status: 'pending',
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 승인 권한자(관리자 + 도착센터 센터장)에게 푸시
+  firePush((async () => {
+    const { data: appr } = await supabase.from('users')
+      .select('id, role, center, assigned_center').eq('is_approved', true)
+    const ids = (appr ?? [])
+      .filter((x: { role: string; center: string; assigned_center: string | null }) =>
+        x.role === 'admin' || (x.role === 'manager' && (x.assigned_center ?? x.center) === to_center))
+      .map((x: { id: string }) => x.id)
+    await sendPushToUsers(ids, {
+      title: '새 이동신청',
+      body: `${u.name}: ${item.item_name} ${quantity}개 (${from_center}→${to_center})`,
+      url: '/warehouse?tab=transfers',
+      tag: 'transfer-request',
+    })
+  })())
   return NextResponse.json({ ok: true })
 }

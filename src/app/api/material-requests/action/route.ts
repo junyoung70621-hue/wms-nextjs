@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { sendMail, emailLayout, infoTable, noteBanner, MAIL_COLOR, type Cell } from '@/lib/email'
+import { firePush, sendPushToUsers } from '@/lib/push'
+
+const ACTION_LABEL: Record<string, string> = { approved: '승인', rejected: '거절', on_hold: '보류' }
 
 // ── 승인/거절/보류 처리 (admin/materials) ────────────────────────────────
 export async function POST(request: Request) {
@@ -106,6 +109,15 @@ export async function POST(request: Request) {
         .from('material_requests')
         .select('requester_id, requester_name, from_center, items')
         .eq('id', id).single()
+
+      if (req?.requester_id) {
+        firePush(sendPushToUsers([req.requester_id], {
+          title: `자재요청 ${ACTION_LABEL[action] ?? action}`,
+          body: `${req.from_center} 자재요청이 ${ACTION_LABEL[action] ?? action} 처리되었습니다.`,
+          url: '/material-requests',
+          tag: `material-request-${id}`,
+        }))
+      }
 
       if (req?.requester_id) {
         const { data: reqUser } = await supabase

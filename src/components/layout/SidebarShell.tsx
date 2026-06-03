@@ -8,6 +8,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import PageTransition from './PageTransition'
 import IdleLogout from './IdleLogout'
+import PushPrompt from '../PushPrompt'
 
 export default function SidebarShell({
   user,
@@ -74,6 +75,7 @@ export default function SidebarShell({
           trialOpen ? 'mt-[82px]' : 'mt-[58px]'
         } ${collapsed ? 'ml-0' : 'ml-0 md:ml-[240px]'}`}
       >
+        <PushPrompt />
         <PageTransition>{children}</PageTransition>
       </main>
     </>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { sendMail, emailLayout, infoTable, type Cell } from '@/lib/email'
+import { firePush, sendPushToRoles } from '@/lib/push'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
@@ -52,6 +53,13 @@ export async function POST(request: Request) {
 
   const { error } = await supabase.from('purchase_requests').insert(payload)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  firePush(sendPushToRoles(['admin', 'materials'], {
+    title: '새 구매요청',
+    body: `${session.user.name}(${session.user.assigned_center ?? session.user.center}) · 품목 ${items.length}건`,
+    url: '/purchase-requests?tab=pending',
+    tag: 'purchase-request',
+  }))
 
   // 관리자·자재파트 알림 메일
   try {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { sendMail, emailLayout, infoTable, noteBanner, MAIL_COLOR, type Cell } from '@/lib/email'
+import { firePush, sendPushToUsers } from '@/lib/push'
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   in_progress: { label: '처리중', color: MAIL_COLOR.pending },
@@ -46,6 +47,16 @@ export async function PATCH(request: Request) {
         .select('requester_id, requester_name, requester_center, items, reason')
         .eq('id', id)
         .single()
+
+      if (req?.requester_id) {
+        const stm = STATUS_META[status]
+        firePush(sendPushToUsers([req.requester_id], {
+          title: `구매요청 ${stm?.label ?? status}`,
+          body: `구매 요청이 ${stm?.label ?? status} 처리되었습니다.`,
+          url: '/purchase-requests',
+          tag: `purchase-request-${id}`,
+        }))
+      }
 
       if (req?.requester_id) {
         const { data: reqUser } = await supabase

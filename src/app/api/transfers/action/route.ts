@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { firePush, sendPushToUsers } from '@/lib/push'
 
 // PATCH: 이동 신청 승인 / 거절 / 취소
 export async function PATCH(request: Request) {
@@ -57,6 +58,11 @@ export async function PATCH(request: Request) {
       approver_id: u.id,
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    firePush(sendPushToUsers([tr.requester_id], {
+      title: '이동신청 거절',
+      body: `${tr.from_center}→${tr.to_center} ${tr.quantity}개 이동신청이 거절되었습니다.`,
+      url: '/warehouse?tab=transfers', tag: `transfer-${id}`,
+    }))
     return NextResponse.json({ ok: true })
   }
 
@@ -134,5 +140,11 @@ export async function PATCH(request: Request) {
   }).eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  firePush(sendPushToUsers([tr.requester_id], {
+    title: '이동신청 승인',
+    body: `${tr.from_center}→${tr.to_center} ${tr.quantity}개 이동이 승인되었습니다.`,
+    url: '/warehouse?tab=transfers', tag: `transfer-${id}`,
+  }))
   return NextResponse.json({ ok: true })
 }

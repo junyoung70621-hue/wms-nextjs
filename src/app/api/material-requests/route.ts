@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { firePush, sendPushToRoles } from '@/lib/push'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
@@ -51,6 +52,13 @@ export async function POST(request: Request) {
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  firePush(sendPushToRoles(['admin', 'materials'], {
+    title: '새 자재요청',
+    body: `${u.name}(${fromCenter}) · 자재 ${items.length}건 요청`,
+    url: '/material-requests?tab=pending',
+    tag: 'material-request',
+  }))
   return NextResponse.json({ ok: true })
 }
 

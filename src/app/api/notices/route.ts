@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { firePush, sendPushToAll } from '@/lib/push'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET() {
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  firePush(sendPushToAll({
+    title: '새 공지사항',
+    body: title.trim(),
+    url: '/notices',
+    tag: 'notice',
+  }))
   return NextResponse.json({ ok: true, id: data.id })
 }
 

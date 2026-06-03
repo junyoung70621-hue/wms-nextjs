@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { classifyTerminal, normalizeTrcnId, TERMINAL_TABLE } from '@/lib/terminal'
 import { TRACKING_CENTERS } from '@/lib/busTracking'
+import { firePush, sendPushToCenters } from '@/lib/push'
 
 const ASSIGN = 'bus_terminal_assignments'
 const HIST = 'bus_terminal_history'
@@ -133,12 +134,21 @@ export async function POST(request: Request) {
     } catch { /* 자동반납 실패는 업로드를 막지 않음 */ }
   }
 
-  // 출고 시 도착 센터(추적대상)의 보유현황에 '미배정(센터보관)'으로 자동 추가
+  // 출고 시 도착 센터(추적대상)의 보유현황에 '미배정(센터보관)'으로 자동 추가 + 센터 인원에게 푸시
   let stocked = 0
   if (direction === 'out' && TRACKING_CENTERS.includes(toCenter)) {
     try {
       stocked = await stockToCenter(toInsert, toCenter, u, now)
     } catch { /* 보유 추가 실패는 업로드를 막지 않음 */ }
+    const byDev: Record<string, number> = {}
+    for (const r of toInsert) byDev[r.device] = (byDev[r.device] ?? 0) + 1
+    const brk = Object.entries(byDev).map(([d, c]) => `${d} ${c}대`).join(' · ')
+    firePush(sendPushToCenters([toCenter], {
+      title: `${toCenter} 단말기 출고`,
+      body: `버스단말기 ${toInsert.length}대가 ${toCenter}로 출고되었습니다.${brk ? `\n${brk}` : ''}`,
+      url: '/bus-tracking',
+      tag: `terminal-out-${toCenter}`,
+    }))
   }
 
   return NextResponse.json({
