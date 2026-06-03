@@ -648,8 +648,9 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
   return (
     <div className="space-y-4 max-w-3xl">
       <Tabs key={activeTab} defaultValue={activeTab}>
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-          <TabsList className="flex-wrap h-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+          <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
+          <TabsList className="h-auto w-max flex-nowrap">
             {canRequest && (
               <TabsTrigger value="new" className="text-[12px]">➕ 새 요청</TabsTrigger>
             )}
@@ -667,13 +668,14 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
               <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
             ))}
           </TabsList>
-          <div className="flex items-center gap-2 ml-auto">
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
             {isManager && (
               <Input
                 placeholder="이름 / 센터 / 자재명 검색"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-8 text-[12px] w-44"
+                className="h-8 text-[12px] w-full sm:w-44"
               />
             )}
             <Button variant="outline" onClick={fetchData} disabled={loading} className="text-[12px] h-8">

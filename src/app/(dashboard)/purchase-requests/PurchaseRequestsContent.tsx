@@ -543,18 +543,20 @@ export default function PurchaseRequestsContent({ user, initialTab }: { user: Se
       </div>
 
       <Tabs key={activeTab} defaultValue={activeTab}>
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-          <TabsList className="flex-wrap h-auto gap-1">
-            {tabs.map(t => (
-              <TabsTrigger key={t.key} value={t.key} className="text-[12px]">{t.label}</TabsTrigger>
-            ))}
-          </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+          <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
+            <TabsList className="h-auto gap-1 w-max flex-nowrap">
+              {tabs.map(t => (
+                <TabsTrigger key={t.key} value={t.key} className="text-[12px] whitespace-nowrap">{t.label}</TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
           {isManager && (
             <Input
               placeholder="이름 / 센터 / 사유 / 품명 검색"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-8 text-[12px] w-full sm:w-52 sm:ml-auto"
+              className="h-8 text-[12px] w-full sm:w-52 sm:ml-auto sm:flex-shrink-0"
             />
           )}
         </div>
