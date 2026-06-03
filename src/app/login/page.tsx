@@ -81,7 +81,10 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem('wms_saved_id')
       }
-      router.push('/dashboard')
+      // 알림 클릭 등으로 ?next=가 있으면 그 페이지로, 없으면 대시보드
+      const next = new URLSearchParams(window.location.search).get('next')
+      const dest = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+      router.push(dest)
     } catch {
       setLoginError('네트워크 오류가 발생했습니다.')
     } finally {

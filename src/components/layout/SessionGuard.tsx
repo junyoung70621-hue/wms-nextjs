@@ -10,7 +10,9 @@ export default function SessionGuard() {
     const check = async () => {
       const res = await fetch('/api/auth/me').catch(() => null)
       if (!res || res.status === 401) {
-        router.push('/login')
+        const cur = window.location.pathname + window.location.search
+        const next = cur.startsWith('/login') ? '' : cur
+        router.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')
       }
     }
 
