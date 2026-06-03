@@ -1441,7 +1441,10 @@ function TabInit({ selCenter, userId, canManage }: {
           </div>
           <label className="flex items-center gap-2 text-[12px] text-[#475569]">
             <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#B32646]" />
-            저장 전 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 보유중 데이터 삭제
+            <span>
+              완전초기화 — 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 데이터 <b className="text-[#B32646]">전체 삭제</b> 후 등록
+              <span className="text-[#94A3B8]"> (불량·반납·미배정 포함 / 변경이력은 보존)</span>
+            </span>
           </label>
           <Button onClick={handleSave} disabled={saving}
             className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">

@@ -113,11 +113,9 @@ export async function PATCH(req: Request) {
     if (!records?.length) return NextResponse.json({ error: 'records 필요' }, { status: 400 })
 
     if (clear_centers?.length) {
-      const { data: existing } = await supabase.from(TABLE)
-        .select('id').in('center', clear_centers).eq('status', 'holding')
-      if (existing?.length) {
-        await supabase.from(TABLE).delete().in('id', existing.map((r: { id: string }) => r.id))
-      }
+      // 완전초기화: 대상 센터의 모든 상태(보유/불량/교체완료/반납/미배정) 레코드 삭제.
+      // 변경이력(bus_terminal_history)은 별도 테이블이라 보존됨.
+      await supabase.from(TABLE).delete().in('center', clear_centers)
     }
 
     await supabase.from(TABLE).insert(records)
