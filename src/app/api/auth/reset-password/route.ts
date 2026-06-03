@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
-import nodemailer from 'nodemailer'
+import { sendMail, emailLayout, bigCode, warnText } from '@/lib/email'
 
 function generateTempPassword(length = 10): string {
   const chars =
@@ -45,24 +45,18 @@ export async function POST(request: Request) {
       .update({ password_hash: hashed })
       .eq('id', user.id)
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_ADDRESS,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    })
-
-    await transporter.sendMail({
-      from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-      to: email,
-      subject: '[에이텍모빌리티] 임시 비밀번호 발급',
-      html: `
-        <p>${user.name}님, 임시 비밀번호가 발급되었습니다.</p>
-        <p><b>임시 비밀번호: ${tempPw}</b></p>
-        <p>로그인 후 반드시 비밀번호를 변경해 주세요.</p>
-      `,
-    })
+    await sendMail(
+      email,
+      '[에이텍모빌리티 자재관리] 임시 비밀번호 발급',
+      emailLayout({
+        title: '임시 비밀번호가 발급되었습니다',
+        greetingName: user.name,
+        bodyHtml: `
+          <p>요청하신 임시 비밀번호입니다. 아래 비밀번호로 로그인해 주세요.</p>
+          ${bigCode(tempPw)}
+          ${warnText('보안을 위해 로그인 후 반드시 비밀번호를 변경해 주세요.')}`,
+      }),
+    )
 
     return NextResponse.json({ ok: true })
   } catch {

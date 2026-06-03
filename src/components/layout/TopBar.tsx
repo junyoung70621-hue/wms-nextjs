@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Settings } from 'lucide-react'
+import { Settings, LogOut } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -10,7 +10,24 @@ const ROLE_LABEL: Record<string, string> = {
   manager: '센터장', user: '일반', guest: '게스트',
 }
 
-const SESSION_MS = 8 * 60 * 60 * 1000
+const IDLE_LOGOUT_MS = 30 * 60 * 1000 // 자동 로그아웃 (IdleLogout과 동일)
+const AWAY_MS = 5 * 60 * 1000 // 5분 무활동 → 자리비움
+const DANGER_MS = 5 * 60 * 1000 // 자동 로그아웃 5분 전 → 위험
+const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'] as const
+
+type ActivityState = 'active' | 'away' | 'danger'
+
+const ACTIVITY_STYLE: Record<ActivityState, { pill: string; text: string }> = {
+  active: { pill: 'bg-[#eff4ff] border-[#dce9ff]', text: 'text-[#2563EB]' },
+  away: { pill: 'bg-[#fefce8] border-[#fde68a]', text: 'text-[#CA8A04]' },
+  danger: { pill: 'bg-[#fbe9ee] border-[#f3c6d1]', text: 'text-[#b32646]' },
+}
+
+const ACTIVITY_LABEL: Record<ActivityState, string> = {
+  active: '활동중',
+  away: '자리비움',
+  danger: '곧 종료',
+}
 
 // 경로 → 화면 제목
 const TITLE_MAP: Record<string, string> = {
@@ -20,7 +37,7 @@ const TITLE_MAP: Record<string, string> = {
   '/purchase-requests': '구매 요청',
   '/usage': '사용내역',
   '/history': '입출고 이력',
-  '/rack-map': '위치 지도',
+  '/rack-map': '자재창고 지도',
   '/bus-tracking': '센터 단말현황(버스)',
   '/terminal/bus': '버스단말기 현황',
   '/terminal/taxi': '택시단말기 현황',
@@ -45,11 +62,12 @@ interface TopBarProps {
 }
 
 function formatRemaining(ms: number): string {
-  if (ms <= 0) return '00:00'
+  if (ms <= 0) return '00:00:00'
   const totalSec = Math.floor(ms / 1000)
   const h = Math.floor(totalSec / 3600)
   const m = Math.floor((totalSec % 3600) / 60)
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  const s = totalSec % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 function today(): string {
@@ -63,6 +81,8 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const title = TITLE_MAP[pathname] ?? ''
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, tr_pending: 0, unread_notices: 0 })
   const [remaining, setRemaining] = useState<number | null>(null)
+  const [activity, setActivity] = useState<ActivityState>('active')
+  const lastActivityRef = useRef<number>(Date.now())
 
   // 카운트 갱신
   useEffect(() => {
@@ -72,27 +92,35 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
       .catch(() => {})
   }, [pathname])
 
-  // 세션 잔여시간 초기화
-  const initRemaining = useCallback(() => {
-    fetch('/api/auth/me')
-      .then(r => r.json())
-      .then(d => {
-        if (d.loginAt) setRemaining(d.loginAt + SESSION_MS - Date.now())
-      })
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => { initRemaining() }, [initRemaining])
-
-  // 1분마다 카운트다운
+  // 활동 추적 → 자동 로그아웃까지 남은 시간 + 상태 색상 (활동중/자리비움/위험)
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemaining(prev => (prev !== null ? prev - 60_000 : null))
-    }, 60_000)
-    return () => clearInterval(timer)
+    const onActivity = () => { lastActivityRef.current = Date.now() }
+    ACTIVITY_EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+
+    const tick = () => {
+      const idle = Date.now() - lastActivityRef.current
+      const left = IDLE_LOGOUT_MS - idle
+      setRemaining(left)
+      if (left <= DANGER_MS) setActivity('danger')
+      else if (idle >= AWAY_MS) setActivity('away')
+      else setActivity('active')
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
+
+    return () => {
+      clearInterval(timer)
+      ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, onActivity))
+    }
   }, [])
 
   const center = user.assigned_center ?? user.center
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 h-[58px] bg-[#f8f9ff]/95 backdrop-blur-sm border-b border-[rgba(0,0,0,0.08)] shadow-sm z-50 flex items-stretch">
@@ -159,14 +187,14 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
               </span>
             </button>
             <span className="text-[#CBD5E1]">·</span>
-            <button onClick={() => router.push('/material-requests')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
+            <button onClick={() => router.push('/material-requests?tab=pending')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
               <span className="text-[#64748B]">자재</span>{' '}
               <span className={`font-bold ${counts.mat_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
                 {counts.mat_pending}건
               </span>
             </button>
             <span className="text-[#CBD5E1]">·</span>
-            <button onClick={() => router.push('/purchase-requests')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
+            <button onClick={() => router.push('/purchase-requests?tab=pending')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
               <span className="text-[#64748B]">구매</span>{' '}
               <span className={`font-bold ${counts.pur_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
                 {counts.pur_pending}건
@@ -175,16 +203,14 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           </div>
         </div>
 
-        {/* 세션 잔여시간 (pill) */}
+        {/* 세션 잔여시간 (pill) — 활동 상태별 색상 */}
         <div className="flex items-center px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#eff4ff] border border-[#dce9ff]">
-            <span className="text-[9px] font-bold tracking-[0.1em] text-[#94A3B8]">SESSION</span>
-            <span
-              className={`text-[11px] font-mono font-bold whitespace-nowrap ${
-                remaining !== null && remaining < 30 * 60 * 1000 ? 'text-[#B32646]' : 'text-[#1E293B]'
-              }`}
-            >
-              {remaining !== null ? formatRemaining(remaining) : '--:--'}
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${ACTIVITY_STYLE[activity].pill}`}>
+            <span className={`text-[9px] font-bold tracking-[0.1em] ${ACTIVITY_STYLE[activity].text}`}>
+              {ACTIVITY_LABEL[activity]}
+            </span>
+            <span className={`text-[11px] font-mono font-bold whitespace-nowrap ${ACTIVITY_STYLE[activity].text}`}>
+              {remaining !== null ? formatRemaining(remaining) : '--:--:--'}
             </span>
           </span>
         </div>
@@ -197,20 +223,19 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           <span className="text-[#CBD5E1]">·</span>
           <span className="text-[#64748B] whitespace-nowrap">{ROLE_LABEL[user.role] ?? user.role}</span>
           <span className="text-[#CBD5E1]">·</span>
-          <span className="text-[#94A3B8] whitespace-nowrap font-mono text-[11px]">{today()}</span>
+          <span className="text-[#0F172A] font-semibold whitespace-nowrap font-mono text-[11px]">{today()}</span>
         </div>
 
-        {/* 아이콘 + 아바타 */}
-        <div className="flex items-center gap-1 pl-3">
-          <button className="p-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="알림">
-            <Bell size={16} strokeWidth={1.9} />
-          </button>
-          <button onClick={() => router.push('/mypage')} className="p-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="설정">
+        {/* 아이콘 */}
+        <div className="flex items-center gap-1.5 pl-3">
+          <button onClick={() => router.push('/mypage')} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="마이페이지">
             <Settings size={16} strokeWidth={1.9} />
+            <span className="text-[12px] font-medium whitespace-nowrap">마이페이지</span>
           </button>
-          <div className="w-[28px] h-[28px] ml-1 rounded-full bg-[#b32646] text-white flex items-center justify-center text-[12px] font-bold">
-            {user.name.charAt(0)}
-          </div>
+          <button onClick={handleLogout} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#b32646] text-white hover:bg-[#9a1f3c] transition-colors" aria-label="로그아웃">
+            <LogOut size={16} strokeWidth={1.9} />
+            <span className="text-[12px] font-semibold whitespace-nowrap">Logout</span>
+          </button>
         </div>
       </div>
     </header>

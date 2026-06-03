@@ -191,13 +191,14 @@ export async function DELETE(request: Request) {
   const uploadId: string | undefined = body.upload_id
   if (!id && !uploadId) return NextResponse.json({ error: 'id 또는 upload_id 필요' }, { status: 400 })
 
-  // 권한: admin/자재센터 또는 업로더 본인
+  // 권한: admin/자재센터 전체 / 그 외에는 본인 센터 업로드(in=출발센터, out=도착센터) 또는 업로더 본인
   const col = id ? 'id' : 'upload_id'
   const val = id ?? uploadId!
   const { data: rec } = await supabase.from(TERMINAL_TABLE)
-    .select('uploaded_by').eq(col, val).limit(1).single()
+    .select('uploaded_by, direction, from_center, to_center').eq(col, val).limit(1).single()
   if (!rec) return NextResponse.json({ error: '대상 없음' }, { status: 404 })
-  const owns = rec.uploaded_by === u.id
+  const ownerCenter = rec.direction === 'in' ? rec.from_center : rec.to_center
+  const owns = ownerCenter === p.center || rec.uploaded_by === u.id
   if (!p.isAdmin && !p.isJjae && !owns)
     return NextResponse.json({ error: '삭제 권한 없음' }, { status: 403 })
 

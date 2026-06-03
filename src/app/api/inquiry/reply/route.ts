@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { sendMail, emailLayout, infoTable, textBlock, MAIL_COLOR } from '@/lib/email'
 
 export async function POST(request: Request) {
   const session = await getSession()
@@ -29,20 +30,19 @@ export async function POST(request: Request) {
   // 신청자 답변 알림 메일
   if (inq.requester_email) {
     try {
-      const nodemailer = await import('nodemailer')
-      const t = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-      })
-      await t.sendMail({
-        from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-        to: inq.requester_email,
-        subject: `[문의 답변] ${inq.title}`,
-        html: `<p>${inq.requester_name}님, 문의하신 내용에 답변이 등록됐습니다.</p>
-               <p><b>문의:</b> ${inq.title}</p>
-               <p><b>답변:</b><br>${reply.replace(/\n/g, '<br>')}</p>
-               <p>답변자: ${session.user.name}</p>`,
-      })
+      await sendMail(
+        inq.requester_email,
+        `[에이텍모빌리티 자재관리] 문의 답변 · ${inq.title}`,
+        emailLayout({
+          title: '문의하신 내용에 답변이 등록되었습니다',
+          greetingName: inq.requester_name,
+          bodyHtml: `
+            ${infoTable(['항목', '내용'], [['문의', inq.title]])}
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">답변</p>
+            ${textBlock(reply)}
+            <p style="margin:10px 0 0; font-size:13px; color:${MAIL_COLOR.muted};">답변자 · ${session.user.name}</p>`,
+        }),
+      )
     } catch { /* 무시 */ }
   }
 

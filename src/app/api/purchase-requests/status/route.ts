@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { sendMail, emailLayout, infoTable, noteBanner, MAIL_COLOR, type Cell } from '@/lib/email'
 
-const STATUS_KO: Record<string, string> = {
-  in_progress: '🔄 처리중',
-  completed:   '✅ 완료',
-  rejected:    '❌ 거절',
-  cancelled:   '🚫 취소됨',
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  in_progress: { label: '처리중', color: MAIL_COLOR.pending },
+  completed:   { label: '완료',   color: MAIL_COLOR.success },
+  rejected:    { label: '거절',   color: MAIL_COLOR.danger },
+  cancelled:   { label: '취소됨', color: MAIL_COLOR.muted },
 }
 
 export async function PATCH(request: Request) {
@@ -54,31 +55,28 @@ export async function PATCH(request: Request) {
           .single()
 
         if (reqUser?.email) {
-          const nodemailer = await import('nodemailer')
-          const t = nodemailer.default.createTransport({
-            service: 'gmail',
-            auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-          })
-          const statusLabel = STATUS_KO[status] ?? status
-          const itemRows = (req.items ?? []).map((it: Record<string, unknown>, i: number) =>
-            `<tr><td>${i + 1}</td><td>${it['품명'] ?? ''}</td><td>${it['수량'] ?? ''}</td></tr>`
-          ).join('')
+          const st = STATUS_META[status] ?? { label: status, color: MAIL_COLOR.text }
+          const itemRows: Cell[][] = (req.items ?? []).map((it: Record<string, unknown>, i: number) =>
+            [String(i + 1), String(it['품명'] ?? ''), { text: String(it['수량'] ?? ''), right: true }])
 
-          await t.sendMail({
-            from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-            to: reqUser.email,
-            subject: `[구매요청] ${statusLabel} — ${req.requester_name}님의 요청`,
-            html: `
-              <h3>구매 요청이 <b>${statusLabel}</b> 처리되었습니다.</h3>
-              <p><b>요청자:</b> ${req.requester_name} (${req.requester_center})</p>
-              <p><b>구매사유:</b> ${req.reason ?? '-'}</p>
-              ${replyMessage ? `<p><b>담당자 메시지:</b> ${replyMessage}</p>` : ''}
-              <table border="1" cellpadding="5" style="border-collapse:collapse">
-                <tr><th>No</th><th>품명</th><th>수량</th></tr>
-                ${itemRows}
-              </table>
-            `,
-          })
+          await sendMail(
+            reqUser.email,
+            `[에이텍모빌리티 자재관리] 구매요청 ${st.label} · ${req.requester_name}님`,
+            emailLayout({
+              title: `구매 요청이 ${st.label} 처리되었습니다`,
+              greetingName: req.requester_name,
+              bodyHtml: `
+                <p>요청하신 구매 건이 <b style="color:${st.color};">${st.label}</b> 처리되었습니다.</p>
+                ${infoTable(['항목', '내용'], [
+                  ['요청자', `${req.requester_name} (${req.requester_center})`],
+                  ['처리결과', { text: st.label, color: st.color, bold: true }],
+                  ['구매사유', req.reason ?? '-'],
+                ])}
+                <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
+                ${infoTable(['No', '품명', '수량'], itemRows)}
+                ${replyMessage ? noteBanner(replyMessage) : ''}`,
+            }),
+          )
         }
       }
     } catch { /* 메일 실패 무시 */ }
@@ -102,17 +100,19 @@ export async function PATCH(request: Request) {
         .map(u => u.email)
 
       if (emails.length && req) {
-        const nodemailer = await import('nodemailer')
-        const t = nodemailer.default.createTransport({
-          service: 'gmail',
-          auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-        })
-        await t.sendMail({
-          from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-          to: emails.join(','),
-          subject: `[구매요청 취소] ${req.requester_name} (${req.requester_center})`,
-          html: `<p>${req.requester_name}님이 구매 요청을 취소했습니다.</p><p><b>구매사유:</b> ${req.reason ?? '-'}</p>`,
-        })
+        await sendMail(
+          emails,
+          `[에이텍모빌리티 자재관리] 구매요청 취소 · ${req.requester_name} (${req.requester_center})`,
+          emailLayout({
+            title: '구매 요청이 취소되었습니다',
+            bodyHtml: `
+              <p><b>${req.requester_name}</b>님이 구매 요청을 취소했습니다.</p>
+              ${infoTable(['항목', '내용'], [
+                ['요청자', `${req.requester_name} (${req.requester_center})`],
+                ['구매사유', req.reason ?? '-'],
+              ])}`,
+          }),
+        )
       }
     } catch { /* 메일 실패 무시 */ }
   }

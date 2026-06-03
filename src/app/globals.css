@@ -130,7 +130,9 @@
 }
 
 .page-enter {
-  animation: page-enter 0.2s ease-out both;
+  /* backwards: 진입 슬라이드는 유지하되, 종료 후 transform 을 none 으로 되돌려
+     자식 position:fixed 모달이 페이지가 아닌 viewport 기준으로 뜨게 함 */
+  animation: page-enter 0.2s ease-out backwards;
 }
 
 @layer base {

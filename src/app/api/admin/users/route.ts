@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
+import { sendMail, emailLayout, infoTable, MAIL_COLOR } from '@/lib/email'
 
 async function requireAdmin() {
   const session = await getSession()
@@ -47,8 +48,33 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: '변경할 항목 없음' }, { status: 400 })
   }
 
+  // 승인 전환 감지를 위해 직전 상태 조회
+  const { data: before } = await supabase
+    .from('users').select('name, email, center, assigned_center, is_approved').eq('id', id).single()
+
   const { error } = await supabase.from('users').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 미승인 → 승인 으로 바뀐 경우 신청자에게 승인 안내 메일
+  if (is_approved === true && before && before.is_approved === false && before.email) {
+    try {
+      await sendMail(
+        before.email,
+        '[에이텍모빌리티 자재관리] 회원가입이 승인되었습니다',
+        emailLayout({
+          title: '회원가입이 승인되었습니다',
+          greetingName: before.name,
+          bodyHtml: `
+            <p>회원가입이 <b style="color:${MAIL_COLOR.success};">승인</b>되었습니다. 지금 바로 로그인하여 이용하실 수 있습니다.</p>
+            ${infoTable(['항목', '내용'], [
+              ['이름', { text: `<b>${before.name}</b>` }],
+              ['소속 센터', (assigned_center ?? before.assigned_center) || before.center || '미지정'],
+            ])}`,
+        }),
+      )
+    } catch { /* 메일 실패 무시 */ }
+  }
+
   return NextResponse.json({ ok: true })
 }
 

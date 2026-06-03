@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Upload, Pencil, ChevronDown, ChevronRight, FileDown } from 'lucide-react'
+import { Upload, Pencil, ChevronDown, ChevronRight, FileDown, Plus, Send, X } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 import { CENTERS } from '@/constants/centers'
 import {
@@ -59,6 +59,8 @@ function parseExcelFile(file: File): Promise<{ ids: string[]; detected: boolean 
         if (col < 0) { resolve({ ids: [], detected: false }); return }
         const ids: string[] = []
         for (let k = headerRow + 1; k < aoa.length; k++) {
+          // 헤더가 여러 줄일 때(예: TRCN_ID / 단말기ID) 서브헤더 셀은 건너뜀
+          if (findTrcnIndex([aoa[k][col]]) === 0) continue
           const v = normalizeTrcnId(aoa[k][col])
           if (v) ids.push(v)
         }
@@ -116,7 +118,7 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
   )
 }
 
-function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot | null; date: string; title: string; action?: React.ReactNode }) {
+function CenterCrossTable({ pivot, date, title, action, showTotals = false }: { pivot: CenterPivot | null; date: string; title: string; action?: React.ReactNode; showTotals?: boolean }) {
   const header = (
     <div className="flex items-center justify-between mb-1.5 gap-2">
       <div className="text-[12px] font-bold text-[#1E293B]">{title}</div>
@@ -131,6 +133,8 @@ function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot |
       </div>
     )
   }
+  const colTotals = pivot.centers.map((_, i) => pivot.rows.reduce((s, r) => s + r.cells[i], 0))
+  const grandTotal = pivot.rows.reduce((s, r) => s + r.total, 0)
   return (
     <div>
       {header}
@@ -138,7 +142,7 @@ function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot |
         <table className="border-collapse text-[12px]">
           <thead>
             <tr>
-              <th colSpan={pivot.centers.length + 1}
+              <th colSpan={pivot.centers.length + (showTotals ? 2 : 1)}
                   className="px-3 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">
                 {dateLabel(date)}
               </th>
@@ -148,6 +152,9 @@ function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot |
               {pivot.centers.map(c => (
                 <th key={c} className="px-2 py-1.5 text-center font-semibold border border-[#E2E8F0] bg-[#F8F9FA] text-[#1E293B] min-w-[48px]">{c}</th>
               ))}
+              {showTotals && (
+                <th className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646] min-w-[48px]">합계</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -159,9 +166,23 @@ function CenterCrossTable({ pivot, date, title, action }: { pivot: CenterPivot |
                     {c > 0 ? c : ''}
                   </td>
                 ))}
+                {showTotals && (
+                  <td className="px-2 py-1.5 text-center font-bold border border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">{r.total}</td>
+                )}
               </tr>
             ))}
           </tbody>
+          {showTotals && (
+            <tfoot>
+              <tr>
+                <td className="px-2.5 py-1.5 text-left font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">합계</td>
+                {colTotals.map((t, i) => (
+                  <td key={i} className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">{t > 0 ? t : ''}</td>
+                ))}
+                <td className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#F9CEDB] text-[#B32646]">{grandTotal}</td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
     </div>
@@ -215,6 +236,21 @@ function UploadPanel({
   const classified = useMemo(() => ids.map(id => ({ id, ...classifyTerminal(id) })), [ids])
   const validCount = classified.filter(c => c.device !== '미분류').length
   const invalid = classified.filter(c => c.device === '미분류')
+
+  // 인식된 단말기를 기종(종류/유형)별로 묶어 표시 — 분류가 제대로 되는지 확인용
+  const deviceGroups = useMemo(() => {
+    const m = new Map<string, { device: string; sub: string; count: number }>()
+    for (const c of classified) {
+      if (c.device === '미분류') continue
+      const key = `${c.device}|${c.sub}`
+      const g = m.get(key)
+      if (g) g.count++
+      else m.set(key, { device: c.device, sub: c.sub, count: 1 })
+    }
+    return [...m.values()].sort((a, b) =>
+      (DEVICE_ORDER.indexOf(a.device) - DEVICE_ORDER.indexOf(b.device)) ||
+      (SUB_ORDER.indexOf(a.sub) - SUB_ORDER.indexOf(b.sub)))
+  }, [classified])
 
   const fromCenter = direction === 'out' ? HUB : center
   const toCenter = direction === 'out' ? center : HUB
@@ -283,7 +319,7 @@ function UploadPanel({
         <div>
           <label className="text-[11px] text-[#64748B] block mb-0.5">{direction === 'out' ? '도착센터' : '출발센터'}</label>
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
-            <SelectTrigger className="h-8 text-[12px] w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-[12px] w-36 bg-white"><SelectValue /></SelectTrigger>
             <SelectContent>
               {selectableCenters.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
             </SelectContent>
@@ -292,7 +328,7 @@ function UploadPanel({
         <div>
           <label className="text-[11px] text-[#64748B] block mb-0.5">이동 날짜</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
         </div>
         <div className="text-[11px] text-[#94A3B8]">{fromCenter} → {toCenter}</div>
       </div>
@@ -314,11 +350,11 @@ function UploadPanel({
       {/* 직접 입력 */}
       <div>
         <label className="text-[11px] text-[#64748B] block mb-0.5">또는 직접 입력 (줄바꿈/쉼표 구분)</label>
-        <div className="flex gap-2">
-          <textarea value={manualText} onChange={e => setManualText(e.target.value)}
-                    rows={2} className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1"
-                    placeholder="560002215, 445001234 ..." />
-          <Button type="button" variant="outline" className="h-8 text-[12px] self-end" onClick={applyManual}>적용</Button>
+        <textarea value={manualText} onChange={e => setManualText(e.target.value)}
+                  rows={2} className="w-full text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white"
+                  placeholder="560002215, 445001234 ..." />
+        <div className="flex justify-end mt-1.5">
+          <Button type="button" variant="outline" className="h-7 text-[12px]" onClick={applyManual}>적용</Button>
         </div>
       </div>
 
@@ -329,6 +365,21 @@ function UploadPanel({
           <span className="text-[#94A3B8]">전체 {ids.length}</span>
         </div>
       )}
+      {deviceGroups.length > 0 && (
+        <div className="rounded-md border border-[#E2E8F0] bg-white p-2">
+          <div className="text-[11px] font-semibold text-[#334155] mb-1.5">
+            인식된 단말기 · 기종별 {validCount}개
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {deviceGroups.map(g => (
+              <span key={`${g.device}-${g.sub}`}
+                    className="px-2 py-0.5 rounded border border-[#E2E8F0] bg-[#FAFAFA] text-[11px] text-[#475569]">
+                {g.device} <span className="text-[#94A3B8]">{g.sub}</span> <b className="text-[#1565c0]">{g.count}</b>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {invalid.length > 0 && (
         <div className="text-[10px] text-[#94A3B8] max-h-20 overflow-y-auto">
           미분류: {invalid.slice(0, 30).map(i => i.id).join(', ')}{invalid.length > 30 ? ' …' : ''}
@@ -337,7 +388,7 @@ function UploadPanel({
 
       <div>
         <label className="text-[11px] text-[#64748B] block mb-0.5">비고 (선택)</label>
-        <Input value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px]" placeholder="메모" />
+        <Input value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px] bg-white" placeholder="메모" />
       </div>
 
       {dups !== null && dups.length > 0 && (
@@ -357,13 +408,40 @@ function UploadPanel({
   )
 }
 
+// 추가출고 / 추가입고 — UploadPanel을 모달로 감싼 빠른 업로드
+function UploadModal({
+  direction, perms, onClose, onSaved,
+}: {
+  direction: 'in' | 'out'
+  perms: Perms
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const title = direction === 'out' ? '➕ 추가 출고 업로드' : '➕ 추가 입고 업로드'
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-lg w-[560px] max-w-full my-8" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
+          <div className="text-[13px] font-bold text-[#1E293B]">{title}</div>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]">
+            <X size={16} strokeWidth={2} />
+          </button>
+        </div>
+        <div className="p-4">
+          <UploadPanel direction={direction} perms={perms} onSaved={onSaved} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 관리(편집/삭제) 패널
 // ══════════════════════════════════════════════════════════════════════════════
 
-function ManagePanel({ rows, perms, onChanged }: { rows: TerminalMovement[]; perms: Perms; onChanged: () => void }) {
+function ManagePanel({ rows, perms, onChanged, defaultOpen = false }: { rows: TerminalMovement[]; perms: Perms; onChanged: () => void; defaultOpen?: boolean }) {
   const [busy, setBusy] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   // 수정 모달
   const [editRec, setEditRec] = useState<TerminalMovement | null>(null)
   const [editTrcn, setEditTrcn] = useState('')
@@ -411,7 +489,11 @@ function ManagePanel({ rows, perms, onChanged }: { rows: TerminalMovement[]; per
     setBusy(false); setEditRec(null); onChanged()
   }
 
-  const canManage = (r: TerminalMovement) => perms.isAdmin || perms.isJjae || r.uploaded_by === perms.userId
+  // 관리자·자재센터는 전체 / 그 외에는 본인 센터가 업로드한 것(in=출발센터, out=도착센터)만 수정·삭제
+  const canManage = (r: TerminalMovement) =>
+    perms.isAdmin || perms.isJjae ||
+    (r.direction === 'in' ? r.from_center : r.to_center) === perms.center ||
+    r.uploaded_by === perms.userId
 
   return (
     <div className="border border-[#E2E8F0] rounded-lg bg-white overflow-hidden">
@@ -496,6 +578,34 @@ function ManagePanel({ rows, perms, onChanged }: { rows: TerminalMovement[]; per
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// 업로드 내역 수정/삭제 — ManagePanel을 모달로 감싼 빠른 수정
+function ManageModal({
+  direction, rows, perms, onClose, onChanged,
+}: {
+  direction: 'in' | 'out'
+  rows: TerminalMovement[]
+  perms: Perms
+  onClose: () => void
+  onChanged: () => void
+}) {
+  const title = direction === 'out' ? '✏️ 출고 업로드 수정' : '✏️ 입고 업로드 수정'
+  return (
+    <div className="fixed inset-0 bg-black/40 z-40 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-lg w-[640px] max-w-full my-8" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
+          <div className="text-[13px] font-bold text-[#1E293B]">{title}</div>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]">
+            <X size={16} strokeWidth={2} />
+          </button>
+        </div>
+        <div className="p-4">
+          <ManagePanel rows={rows} perms={perms} onChanged={onChanged} defaultOpen />
+        </div>
+      </div>
     </div>
   )
 }
@@ -597,6 +707,10 @@ function TodayTab({ perms }: { perms: Perms }) {
   const [out, setOut] = useState<TerminalMovement[]>([])
   const [inn, setInn] = useState<TerminalMovement[]>([])
   const [loading, setLoading] = useState(true)
+  const [modalDir, setModalDir] = useState<'in' | 'out' | null>(null)
+  const [manageDir, setManageDir] = useState<'in' | 'out' | null>(null)
+  const [teamsBusy, setTeamsBusy] = useState(false)
+  const [teamsMsg, setTeamsMsg] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -608,6 +722,20 @@ function TodayTab({ perms }: { perms: Perms }) {
   }, [date])
 
   useEffect(() => { load() }, [load])
+
+  // 출고 현황을 Teams 그룹채팅으로 전송
+  async function sendTeams() {
+    setTeamsBusy(true); setTeamsMsg('')
+    try {
+      const r = await fetch('/api/terminal/teams', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date }),
+      })
+      const d = await r.json()
+      setTeamsMsg(r.ok ? '📨 Teams 채팅방으로 출고 현황을 전송했습니다.' : (d.error || '전송 실패'))
+    } catch { setTeamsMsg('전송 실패') }
+    setTeamsBusy(false)
+  }
 
   const outCenterPivot = useMemo(() => buildCenterPivot(out, 'out'), [out])
   const inCenterPivot = useMemo(() => buildCenterPivot(inn, 'in'), [inn])
@@ -629,30 +757,72 @@ function TodayTab({ perms }: { perms: Perms }) {
         <>
           <div className="grid md:grid-cols-2 gap-5">
             <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-              <CenterCrossTable pivot={outCenterPivot} date={date} title="📤 센터별 출고 현황" />
+              <CenterCrossTable pivot={outCenterPivot} date={date} title="📤 센터별 출고 현황"
+                action={(perms.isAdmin || perms.isJjae) ? (
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                      onClick={() => setModalDir('out')} title="출고 데이터 추가 업로드">
+                      <Plus size={13} strokeWidth={2.2} /> 추가출고
+                    </Button>
+                    <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                      disabled={!out.length} onClick={() => setManageDir('out')} title="출고 업로드 수정/삭제">
+                      <Pencil size={12} strokeWidth={1.9} /> 수정
+                    </Button>
+                    <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                      disabled={teamsBusy || !out.length} onClick={sendTeams}
+                      title="Teams 채팅방으로 출고 현황 전송">
+                      <Send size={12} strokeWidth={1.9} /> {teamsBusy ? '전송 중…' : 'Teams'}
+                    </Button>
+                  </div>
+                ) : undefined}
+              />
+              {teamsMsg && <div className="text-[11px] text-[#475569]">{teamsMsg}</div>}
               <DevicePivotTable pivot={buildPivot(out)} title="출고 기종별" />
               <CenterCountList rows={out} field="to_center" label="출고 센터별" />
             </div>
             <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-              <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황"
+              <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황" showTotals
                 action={
-                  <Button type="button" variant="outline" className="h-7 text-[11px] gap-1 flex-shrink-0"
-                    disabled={!inn.length}
-                    onClick={() => {
-                      const isHub = perms.center === HUB
-                      const certRows = isHub ? inn : inn.filter(r => r.from_center === perms.center)
-                      if (!certRows.length) return
-                      const fromC = isHub ? '타센터' : perms.center
-                      downloadHandover(certRows, fromC, HUB, date, '', isHub ? 'from' : null)
-                    }}>
-                    <FileDown size={13} strokeWidth={1.9} /> 인수인계증
-                  </Button>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    {(perms.isAdmin || perms.isJjae) && (
+                      <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                        onClick={() => setModalDir('in')} title="입고 데이터 추가 업로드">
+                        <Plus size={13} strokeWidth={2.2} /> 추가입고
+                      </Button>
+                    )}
+                    {perms.canUpIn && (
+                      <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                        disabled={!inn.length} onClick={() => setManageDir('in')} title="입고 업로드 수정/삭제">
+                        <Pencil size={12} strokeWidth={1.9} /> 수정
+                      </Button>
+                    )}
+                    <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                      disabled={!inn.length}
+                      onClick={() => {
+                        const isHub = perms.center === HUB
+                        const certRows = isHub ? inn : inn.filter(r => r.from_center === perms.center)
+                        if (!certRows.length) return
+                        const fromC = isHub ? '타센터' : perms.center
+                        downloadHandover(certRows, fromC, HUB, date, '', isHub ? 'from' : null)
+                      }}>
+                      <FileDown size={13} strokeWidth={1.9} /> 인수인계증
+                    </Button>
+                  </div>
                 }
               />
               <DevicePivotTable pivot={buildPivot(inn)} title="입고 기종별" />
               <CenterCountList rows={inn} field="from_center" label="입고 센터별" />
             </div>
           </div>
+
+          {modalDir && (
+            <UploadModal direction={modalDir} perms={perms}
+              onClose={() => setModalDir(null)} onSaved={load} />
+          )}
+          {manageDir && (
+            <ManageModal direction={manageDir} rows={manageDir === 'out' ? out : inn}
+              perms={perms} onClose={() => setManageDir(null)} onChanged={load} />
+          )}
 
           {(perms.canUpOut || perms.canUpIn) && (
             <div className="grid md:grid-cols-2 gap-5 pt-2">
@@ -664,7 +834,7 @@ function TodayTab({ perms }: { perms: Perms }) {
                 </div>
               )}
               {perms.canUpIn && (
-                <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
+                <div className={`bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2${perms.canUpOut ? '' : ' md:col-start-2'}`}>
                   <div className="text-[12px] font-bold text-[#1E293B]">📥 입고 업로드</div>
                   <UploadPanel direction="in" perms={perms} onSaved={load} />
                   <ManagePanel rows={inn} perms={perms} onChanged={load} />
@@ -953,7 +1123,7 @@ function AdminTab() {
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
-        <div className="text-[12px] text-[#64748B]">'모뎀'으로 저장된 단말기를 현재 분류 규칙으로 재분류합니다.</div>
+        <div className="text-[12px] text-[#64748B]">「모뎀」으로 저장된 단말기를 현재 분류 규칙으로 재분류합니다.</div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={busy} onClick={preview}>미리보기</Button>
           {changes && changes.length > 0 && (

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import { classifyTerminal, ACTIVE_STATUSES } from '@/lib/busTracking'
 
 const TABLE = 'bus_terminal_assignments'
 const HIST  = 'bus_terminal_history'

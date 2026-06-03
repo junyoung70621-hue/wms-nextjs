@@ -19,9 +19,12 @@ export async function PATCH(
   const body = await request.json()
 
   const { data: rec } = await supabase.from(TERMINAL_TABLE)
-    .select('uploaded_by').eq('id', id).limit(1).single()
+    .select('uploaded_by, direction, from_center, to_center').eq('id', id).limit(1).single()
   if (!rec) return NextResponse.json({ error: '대상 없음' }, { status: 404 })
-  if (!isAdmin && !isJjae && rec.uploaded_by !== u.id)
+  // 관리자·자재센터는 전체 / 그 외에는 본인 센터 업로드(in=출발센터, out=도착센터)만
+  const ownerCenter = rec.direction === 'in' ? rec.from_center : rec.to_center
+  const owns = ownerCenter === center || rec.uploaded_by === u.id
+  if (!isAdmin && !isJjae && !owns)
     return NextResponse.json({ error: '수정 권한 없음' }, { status: 403 })
 
   const patch: Record<string, string> = {}

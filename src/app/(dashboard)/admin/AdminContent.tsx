@@ -33,6 +33,25 @@ const ROLE_COLOR: Record<string, string> = {
   admin: '#B32646', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
 }
 
+// ── KPI 칩 (컴팩트) ───────────────────────────────────────────────────────────
+function KpiChip({ label, value, color, active, onClick }: {
+  label: string; value: number; color: string; active?: boolean; onClick?: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border transition-all"
+      style={active
+        ? { borderColor: color, boxShadow: `inset 0 0 0 1px ${color}` }
+        : { borderColor: '#e2e8f0' }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+      <span className="text-[11px] text-[#64748B] whitespace-nowrap">{label}</span>
+      <span className="text-[13px] font-bold leading-none font-heading" style={{ color }}>{value}</span>
+    </button>
+  )
+}
+
 function tsKst(ts: string) {
   if (!ts) return ''
   try {
@@ -77,40 +96,35 @@ function UserRow({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors text-left"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="w-7 h-7 flex-shrink-0 rounded flex items-center justify-center text-[11px] font-bold text-white"
-            style={{ background: ROLE_COLOR[u.role] ?? '#555' }}
-          >
-            {u.name.charAt(0)}
-          </div>
-          <div className="min-w-0">
-            <span className="text-[13px] font-semibold text-[#1E293B]">{u.name}</span>
-            <span className="text-[11px] text-[#64748B] ml-2">@{u.username}</span>
-            <div className="text-[11px] text-[#94A3B8] mt-0.5">
-              {u.center}{u.assigned_center ? ` → ${u.assigned_center}` : ''} · {tsKst(u.created_at)} 가입
-            </div>
-          </div>
+        <div
+          className="w-6 h-6 flex-shrink-0 rounded flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: ROLE_COLOR[u.role] ?? '#555' }}
+        >
+          {u.name.charAt(0)}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          {!u.is_approved && (
-            <span className="text-[10px] font-bold text-white bg-[#f57c00] rounded px-1.5 py-0.5">
-              미승인
-            </span>
-          )}
-          <span
-            className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-            style={{ color: ROLE_COLOR[u.role] ?? '#555', background: (ROLE_COLOR[u.role] ?? '#555') + '18' }}
-          >
-            {ROLE_LABEL[u.role] ?? u.role}
+        <span className="text-[12px] font-semibold text-[#1E293B] w-24 truncate flex-shrink-0">{u.name}</span>
+        <span className="text-[11px] text-[#64748B] w-28 truncate flex-shrink-0 hidden sm:block">@{u.username}</span>
+        <span className="text-[11px] text-[#64748B] flex-1 truncate min-w-0">
+          {u.center}{u.assigned_center ? ` → ${u.assigned_center}` : ''}
+        </span>
+        <span className="text-[11px] text-[#94A3B8] font-mono w-20 flex-shrink-0 hidden md:block">{tsKst(u.created_at)}</span>
+        {!u.is_approved && (
+          <span className="text-[10px] font-bold text-white bg-[#f57c00] rounded px-1.5 py-0.5 flex-shrink-0">
+            미승인
           </span>
-          <span className="text-[#94A3B8]">{open ? '▲' : '▼'}</span>
-        </div>
+        )}
+        <span
+          className="text-[10px] font-bold px-1.5 py-0.5 rounded w-[72px] text-center flex-shrink-0"
+          style={{ color: ROLE_COLOR[u.role] ?? '#555', background: (ROLE_COLOR[u.role] ?? '#555') + '18' }}
+        >
+          {ROLE_LABEL[u.role] ?? u.role}
+        </span>
+        <span className="text-[#94A3B8] text-[10px] flex-shrink-0">{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
@@ -443,6 +457,9 @@ export default function AdminContent({ user }: { user: SessionUser }) {
   })
 
   const pendingCount = users.filter(u => !u.is_approved).length
+  const roleCounts = ROLES.reduce<Record<string, number>>(
+    (acc, r) => { acc[r] = users.filter(u => u.role === r).length; return acc }, {}
+  )
 
   const handleApproveAll = async () => {
     const pending = users.filter(u => !u.is_approved)
@@ -481,6 +498,28 @@ export default function AdminContent({ user }: { user: SessionUser }) {
 
       {/* ── 유저 관리 탭 ── */}
       <TabsContent value="users" className="space-y-3">
+        {/* KPI 칩 (총원 · 권한별 · 미승인) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <KpiChip
+            label="전체" value={users.length} color="#1E293B"
+            active={filterRole === 'all' && filterApprv === 'all'}
+            onClick={() => { setFilterRole('all'); setFilterApprv('all') }}
+          />
+          {ROLES.map(r => (
+            <KpiChip
+              key={r}
+              label={ROLE_LABEL[r]} value={roleCounts[r] ?? 0} color={ROLE_COLOR[r]}
+              active={filterRole === r}
+              onClick={() => setFilterRole(filterRole === r ? 'all' : r)}
+            />
+          ))}
+          <KpiChip
+            label="미승인" value={pendingCount} color="#f57c00"
+            active={filterApprv === 'pending'}
+            onClick={() => setFilterApprv(filterApprv === 'pending' ? 'all' : 'pending')}
+          />
+        </div>
+
         {/* 필터 */}
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
         <div className="flex flex-wrap gap-2 items-center">
@@ -533,8 +572,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         ) : filtered.length === 0 ? (
           <div className="text-[12px] text-[#94A3B8] py-8 text-center">해당 조건의 유저 없음</div>
         ) : (
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-          <div className="space-y-2">
+          <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-hidden divide-y divide-[#eef1f6]">
             {filtered.map(u => (
               <UserRow
                 key={u.id}
@@ -544,7 +582,6 @@ export default function AdminContent({ user }: { user: SessionUser }) {
                 onDelete={handleDelete}
               />
             ))}
-          </div>
           </div>
         )}
       </TabsContent>

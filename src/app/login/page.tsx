@@ -42,12 +42,18 @@ export default function LoginPage() {
   const [resetSuccess, setResetSuccess] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
 
-  // 저장된 아이디 불러오기
+  // 자동 로그아웃 안내
+  const [idleNotice, setIdleNotice] = useState(false)
+
+  // 저장된 아이디 불러오기 + 자동 로그아웃 여부 확인
   useEffect(() => {
     const saved = localStorage.getItem('wms_saved_id')
     if (saved) {
       setUsername(saved)
       setRememberMe(true)
+    }
+    if (new URLSearchParams(window.location.search).get('reason') === 'idle') {
+      setIdleNotice(true)
     }
   }, [])
 
@@ -151,19 +157,28 @@ export default function LoginPage() {
 
         {/* 헤더 */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#1E293B] tracking-tight">
-            에이텍모빌리티
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">자재관리 시스템</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/atec_logo_full.png"
+            alt="에이텍모빌리티"
+            className="mx-auto h-10 w-auto"
+          />
+          <p className="text-gray-500 text-lg font-medium mt-3">자재관리 시스템</p>
         </div>
+
+        {idleNotice && (
+          <div className="mb-4 rounded-md border border-[#f3c6d1] bg-[#fbe9ee] px-4 py-3 text-center text-[13px] font-medium text-[#b32646]">
+            장시간 활동이 없어 자동 로그아웃되었습니다. 다시 로그인해 주세요.
+          </div>
+        )}
 
         <Card>
           <CardContent className="pt-6">
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="login">🔑 로그인</TabsTrigger>
-                <TabsTrigger value="register">✏️ 회원가입</TabsTrigger>
-                <TabsTrigger value="reset">🔓 찾기</TabsTrigger>
+                <TabsTrigger value="login" className="data-active:bg-[#B32646] data-active:text-white">🔑 로그인</TabsTrigger>
+                <TabsTrigger value="register" className="data-active:bg-[#B32646] data-active:text-white">✏️ 회원가입</TabsTrigger>
+                <TabsTrigger value="reset" className="data-active:bg-[#B32646] data-active:text-white">🔓 찾기</TabsTrigger>
               </TabsList>
 
               {/* ── 로그인 탭 ── */}

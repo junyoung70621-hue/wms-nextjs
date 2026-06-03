@@ -12,6 +12,7 @@ import { Boxes, ClipboardCheck, TriangleAlert, PackageX, type LucideIcon } from 
 import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
 import { getViewableCenters, CENTERS } from '@/constants/centers'
+import TerminalBoxSection from '@/components/TerminalBoxSection'
 import MaterialRequestsContent from '../material-requests/MaterialRequestsContent'
 import UsageContent from '../usage/UsageContent'
 
@@ -353,10 +354,37 @@ function ItemDetailModal({
               </div>
             </div>
           )}
+
+          {/* 단말기 박스 — 자재창고 지도와 동일한 데이터(box_terminals) 공유 */}
+          {item.category_mid === '단말기' && (
+            <div className="mt-4">
+              <TerminalBoxSection
+                item={item}
+                canEdit={user.role === 'admin' || (center === '자재센터' && user.role !== 'guest')}
+                location={item.location}
+                onChanged={onUpdated}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
+}
+
+// ── 이동 신청 도착 센터 규칙 ──────────────────────────────────────────────────
+const TR_REGIONAL = new Set(['강서센터', '강북센터', '강동센터', '강남센터'])
+const TR_ALL_CENTERS = [
+  '자재센터', '강서센터', '강북센터', '강동센터', '강남센터', '택시지원파트', '리페어팀',
+  'AFC지원파트', '고속/시외', '대전센터', '토스', '외부창고', '에이텍본사', '티머니(버스)', '티머니(택시)',
+]
+const TR_SPECIAL = new Set(TR_ALL_CENTERS.filter(c => c !== '자재센터' && !TR_REGIONAL.has(c)))
+
+function transferDestinations(center: string): string[] {
+  if (center === '자재센터') return TR_ALL_CENTERS.filter(c => c !== '자재센터')
+  if (TR_REGIONAL.has(center)) return TR_ALL_CENTERS.filter(c => c === '자재센터' || (TR_REGIONAL.has(c) && c !== center))
+  if (TR_SPECIAL.has(center)) return ['자재센터']
+  return []
 }
 
 // ── 재고 현황 탭 ──────────────────────────────────────────────────────────────
@@ -365,8 +393,9 @@ function InventoryTab({ user, center, onCenterChange }: {
 }) {
   const viewable = getViewableCenters(user.role, user.assigned_center ?? user.center)
   const isHub    = center === '자재센터'
-  const isAdmin  = user.role === 'admin'
-  const canStock = user.role === 'admin' || user.role === 'materials'
+  const canStock = user.role === 'admin' || user.role === 'materials'   // 입고/출고
+  const canAct   = user.role === 'manager' || user.role === 'user'      // 이동신청/사용내역입력
+  const canSelect = canStock || canAct
 
   const [data,    setData]    = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
@@ -384,9 +413,10 @@ function InventoryTab({ user, center, onCenterChange }: {
   const [sortDir,   setSortDir]   = useState<'asc'|'desc'>('asc')
 
   const [selected,    setSelected]    = useState<Set<number>>(new Set())
-  const [showStock,   setShowStock]   = useState<'in'|'out'|null>(null)
+  const [actionMode,  setActionMode]  = useState<'in'|'out'|'use'|'transfer'|null>(null)
   const [stockQties,  setStockQties]  = useState<Record<number, number>>({})
   const [stockReason, setStockReason] = useState('')
+  const [actDest,     setActDest]     = useState('')
   const [stockSaving, setStockSaving] = useState(false)
   const [stockMsg,    setStockMsg]    = useState('')
 
@@ -471,22 +501,65 @@ function InventoryTab({ user, center, onCenterChange }: {
     return 'text-[#1E293B]'
   }
 
-  async function handleStock() {
-    if (!showStock || !stockReason.trim()) return
-    const items = Array.from(selected).map(id => ({ item_id: id, quantity: stockQties[id] ?? 1 }))
+  const actItems = useMemo(() => data.filter(r => selected.has(r.id)), [data, selected])
+  const qtyOf = (id: number) => stockQties[id] ?? 1
+
+  function openAction(mode: 'in'|'out'|'use'|'transfer') {
+    setActionMode(mode); setStockMsg(''); setStockReason(''); setActDest(''); setStockQties({})
+  }
+  function resetAction() {
+    setSelected(new Set()); setActionMode(null); setStockReason(''); setActDest(''); setStockQties({})
+  }
+
+  async function handleAction() {
+    if (!actionMode || !selected.size) return
+    const ids = Array.from(selected)
     setStockSaving(true); setStockMsg('')
     try {
-      const res = await fetch('/api/warehouse/stock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, action: showStock, reason: stockReason }),
-      })
-      const j = await res.json()
-      if (!res.ok) setStockMsg(`❌ ${j.error}`)
-      else {
-        setStockMsg(j.errors?.length ? `⚠️ 일부 실패: ${j.errors.join(', ')}` : '✅ 완료')
-        setSelected(new Set()); setShowStock(null); setStockReason(''); setStockQties({})
-        fetchData(center)
+      // ── 입고 / 출고 (자재센터·관리자) ──
+      if (actionMode === 'in' || actionMode === 'out') {
+        if (!stockReason.trim()) { setStockSaving(false); return }
+        const items = ids.map(id => ({ item_id: id, quantity: qtyOf(id) }))
+        const res = await fetch('/api/warehouse/stock', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items, action: actionMode, reason: stockReason }),
+        })
+        const j = await res.json()
+        if (!res.ok) setStockMsg(`❌ ${j.error}`)
+        else { setStockMsg(j.errors?.length ? `⚠️ 일부 실패: ${j.errors.join(', ')}` : '✅ 완료'); resetAction(); fetchData(center) }
+      }
+      // ── 사용내역 입력 (재고 차감) ──
+      else if (actionMode === 'use') {
+        if (!stockReason.trim()) { setStockSaving(false); return }
+        const rows = actItems.map(it => ({
+          item_id: it.id, item_name: it.item_name, erp_code: it.erp_code ?? undefined,
+          quantity: qtyOf(it.id), reason: stockReason,
+        }))
+        const res = await fetch('/api/usage', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows }),
+        })
+        const j = await res.json()
+        if (!res.ok) setStockMsg(`❌ ${j.error}`)
+        else {
+          const fails = (j.results ?? []).filter((r: { ok: boolean }) => !r.ok)
+          setStockMsg(fails.length ? `⚠️ 일부 실패: ${fails.map((f: { error: string }) => f.error).join(', ')}` : '✅ 사용 처리 완료')
+          if (fails.length < rows.length) { resetAction(); fetchData(center) }
+        }
+      }
+      // ── 이동 신청 (건별) ──
+      else if (actionMode === 'transfer') {
+        if (!actDest) { setStockSaving(false); return }
+        const errs: string[] = []
+        for (const it of actItems) {
+          const res = await fetch('/api/transfers', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: it.id, from_center: center, to_center: actDest, quantity: qtyOf(it.id) }),
+          })
+          if (!res.ok) { const j = await res.json(); errs.push(`${it.item_name}: ${j.error}`) }
+        }
+        setStockMsg(errs.length ? `⚠️ 일부 실패: ${errs.join(', ')}` : '✅ 이동 신청 완료')
+        if (errs.length < actItems.length) { resetAction(); fetchData(center) }
       }
     } finally { setStockSaving(false) }
   }
@@ -504,12 +577,24 @@ function InventoryTab({ user, center, onCenterChange }: {
             {loading ? '...' : '🔄'}
           </Button>
         </div>
-        {canStock && selected.size > 0 && (
-          <div className="flex gap-2">
-            <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
-              onClick={() => setShowStock('in')}>📥 입고 ({selected.size})</Button>
-            <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
-              onClick={() => setShowStock('out')}>📤 출고 ({selected.size})</Button>
+        {selected.size > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {canStock && (
+              <>
+                <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
+                  onClick={() => openAction('in')}>📥 입고 ({selected.size})</Button>
+                <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
+                  onClick={() => openAction('out')}>📤 출고 ({selected.size})</Button>
+              </>
+            )}
+            {canAct && (
+              <>
+                <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
+                  onClick={() => openAction('use')}>🧾 사용내역 입력 ({selected.size})</Button>
+                <Button size="sm" className="bg-[#1565c0] hover:bg-[#0d47a1] text-white"
+                  onClick={() => openAction('transfer')}>🚚 이동신청 ({selected.size})</Button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -552,39 +637,72 @@ function InventoryTab({ user, center, onCenterChange }: {
         )}
       </div>
 
-      {/* 입출고 패널 */}
-      {showStock && selected.size > 0 && (
-        <div className="border rounded-lg p-4 bg-[#FFF8F0] space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-bold">{showStock === 'in' ? '📥 입고' : '📤 출고'} — {selected.size}개 자재</span>
-            <button onClick={() => setShowStock(null)} className="text-[#94A3B8] hover:text-red-400">✕</button>
-          </div>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {data.filter(r => selected.has(r.id)).map(r => (
-              <div key={r.id} className="flex items-center gap-2">
-                <span className="text-[12px] flex-1 truncate">{r.item_name}</span>
-                <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
-                <input type="number" min={1} value={stockQties[r.id] ?? 1}
-                  onChange={e => setStockQties(prev => ({ ...prev, [r.id]: parseInt(e.target.value) || 1 }))}
-                  className="w-20 border rounded px-2 py-0.5 text-[12px] text-right focus:outline-none" />
+      {/* 액션 패널 (입고/출고/사용/이동신청) */}
+      {actionMode && selected.size > 0 && (() => {
+        const META = {
+          in:       { title: '📥 입고',        btn: '✅ 입고 확정',   color: 'bg-[#2e7d32] hover:bg-[#1b5e20] text-white' },
+          out:      { title: '📤 출고',        btn: '✅ 출고 확정',   color: 'bg-[#c62828] hover:bg-[#8e0000] text-white' },
+          use:      { title: '🧾 사용내역 입력', btn: '✅ 사용 확정',   color: 'bg-[#c62828] hover:bg-[#8e0000] text-white' },
+          transfer: { title: '🚚 이동 신청',    btn: '🚚 이동 신청',   color: 'bg-[#1565c0] hover:bg-[#0d47a1] text-white' },
+        }[actionMode]
+        const needReason = actionMode !== 'transfer'
+        const dests = transferDestinations(center)
+        const disabled = stockSaving || (needReason ? !stockReason.trim() : !actDest)
+        return (
+          <div className="border rounded-lg p-4 bg-[#FFF8F0] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-bold">{META.title} — {selected.size}개 자재</span>
+              <button onClick={resetAction} className="text-[#94A3B8] hover:text-red-400">✕</button>
+            </div>
+
+            {actionMode === 'transfer' && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-[#64748B] block mb-1">출발 센터</label>
+                  <input value={center} disabled className="border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8] w-40" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#64748B] block mb-1">도착 센터 *</label>
+                  <select value={actDest} onChange={e => setActDest(e.target.value)}
+                    className="border rounded px-3 py-1.5 text-[12px] w-40 focus:outline-none focus:border-[#B32646] bg-white">
+                    <option value="">선택하세요</option>
+                    {dests.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
               </div>
-            ))}
+            )}
+
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {actItems.map(r => (
+                <div key={r.id} className="flex items-center gap-2">
+                  <span className="text-[12px] flex-1 truncate">{r.item_name}</span>
+                  <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
+                  <input type="number" min={1} value={stockQties[r.id] ?? 1}
+                    onChange={e => setStockQties(prev => ({ ...prev, [r.id]: parseInt(e.target.value) || 1 }))}
+                    className="w-20 border rounded px-2 py-0.5 text-[12px] text-right focus:outline-none bg-white" />
+                </div>
+              ))}
+            </div>
+
+            {needReason && (
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">사유 *</label>
+                <input value={stockReason} onChange={e => setStockReason(e.target.value)}
+                  placeholder={actionMode === 'use' ? '사용 사유' : '입출고 사유'}
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646] bg-white" />
+              </div>
+            )}
+
+            {stockMsg && <p className="text-[12px]">{stockMsg}</p>}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleAction} disabled={disabled} className={META.color}>
+                {stockSaving ? '처리 중...' : META.btn}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setActionMode(null); setStockMsg('') }}>취소</Button>
+            </div>
           </div>
-          <div>
-            <label className="text-[11px] font-semibold text-[#64748B] block mb-1">사유 *</label>
-            <input value={stockReason} onChange={e => setStockReason(e.target.value)}
-              placeholder="입출고 사유" className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]" />
-          </div>
-          {stockMsg && <p className="text-[12px]">{stockMsg}</p>}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleStock} disabled={stockSaving || !stockReason.trim()}
-              className={showStock === 'in' ? 'bg-[#2e7d32] hover:bg-[#1b5e20] text-white' : 'bg-[#c62828] hover:bg-[#8e0000] text-white'}>
-              {stockSaving ? '처리 중...' : showStock === 'in' ? '✅ 입고 확정' : '✅ 출고 확정'}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { setShowStock(null); setStockMsg('') }}>취소</Button>
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* 테이블 카드 */}
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
@@ -607,7 +725,7 @@ function InventoryTab({ user, center, onCenterChange }: {
           <table className="w-full text-[12px] border-collapse">
             <thead className="sticky top-0 bg-[#F8F9FA] z-10">
               <tr>
-                {canStock && (
+                {canSelect && (
                   <th className="px-2 py-2 border-b w-8">
                     <input type="checkbox" checked={selected.size === paged.length && paged.length > 0}
                       onChange={() => setSelected(selected.size === paged.length ? new Set() : new Set(paged.map(r => r.id)))}
@@ -630,10 +748,10 @@ function InventoryTab({ user, center, onCenterChange }: {
             <tbody>
               {paged.map((item, i) => (
                 <tr key={item.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                  {canStock && (
+                  {canSelect && (
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={selected.has(item.id)}
-                        onChange={() => setSelected(prev => { const n = new Set(prev); n.has(item.id) ? n.delete(item.id) : n.add(item.id); return n })}
+                        onChange={() => setSelected(prev => { const n = new Set(prev); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n })}
                         className="cursor-pointer" />
                     </td>
                   )}
@@ -895,7 +1013,7 @@ function AdminTab({ center, viewable }: { center: string; viewable: string[] }) 
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
-export default function WarehouseContent({ user }: { user: SessionUser }) {
+export default function WarehouseContent({ user, initialTab }: { user: SessionUser; initialTab?: string }) {
   const viewable = useMemo(
     () => getViewableCenters(user.role, user.assigned_center ?? user.center),
     [user]
@@ -903,6 +1021,14 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
   const [center, setCenter] = useState(viewable[0] ?? '자재센터')
   const isAdmin  = user.role === 'admin'
   const isGuest  = user.role === 'guest'
+
+  // 탑바 처리대기(이동)에서 ?tab=transfers 로 들어오면 해당 탭으로 시작 (유효한 탭만)
+  const validTabs = new Set<string>([
+    'inventory', 'transfers',
+    ...(!isGuest ? ['material-requests', 'usage'] : []),
+    ...(isAdmin ? ['admin'] : []),
+  ])
+  const activeTab = initialTab && validTabs.has(initialTab) ? initialTab : 'inventory'
 
   return (
     <div className="space-y-4">
@@ -916,7 +1042,7 @@ export default function WarehouseContent({ user }: { user: SessionUser }) {
           <p className="text-[12px] text-[#64748B] mt-0.5">실시간 창고 자재 및 단말기 재고 데이터입니다.</p>
         </div>
       </div>
-      <Tabs defaultValue="inventory">
+      <Tabs key={activeTab} defaultValue={activeTab}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inventory"  className="text-[13px]">📦 재고 현황</TabsTrigger>
           <TabsTrigger value="transfers"  className="text-[13px]">🚚 이동 신청 현황</TabsTrigger>

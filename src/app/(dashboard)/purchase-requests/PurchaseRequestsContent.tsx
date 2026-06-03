@@ -446,7 +446,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────────────
-export default function PurchaseRequestsContent({ user }: { user: SessionUser }) {
+export default function PurchaseRequestsContent({ user, initialTab }: { user: SessionUser; initialTab?: string }) {
   const [data,    setData]    = useState<PurchaseRequest[]>([])
   const [myData,  setMyData]  = useState<PurchaseRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -529,6 +529,10 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
         { key: 'mine',       label: '👤 내 요청 현황' },
       ]
 
+  // 탑바 처리대기에서 ?tab=pending 으로 들어오면 해당 탭으로 시작 (유효한 탭만)
+  const validTabs = new Set(tabs.map(t => t.key))
+  const activeTab = initialTab && validTabs.has(initialTab) ? initialTab : 'new'
+
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
@@ -538,7 +542,7 @@ export default function PurchaseRequestsContent({ user }: { user: SessionUser })
         </Button>
       </div>
 
-      <Tabs defaultValue="new">
+      <Tabs key={activeTab} defaultValue={activeTab}>
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <TabsList className="flex-wrap h-auto gap-1">
             {tabs.map(t => (

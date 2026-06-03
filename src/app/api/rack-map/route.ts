@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from('warehouse')
-    .select('id, item_name, quantity, rack_no, shelf, box_no, category_large, category_mid')
+    .select('id, item_name, quantity, rack_no, shelf, box_no, category_large, category_mid, category_small')
     .eq('location', location)
     .order('rack_no', { ascending: true, nullsFirst: false })
     .order('shelf')

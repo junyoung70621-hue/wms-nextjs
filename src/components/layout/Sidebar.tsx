@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import {
   LayoutGrid, Bus, CarTaxiFront, Boxes, Share2, History, BarChart3,
   ClipboardList, ShoppingCart, Map, Settings, Users, Megaphone,
-  MessageSquare, CircleUser, LogOut, type LucideIcon,
+  MessageSquare, CircleUser, type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
@@ -42,7 +42,7 @@ function getMenuSections(user: SessionUser): Section[] {
   if (showBusTracking)
     assetItems.push({ href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 })
   assetItems.push({ href: '/history', label: '입출고 이력', icon: History })
-  if (!isGuest) assetItems.push({ href: '/usage', label: '사용내역', icon: BarChart3 })
+  if (!isGuest) assetItems.push({ href: '/usage', label: '사용내역 이력', icon: BarChart3 })
   sections.push({ title: 'Asset Management', items: assetItems })
 
   if (!isGuest) {
@@ -56,7 +56,7 @@ function getMenuSections(user: SessionUser): Section[] {
   }
 
   const utilItems: Item[] = []
-  if (isAdmin || isMaterials) utilItems.push({ href: '/rack-map', label: '위치 지도', icon: Map })
+  if (isAdmin || isMaterials) utilItems.push({ href: '/rack-map', label: '자재창고 지도', icon: Map })
   if (isAdmin) {
     utilItems.push({ href: '/admin', label: '관리자', icon: Settings })
     utilItems.push({ href: '/online-users', label: '접속 현황', icon: Users })
@@ -76,7 +76,6 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function Sidebar({ user, collapsed }: { user: SessionUser; collapsed: boolean }) {
   const pathname = usePathname()
-  const router = useRouter()
   const sections = getMenuSections(user)
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, unread_notices: 0 })
 
@@ -86,12 +85,6 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
       .then(d => { if (!d.error) setCounts(d) })
       .catch(() => {})
   }, [pathname])
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
-    router.refresh()
-  }
 
   const BADGE_MAP: Record<string, number> = {
     '/material-requests': counts.mat_pending,
@@ -161,15 +154,6 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
           </div>
         </div>
       </div>
-
-      {/* 로그아웃 (딥레드 솔리드) */}
-      <button
-        onClick={handleLogout}
-        className="mx-2 mb-3 flex items-center justify-center gap-2 h-9 rounded-md bg-[#b32646] text-white text-[13px] font-semibold hover:bg-[#9a1f3c] transition-colors"
-      >
-        <LogOut size={15} strokeWidth={2} />
-        로그아웃
-      </button>
     </aside>
   )
 }

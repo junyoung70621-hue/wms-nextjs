@@ -12,7 +12,7 @@ import type { SessionUser } from '@/lib/session'
 import {
   TRACKING_CENTERS, STATUS_LABEL, ACTIVE_STATUSES, ACTION_LABEL,
   classifyTerminal, tsKst,
-  type Assignment, type AvailableTerminal, type TransferRequest, type IhItem, type HistoryRow,
+  type Assignment, type AvailableTerminal, type TransferRequest, type HistoryRow,
 } from '@/lib/busTracking'
 
 type CenterUser = { id: string; name: string; username: string; role: string }
@@ -107,7 +107,7 @@ function AssignModal({
   }, [center, canPickEmp])
 
   const toggle = (ih: string) =>
-    setSelected(prev => { const n = new Set(prev); n.has(ih) ? n.delete(ih) : n.add(ih); return n })
+    setSelected(prev => { const n = new Set(prev); if (n.has(ih)) n.delete(ih); else n.add(ih); return n })
   const toggleAll = () =>
     setSelected(prev => prev.size === available.length ? new Set() : new Set(available.map(t => t.ih_code)))
 
@@ -487,7 +487,7 @@ function TabAssignments({
   const canEdit  = user.role === 'admin' || user.role === 'manager'
 
   const toggleRow = (id: string) =>
-    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleAll = () =>
     setSelected(prev => prev.size === visibleRows.length ? new Set() : new Set(visibleRows.map(r => r.id)))
 
@@ -770,7 +770,7 @@ function DeleteSection({ selCenter, onDone }: { selCenter: string; onDone: () =>
   }, [selCenter])
 
   const toggle = (id: string) =>
-    setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setSelIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   const effectiveIds = selAll ? rows.map(r => r.id) : Array.from(selIds)
 
@@ -888,7 +888,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
   }, [assignments, available, srcCenter])
 
   const toggleIh = (ih: string) =>
-    setSelIhs(prev => { const n = new Set(prev); n.has(ih) ? n.delete(ih) : n.add(ih); return n })
+    setSelIhs(prev => { const n = new Set(prev); if (n.has(ih)) n.delete(ih); else n.add(ih); return n })
 
   const handleSubmit = async () => {
     if (!toCtr || selIhs.size === 0) { setMsg('목적 센터와 단말기를 선택하세요.'); return }
@@ -1225,8 +1225,8 @@ function TabHistory({ selCenter }: { selCenter: string }) {
 }
 
 // ── 탭 5: 초기 등록 ────────────────────────────────────────────────────────────
-function TabInit({ selCenter, userId, userName, canManage }: {
-  selCenter: string; userId: string; userName: string; canManage: boolean
+function TabInit({ selCenter, userId, canManage }: {
+  selCenter: string; userId: string; canManage: boolean
 }) {
   type ParsedRow = { ih: string; name: string; center: string; dtype: string; stype: string }
   const fileRef   = useRef<HTMLInputElement>(null)
@@ -1512,7 +1512,7 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
         {canInit && (
           <TabsContent value="init" className="mt-4">
             <TabInit key={`init-${selCenter}`} selCenter={selCenter}
-              userId={user.id} userName={user.name} canManage={canManage} />
+              userId={user.id} canManage={canManage} />
           </TabsContent>
         )}
       </Tabs>

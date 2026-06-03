@@ -1,3 +1,5 @@
+import { classifyTerminal as classifyTerminalCore } from './terminal'
+
 export const TRACKING_CENTERS = ['강서센터', '강북센터', '강동센터', '강남센터']
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -81,41 +83,13 @@ export type AvailableTerminal = {
   upload_date: string
 }
 
+// 분류 규칙은 lib/terminal.ts 의 정식 구현에 위임(중복 제거). 단, 기존 정규화
+// (Math.floor(parseFloat)) 를 먼저 적용해 동작을 그대로 보존하고 튜플로 변환한다.
 export function classifyTerminal(raw: string | number): [string, string] {
   let s = String(raw).trim()
   try { s = String(Math.floor(parseFloat(s))) } catch { /* noop */ }
-  const digits = s.replace(/\D/g, '')
-  if (!digits) return ['미분류', '알 수 없음']
-  const n = digits.length
-
-  if (n === 8 || n === 9) {
-    if (digits.startsWith('157'))  return ['한강버스', '승하차']
-    if (digits.startsWith('1560')) return ['B800', '승하차']
-    if (digits.startsWith('1553')) return ['B710', '승하차']
-    if (digits.startsWith('1551')) return ['B620', '승하차']
-    if (digits.startsWith('1451')) return ['B620', '운전자']
-  }
-  if (n === 9) {
-    if (digits.startsWith('5600')) return ['B800', '표출기']
-    if (digits.startsWith('5500')) return ['B800', '통합단말기']
-    if (digits.startsWith('457'))  return ['한강버스', '표출기']
-    if (digits.startsWith('447'))  return ['한강버스', '통합단말기']
-    if (digits.startsWith('4550')) return ['B710', '표출기']
-    if (digits.startsWith('4450')) return ['B710', '통합단말기']
-    if (digits.startsWith('4500')) return ['B700', '표출기']
-    if (digits.startsWith('4400')) return ['B700', '통합단말기']
-  }
-  if (n === 6) {
-    if (digits.startsWith('10')) {
-      const num = parseInt(digits)
-      if (num >= 100001 && num <= 100500) return ['B620', '모뎀']
-      return ['B800', '모뎀']
-    }
-    if (digits.startsWith('6'))                          return ['B710', '모뎀']
-    if (digits.startsWith('4') || digits.startsWith('5')) return ['B700', '모뎀']
-    if (digits.startsWith('1'))                          return ['B620', '모뎀']
-  }
-  return ['미분류', '알 수 없음']
+  const { device, sub } = classifyTerminalCore(s)
+  return [device, sub]
 }
 
 export function tsKst(ts: string | null | undefined): string {

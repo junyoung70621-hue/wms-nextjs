@@ -3,7 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
-export async function GET(request: Request) {
+export async function GET() {
   const session = await getSession()
   if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { sendMail, emailLayout, infoTable, textBlock } from '@/lib/email'
 
 export async function GET() {
   const session = await getSession()
@@ -45,17 +46,21 @@ export async function POST(request: Request) {
       .filter(u => u.email && u.assigned_center !== '고객지원사업부')
       .map(u => u.email)
     if (emails.length) {
-      const nodemailer = await import('nodemailer')
-      const t = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-      })
-      await t.sendMail({
-        from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-        to: emails.join(','),
-        subject: `[문의] ${title.trim()}`,
-        html: `<p><b>${session.user.name}</b> (${session.user.assigned_center ?? session.user.center})님이 문의를 등록했습니다.</p><p><b>제목:</b> ${title.trim()}</p><p><b>내용:</b><br>${content.trim().replace(/\n/g, '<br>')}</p>`,
-      })
+      const who = `${session.user.name} (${session.user.assigned_center ?? session.user.center})`
+      await sendMail(
+        emails,
+        `[에이텍모빌리티 자재관리] 새 문의 · ${title.trim()}`,
+        emailLayout({
+          title: '새 문의가 등록되었습니다',
+          bodyHtml: `
+            ${infoTable(['항목', '내용'], [
+              ['등록자', { text: `<b>${who}</b>` }],
+              ['제목', title.trim()],
+            ])}
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">문의 내용</p>
+            ${textBlock(content.trim())}`,
+        }),
+      )
     }
   } catch { /* 메일 실패 무시 */ }
 

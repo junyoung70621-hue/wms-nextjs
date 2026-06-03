@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { sendMail, emailLayout, infoTable, type Cell } from '@/lib/email'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
@@ -62,46 +63,43 @@ export async function POST(request: Request) {
       .filter(u => u.email && u.assigned_center !== '고객지원사업부')
       .map(u => u.email)
 
-    if (emails.length) {
-      const itemRows = items.map((it: Record<string, unknown>, i: number) =>
-        `<tr><td>${i + 1}</td><td>${it['품명'] ?? ''}</td><td>${it['수량'] ?? ''}</td><td>${it['링크'] ?? '-'}</td></tr>`
-      ).join('')
+    const who = `${session.user.name} (${session.user.assigned_center ?? session.user.center})`
+    const itemRows: Cell[][] = items.map((it: Record<string, unknown>, i: number) =>
+      [String(i + 1), String(it['품명'] ?? ''), { text: String(it['수량'] ?? ''), right: true }, String(it['링크'] ?? '-')])
 
-      const nodemailer = await import('nodemailer')
-      const t = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-      })
-      await t.sendMail({
-        from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-        to: emails.join(','),
-        subject: `[구매요청] ${session.user.name} (${session.user.assigned_center ?? session.user.center})`,
-        html: `
-          <h3>구매 요청이 접수되었습니다.</h3>
-          <p><b>요청자:</b> ${session.user.name} (${session.user.assigned_center ?? session.user.center})</p>
-          <p><b>구매사유:</b> ${reason.trim()}</p>
-          <p><b>원가반영:</b> ${cost_note.trim()}</p>
-          <table border="1" cellpadding="5" style="border-collapse:collapse">
-            <tr><th>No</th><th>품명</th><th>수량</th><th>링크</th></tr>
-            ${itemRows}
-          </table>
-        `,
-      })
+    if (emails.length) {
+      await sendMail(
+        emails,
+        `[에이텍모빌리티 자재관리] 구매 요청 접수 · ${who}`,
+        emailLayout({
+          title: '구매 요청이 접수되었습니다',
+          bodyHtml: `
+            ${infoTable(['항목', '내용'], [
+              ['요청자', { text: `<b>${who}</b>` }],
+              ['구매사유', reason.trim()],
+              ['원가반영', cost_note.trim()],
+            ])}
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
+            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}`,
+        }),
+      )
     }
 
     // 신청자 접수 확인 메일
     if (session.user.email) {
-      const nodemailer = await import('nodemailer')
-      const t = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: { user: process.env.GMAIL_ADDRESS, pass: process.env.GMAIL_APP_PASSWORD },
-      })
-      await t.sendMail({
-        from: `에이텍모빌리티 자재관리 <${process.env.GMAIL_ADDRESS}>`,
-        to: session.user.email,
-        subject: '[구매요청] 접수 확인',
-        html: `<p>${session.user.name}님의 구매 요청이 접수되었습니다.</p><p>관리자 검토 후 처리 결과를 안내드립니다.</p>`,
-      })
+      await sendMail(
+        session.user.email,
+        '[에이텍모빌리티 자재관리] 구매 요청 접수 확인',
+        emailLayout({
+          title: '구매 요청이 정상 접수되었습니다',
+          greetingName: session.user.name,
+          bodyHtml: `
+            <p>요청하신 구매 건이 접수되었습니다. 관리자 검토 후 처리 결과를 안내드립니다.</p>
+            ${infoTable(['항목', '내용'], [['구매사유', reason.trim()]])}
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
+            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}`,
+        }),
+      )
     }
   } catch { /* 메일 실패 무시 */ }
 

@@ -2,11 +2,6 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 
-const STATUS_KO: Record<string, string> = {
-  pending: '대기중', approved: '승인', rejected: '거절',
-  on_hold: '보류', cancelled: '취소됨',
-}
-
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
   const session = await getSession()

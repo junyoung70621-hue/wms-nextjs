@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 
 type UploadRow = {
+  item_id?: number      // 앱 내 재고현황에서 직접 선택한 경우 (이름 매칭 대신 ID 사용)
   item_name: string
   erp_code?: string
   quantity: number
@@ -35,19 +36,35 @@ export async function POST(request: Request) {
       continue
     }
 
-    let q = supabase
-      .from('warehouse')
-      .select('id, item_name, quantity, erp_code, location')
-      .eq('location', targetCenter)
+    let item: { id: number; item_name: string; quantity: number; erp_code: string | null; location: string } | undefined
 
-    if (row.erp_code?.trim()) {
-      q = q.eq('erp_code', row.erp_code.trim())
+    if (row.item_id) {
+      // 재고현황에서 직접 선택 → ID로 정확히 조회
+      const { data } = await supabase
+        .from('warehouse')
+        .select('id, item_name, quantity, erp_code, location')
+        .eq('id', row.item_id)
+        .single()
+      item = data ?? undefined
+      if (item && !isAdmin && item.location !== targetCenter) {
+        results.push({ ...row, ok: false, error: `본인 센터(${targetCenter}) 자재만 사용 가능`, item_name: item.item_name })
+        continue
+      }
     } else {
-      q = q.ilike('item_name', row.item_name.trim())
-    }
+      let q = supabase
+        .from('warehouse')
+        .select('id, item_name, quantity, erp_code, location')
+        .eq('location', targetCenter)
 
-    const { data: items } = await q.limit(1)
-    const item = items?.[0]
+      if (row.erp_code?.trim()) {
+        q = q.eq('erp_code', row.erp_code.trim())
+      } else {
+        q = q.ilike('item_name', row.item_name.trim())
+      }
+
+      const { data: items } = await q.limit(1)
+      item = items?.[0]
+    }
 
     if (!item) {
       results.push({ ...row, ok: false, error: `'${row.item_name}' 자재를 찾을 수 없음 (${targetCenter})` })

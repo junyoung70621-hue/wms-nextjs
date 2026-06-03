@@ -48,6 +48,24 @@ function setWidths(ws: WS) {
   ;[12, 30, 28, 22].forEach((w, i) => { ws.getColumn(i + 1).width = w })
 }
 
+// public/atec_logo.png → base64 (브라우저). 실패 시 null (로고 생략).
+async function loadLogoBase64(): Promise<string | null> {
+  try {
+    const res = await fetch('/atec_logo.png')
+    if (!res.ok) return null
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    return btoa(binary)
+  } catch { return null }
+}
+
+// wms_v2 _add_logo: D열에 130×44 로고, 해당 행 높이 36
+function addLogo(ws: WS, logoId: number, row: number) {
+  ws.getRow(row).height = 36
+  ws.addImage(logoId, { tl: { col: 3, row: row - 1 }, ext: { width: 130, height: 44 } })
+}
+
 function writeHeader(ws: WS, r: number, title: string, from: string, to: string, rows: TerminalMovement[], date: string) {
   ws.mergeCells(r, 1, r, 4)
   put(ws, r, 1, title, { font: bold14, align: ca })
@@ -146,19 +164,29 @@ function writeTrcnList(ws: WS, r: number, rows: TerminalMovement[]): number {
   return r
 }
 
-function writeCenterSheet(ws: WS, rows: TerminalMovement[], from: string, to: string, notes: string, date: string) {
+function writeCenterSheet(ws: WS, rows: TerminalMovement[], from: string, to: string, notes: string, date: string, logoId?: number) {
   setWidths(ws)
+  // ── 1페이지: 요약(헤더 + 종류별 수량 + 비고/서명) ──────────────────────────
   writeHeader(ws, 1, '단말기 이동 인수인계증 — 요약', from, to, rows, date)
   let r = 5
   r = writeDeviceSummary(ws, r, rows)
   r = writeNotesSig(ws, r, notes)
-  r += 2
+  r += 1
+  if (logoId !== undefined) addLogo(ws, logoId, r)
+  r += 1
+  // 페이지 구분: 1페이지(요약) | 2페이지(상세)
+  ws.getRow(r).addPageBreak()
+  r += 1
+  // ── 2페이지: 상세(헤더 + 단말기 IH 목록) ──────────────────────────────────
   writeHeader(ws, r, '단말기 이동 인수인계증 — 상세', from, to, rows, date)
   r += 4
   r = writeTrcnList(ws, r, rows)
   r += 1
+  if (logoId !== undefined) addLogo(ws, logoId, r)
+  r += 1
   ws.pageSetup = {
     fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
+    printArea: `A1:D${r}`,
     margins: { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 },
   }
 }
@@ -235,6 +263,10 @@ export async function downloadHandover(
 ) {
   const wb = new ExcelJS.Workbook()
 
+  // 로고 1회 로드 → 워크북에 등록 (모든 센터 시트에서 재사용)
+  const logoB64 = await loadLogoBase64()
+  const logoId = logoB64 !== null ? wb.addImage({ base64: logoB64, extension: 'png' }) : undefined
+
   if (perCenter) {
     const field = perCenter === 'to' ? 'to_center' : 'from_center'
     const direction: 'in' | 'out' = perCenter === 'to' ? 'out' : 'in'
@@ -252,11 +284,11 @@ export async function downloadHandover(
       const ws = wb.addWorksheet(safeSheetName(cname))
       const f = perCenter === 'to' ? fromC : cname
       const t = perCenter === 'to' ? cname : toC
-      writeCenterSheet(ws, groups.get(cname)!, f, t, notes, date)
+      writeCenterSheet(ws, groups.get(cname)!, f, t, notes, date, logoId)
     }
   } else {
     const ws = wb.addWorksheet('인수인계증')
-    writeCenterSheet(ws, rows, fromC, toC, notes, date)
+    writeCenterSheet(ws, rows, fromC, toC, notes, date, logoId)
   }
 
   const buf = await wb.xlsx.writeBuffer()

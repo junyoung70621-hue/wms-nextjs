@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import * as XLSX from 'xlsx'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import type { SessionUser } from '@/lib/session'
 import { CENTERS } from '@/constants/centers'
+import { downloadUsageTemplate, type StockLite } from '@/lib/usageTemplate'
 
 type Row = {
   id: string
@@ -37,15 +39,20 @@ function daysAgo(n: number) {
   return d.toISOString().slice(0, 10)
 }
 
-// ── CSV 파싱 ──────────────────────────────────────────────────────────────────
+// ── XLSX 파싱 ─────────────────────────────────────────────────────────────────
 type ParsedRow = { item_name: string; erp_code: string; quantity: number; reason: string }
 type UploadResult = ParsedRow & { ok: boolean; error?: string; before?: number; after?: number }
 
-function parseCsv(text: string): ParsedRow[] {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
-  if (lines.length < 2) return []
+// 헤더 매핑: 자재명→item_name, ERP코드→erp_code, 사용수량→quantity, 사용사유→reason
+// 자재명·ERP코드 중 하나라도 있고 사용수량>0 인 행만 채택
+function parseXlsx(buf: ArrayBuffer): ParsedRow[] {
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' })
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  if (!ws) return []
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' })
+  if (aoa.length < 2) return []
 
-  const header = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim())
+  const header = (aoa[0] as unknown[]).map(h => String(h ?? '').trim())
   const colIdx = (names: string[]) => {
     for (const n of names) {
       const i = header.findIndex(h => h === n)
@@ -53,22 +60,19 @@ function parseCsv(text: string): ParsedRow[] {
     }
     return -1
   }
-  const iName  = colIdx(['자재명', 'item_name', '품명'])
-  const iErp   = colIdx(['ERP코드', 'erp_code', 'ERP'])
-  const iQty   = colIdx(['수량', 'quantity', '사용수량'])
-  const iReason = colIdx(['사유', 'reason', '비고'])
+  const iName   = colIdx(['자재명', 'item_name', '품명'])
+  const iErp    = colIdx(['ERP코드', 'erp_code', 'ERP'])
+  const iQty    = colIdx(['사용수량', '수량', 'quantity'])
+  const iReason = colIdx(['사용사유', '사유', 'reason', '비고'])
 
-  if (iName === -1 || iQty === -1) return []
+  if (iName === -1 && iErp === -1) return []
 
-  return lines.slice(1).map(line => {
-    const cells = line.split(',').map(c => c.replace(/^"|"$/g, '').trim())
-    return {
-      item_name: iName  >= 0 ? (cells[iName]   ?? '') : '',
-      erp_code:  iErp   >= 0 ? (cells[iErp]    ?? '') : '',
-      quantity:  iQty   >= 0 ? (parseInt(cells[iQty] ?? '0') || 0) : 0,
-      reason:    iReason >= 0 ? (cells[iReason] ?? '') : '',
-    }
-  }).filter(r => r.item_name || r.erp_code)
+  return (aoa.slice(1) as unknown[][]).map(cells => ({
+    item_name: iName   >= 0 ? String(cells[iName]   ?? '').trim() : '',
+    erp_code:  iErp    >= 0 ? String(cells[iErp]    ?? '').trim() : '',
+    quantity:  iQty    >= 0 ? (parseInt(String(cells[iQty] ?? '0')) || 0) : 0,
+    reason:    iReason >= 0 ? String(cells[iReason] ?? '').trim() : '',
+  })).filter(r => (r.item_name || r.erp_code) && r.quantity > 0)
 }
 
 // ── 업로드 탭 ─────────────────────────────────────────────────────────────────
@@ -80,17 +84,24 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
   const [rows,      setRows]     = useState<ParsedRow[]>([])
   const [results,   setResults]  = useState<UploadResult[] | null>(null)
   const [saving,    setSaving]   = useState(false)
+  const [tmplLoading, setTmplLoading] = useState(false)
   const [msg,       setMsg]      = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const TEMPLATE_CSV = '﻿자재명,ERP코드,수량,사유\nLED전구,,5,정기점검\n,ABC001,3,수리작업\n'
-
-  const downloadTemplate = () => {
-    const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a'); a.href = url
-    a.download = '사용내역_양식.csv'; a.click()
-    URL.revokeObjectURL(url)
+  // 현재 센터 재고를 조회해 자재명·ERP코드 프리필된 스타일 XLSX 양식 다운로드
+  const downloadTemplate = async () => {
+    const target = isAdmin ? center : userCenter
+    setTmplLoading(true); setMsg('')
+    try {
+      const res = await fetch(`/api/warehouse?center=${encodeURIComponent(target)}`)
+      const j = await res.json()
+      if (!res.ok) { setMsg(`❌ ${j.error ?? '재고 조회 실패'}`); return }
+      const stock: StockLite[] = (j.data ?? []).map((d: { item_name: string; erp_code: string | null }) => ({
+        item_name: d.item_name, erp_code: d.erp_code,
+      }))
+      await downloadUsageTemplate(target, stock)
+    } catch { setMsg('❌ 양식 생성 실패') }
+    finally { setTmplLoading(false) }
   }
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,12 +110,13 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
     setResults(null); setMsg('')
     const reader = new FileReader()
     reader.onload = ev => {
-      const text = ev.target?.result as string
-      const parsed = parseCsv(text)
-      if (!parsed.length) { setMsg('❌ 올바른 형식의 CSV가 아니거나 데이터가 없습니다.'); return }
-      setRows(parsed)
+      try {
+        const parsed = parseXlsx(ev.target?.result as ArrayBuffer)
+        if (!parsed.length) { setMsg('❌ 올바른 양식이 아니거나, 사용수량(>0)이 입력된 행이 없습니다.'); return }
+        setRows(parsed)
+      } catch { setMsg('❌ 엑셀 파일을 읽지 못했습니다.') }
     }
-    reader.readAsText(file, 'UTF-8')
+    reader.readAsArrayBuffer(file)
   }
 
   const handleSubmit = async () => {
@@ -134,9 +146,9 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
     <div className="space-y-4 max-w-3xl">
       {/* 안내 */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[12px] text-[#1E293B] space-y-1">
-        <p className="font-semibold text-[#1565c0]">📋 사용내역 CSV 업로드 안내</p>
-        <p>CSV 파일의 자재명(또는 ERP코드)으로 해당 센터 재고를 조회해 수량을 차감합니다.</p>
-        <p className="text-[#64748B]">필수 컬럼: <code className="bg-white px-1 rounded">자재명</code> · <code className="bg-white px-1 rounded">수량</code> &nbsp;|&nbsp; 선택 컬럼: <code className="bg-white px-1 rounded">ERP코드</code> · <code className="bg-white px-1 rounded">사유</code></p>
+        <p className="font-semibold text-[#1565c0]">📋 사용내역 업로드 안내</p>
+        <p>「양식 다운로드」를 누르면 해당 센터 현재고가 채워진 엑셀이 받아집니다. <b>노란색 사용수량 칸만 입력</b>해 다시 올리면 재고가 차감됩니다.</p>
+        <p className="text-[#64748B]">입력 컬럼: <code className="bg-white px-1 rounded">사용수량</code>(필수) · <code className="bg-white px-1 rounded">사용사유</code>(선택) &nbsp;|&nbsp; 프리필: <code className="bg-white px-1 rounded">자재명</code> · <code className="bg-white px-1 rounded">ERP코드</code></p>
       </div>
 
       {/* 센터 선택 (admin only) + 파일 */}
@@ -151,13 +163,13 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
         {!isAdmin && (
           <div className="px-3 py-1.5 border rounded text-[12px] text-[#1E293B] bg-gray-50">{userCenter}</div>
         )}
-        <Button variant="outline" className="text-[12px] h-8" onClick={downloadTemplate}>
-          📥 양식 다운로드
+        <Button variant="outline" className="text-[12px] h-8" onClick={downloadTemplate} disabled={tmplLoading}>
+          {tmplLoading ? '양식 생성 중...' : '📥 양식 다운로드'}
         </Button>
         <label className="cursor-pointer">
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
           <span className="inline-flex items-center px-3 h-8 border rounded text-[12px] bg-white hover:bg-gray-50 transition-colors cursor-pointer">
-            📂 CSV 파일 선택
+            📂 엑셀 파일 선택
           </span>
         </label>
         {rows.length > 0 && (
@@ -184,7 +196,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
             <table className="w-full text-[12px] border-collapse">
               <thead className="sticky top-0 bg-[#F8F9FA]">
                 <tr>
-                  {['#','자재명','ERP코드','수량','사유'].map(h => (
+                  {['#','자재명','ERP코드','사용수량','사용사유'].map(h => (
                     <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
