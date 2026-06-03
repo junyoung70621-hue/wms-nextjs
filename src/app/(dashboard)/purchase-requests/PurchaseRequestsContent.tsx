@@ -88,7 +88,7 @@ function ManagerCard({
         <div className="px-4 pb-4 border-t border-[rgba(0,0,0,0.06)] space-y-3 bg-white">
           {/* 구매 목록 */}
           {req.items?.length > 0 && (
-            <div className="mt-3 border rounded overflow-hidden">
+            <div className="mt-3 border rounded overflow-x-auto">
               <table className="w-full text-[12px]">
                 <thead className="bg-[#F8F9FA]">
                   <tr>
@@ -221,7 +221,7 @@ function MyCard({
       {open && (
         <div className="px-4 pb-4 border-t border-[rgba(0,0,0,0.06)] space-y-3 bg-white">
           {req.items?.length > 0 && (
-            <div className="mt-3 border rounded overflow-hidden">
+            <div className="mt-3 border rounded overflow-x-auto">
               <table className="w-full text-[12px]">
                 <thead className="bg-[#F8F9FA]">
                   <tr>
@@ -366,8 +366,8 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
           <label className="text-[11px] font-semibold text-[#64748B]">구매 목록 *</label>
           <Button size="sm" variant="outline" onClick={addRow} className="text-[11px] h-6 px-2">+ 행 추가</Button>
         </div>
-        <div className="border rounded overflow-hidden">
-          <table className="w-full text-[12px]">
+        <div className="border rounded overflow-x-auto">
+          <table className="w-full text-[12px] min-w-[460px]">
             <thead className="bg-[#F8F9FA]">
               <tr>
                 <th className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b w-8">No</th>
@@ -554,7 +554,7 @@ export default function PurchaseRequestsContent({ user, initialTab }: { user: Se
               placeholder="이름 / 센터 / 사유 / 품명 검색"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-8 text-[12px] w-52 ml-auto"
+              className="h-8 text-[12px] w-full sm:w-52 sm:ml-auto"
             />
           )}
         </div>

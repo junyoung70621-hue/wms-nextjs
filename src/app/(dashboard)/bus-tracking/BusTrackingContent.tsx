@@ -537,9 +537,9 @@ function TabAssignments({
           <p className="text-[11px] font-bold text-[#64748B] mb-2">기종별 수량</p>
           <DeviceSummary rows={visibleRows} />
         </div>
-        <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden">
+        <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-x-auto">
           {loading ? <p className="text-[12px] text-[#94A3B8] p-4 text-center">로딩 중...</p> : (
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[12px] min-w-[560px]">
               <thead className="bg-[#F8F9FA]">
                 <tr>
                   <th className="px-2 py-2 w-8 text-center">
@@ -707,7 +707,7 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
       )}
 
       {/* 전체 목록 */}
-      <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden">
+      <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-x-auto">
         <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.08)]">
           <span className="text-[12px] font-bold text-[#1E293B]">센터 단말기 현황</span>
           <span className="text-[11px] text-[#94A3B8] ml-2">배정 {activeRows.length}대 · 미배정 {available.length}대</span>
