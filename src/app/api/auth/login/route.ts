@@ -58,6 +58,9 @@ export async function POST(request: Request) {
     session.loginAt = Date.now()
     await session.save()
 
+    // 마지막 접속 시각 갱신 (wms_V2 접속현황과 동일 기준)
+    await supabase.from('users').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id)
+
     return NextResponse.json({ ok: true, name: user.name })
   } catch {
     return NextResponse.json(

@@ -8,10 +8,10 @@ export async function GET() {
     return NextResponse.json({ error: '권한 없음' }, { status: 403 })
   }
 
-  // 승인된 유저 목록
+  // 승인된 유저 목록 + 마지막 접속 시각(last_seen_at) — wms_V2 와 동일 기준
   const { data: users, error: uErr } = await supabase
     .from('users')
-    .select('id, name, username, center, assigned_center, role')
+    .select('id, name, username, center, assigned_center, role, last_seen_at')
     .eq('is_approved', true)
     .order('center')
 
@@ -21,21 +21,9 @@ export async function GET() {
     return NextResponse.json({ data: [] })
   }
 
-  // 유저별 최근 활동 (history 기준)
-  const { data: acts } = await supabase
-    .from('history')
-    .select('actor_id, acted_at')
-    .order('acted_at', { ascending: false })
-    .limit(5000)
-
-  const latestMap: Record<string, string> = {}
-  for (const a of acts ?? []) {
-    if (!latestMap[a.actor_id]) latestMap[a.actor_id] = a.acted_at
-  }
-
   const now = Date.now()
-  const result = users.map(u => {
-    const lastAt = latestMap[u.id] ?? null
+  const result = users.map(({ last_seen_at, ...u }) => {
+    const lastAt = last_seen_at ?? null
     const diffMs = lastAt ? now - new Date(lastAt).getTime() : null
     const online = diffMs !== null && diffMs < 8 * 60 * 60 * 1000
     return { ...u, last_active: lastAt, online }
