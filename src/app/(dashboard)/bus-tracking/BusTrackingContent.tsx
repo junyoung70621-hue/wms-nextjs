@@ -38,6 +38,44 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge text={STATUS_LABEL[status] ?? status} color={colors[status]} />
 }
 
+// ── 표 정렬 (재사용) ─────────────────────────────────────────────────────────
+type SortDir = 'asc' | 'desc'
+function useSort<T extends object>(items: T[], initKey: string | null = null, initDir: SortDir = 'asc') {
+  const [sortKey, setSortKey] = useState<string | null>(initKey)
+  const [sortDir, setSortDir] = useState<SortDir>(initDir)
+  const sorted = useMemo(() => {
+    if (!sortKey) return items
+    const k = sortKey
+    return [...items].sort((a, b) => {
+      const va = (a as Record<string, unknown>)[k], vb = (b as Record<string, unknown>)[k]
+      let c: number
+      if (typeof va === 'boolean' || typeof vb === 'boolean') c = (va ? 1 : 0) - (vb ? 1 : 0)
+      else if (typeof va === 'number' && typeof vb === 'number') c = va - vb
+      else c = String(va ?? '').localeCompare(String(vb ?? ''), 'ko', { numeric: true })
+      return sortDir === 'asc' ? c : -c
+    })
+  }, [items, sortKey, sortDir])
+  const toggle = (key: string) => {
+    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
+  }
+  return { sorted, sortKey, sortDir, toggle }
+}
+
+function SortTh({ label, field, sortKey, sortDir, onSort, className }: {
+  label: string; field: string; sortKey: string | null; sortDir: SortDir; onSort: (k: string) => void; className?: string
+}) {
+  const active = sortKey === field
+  return (
+    <th className={`${className ?? 'px-3 py-2 text-left font-medium text-[#64748B]'} cursor-pointer select-none hover:text-[#1E293B]`}
+        onClick={() => onSort(field)} title="클릭하여 정렬">
+      <span className="inline-flex items-center gap-0.5">{label}
+        <span className="text-[8px] text-[#94A3B8]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
+      </span>
+    </th>
+  )
+}
+
 function DeviceSummary({ rows }: { rows: Assignment[] }) {
   const active = rows.filter(r => ['holding', 'defective'].includes(r.status))
   if (!active.length) return <p className="text-[12px] text-[#94A3B8]">단말기 없음</p>
@@ -610,6 +648,7 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [available,   setAvailable]   = useState<AvailableTerminal[]>([])
   const [loading,     setLoading]     = useState(true)
+  const [ihSearch,    setIhSearch]    = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -646,6 +685,22 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
     ])).sort()
     return { map, allKeys }
   }, [activeRows, available])
+
+  // 센터 단말기 현황 표: 배정 + 미배정(센터창고) 통합 → IH 검색 → 정렬
+  const centerRows = useMemo(() => {
+    const base = [
+      ...activeRows.map(r => ({ ...r, _avail: false, device: `${r.device_type ?? ''} ${r.sub_type ?? ''}`.trim() })),
+      ...available.map(t => ({
+        id: t.ih_code, ih_code: t.ih_code, device_type: t.device_type, sub_type: t.sub_type,
+        employee_name: '─ 미배정 ─', status: 'unassigned', assigned_at: t.upload_date,
+        center: selCenter, employee_id: null, returned_at: null, notes: null, assigned_by: null,
+        _avail: true, device: `${t.device_type || ''} ${t.sub_type || ''}`.trim(),
+      })),
+    ]
+    const q = ihSearch.trim().toLowerCase()
+    return q ? base.filter(r => r.ih_code.toLowerCase().includes(q)) : base
+  }, [activeRows, available, selCenter, ihSearch])
+  const { sorted: centerSorted, sortKey, sortDir, toggle } = useSort(centerRows, 'employee_name', 'asc')
 
   if (loading) return <p className="text-[12px] text-[#94A3B8] py-4">로딩 중...</p>
 
@@ -708,34 +763,49 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
 
       {/* 전체 목록 */}
       <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-x-auto">
-        <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.08)]">
+        <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.08)] flex flex-wrap items-center gap-2">
           <span className="text-[12px] font-bold text-[#1E293B]">센터 단말기 현황</span>
-          <span className="text-[11px] text-[#94A3B8] ml-2">배정 {activeRows.length}대 · 미배정 {available.length}대</span>
+          <span className="text-[11px] text-[#94A3B8]">
+            배정 {activeRows.length}대 · 미배정 {available.length}대
+            {ihSearch.trim() && <span className="text-[#B32646] ml-1">· 검색 {centerRows.length}건</span>}
+          </span>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Input
+              value={ihSearch}
+              onChange={e => setIhSearch(e.target.value)}
+              placeholder="IH 검색"
+              className="h-7 text-[12px] w-40"
+            />
+            {ihSearch && (
+              <button type="button" onClick={() => setIhSearch('')}
+                className="text-[11px] text-[#94A3B8] hover:text-[#1E293B] px-1">✕</button>
+            )}
+          </div>
         </div>
         <table className="w-full text-[12px]">
           <thead className="bg-[#F8F9FA]">
             <tr>
-              <th className="px-3 py-2 text-left font-medium text-[#64748B]">직원명</th>
-              <th className="px-3 py-2 text-left font-medium text-[#64748B]">IH</th>
-              <th className="px-3 py-2 text-left font-medium text-[#64748B]">기종</th>
-              <th className="px-3 py-2 text-left font-medium text-[#64748B]">상태</th>
-              <th className="px-3 py-2 text-left font-medium text-[#64748B]">배정일시</th>
+              <SortTh label="직원명"   field="employee_name" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="IH"       field="ih_code"       sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="기종"     field="device"        sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="상태"     field="status"        sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="배정일시" field="assigned_at"   sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
             </tr>
           </thead>
           <tbody>
-            {[...activeRows.map(r => ({ ...r, _avail: false })),
-              ...available.map(t => ({ id: t.ih_code, ih_code: t.ih_code, device_type: t.device_type, sub_type: t.sub_type, employee_name: '─ 미배정 ─', status: 'unassigned', assigned_at: t.upload_date, center: selCenter, employee_id: null, returned_at: null, notes: null, assigned_by: null, _avail: true }))]
-              .sort((a, b) => a.employee_name.localeCompare(b.employee_name, 'ko'))
-              .map((r, i) => (
-                <tr key={`${r.id}-${i}`} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
-                  <td className="px-3 py-1.5 text-[#1E293B]">{r.employee_name}</td>
-                  <td className="px-3 py-1.5 font-mono text-[#475569]">{r.ih_code}</td>
-                  <td className="px-3 py-1.5 text-[#64748B]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
-                  <td className="px-3 py-1.5"><StatusBadge status={r.status} /></td>
-                  <td className="px-3 py-1.5 text-[#94A3B8]">{tsKst(r.assigned_at)}</td>
-                </tr>
-              ))
-            }
+            {centerSorted.length === 0 ? (
+              <tr><td colSpan={5} className="px-3 py-6 text-center text-[12px] text-[#94A3B8]">
+                {ihSearch.trim() ? '검색 결과가 없습니다.' : '단말기가 없습니다.'}
+              </td></tr>
+            ) : centerSorted.map((r, i) => (
+              <tr key={`${r.id}-${i}`} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
+                <td className="px-3 py-1.5 text-[#1E293B]">{r.employee_name}</td>
+                <td className="px-3 py-1.5 font-mono text-[#475569]">{r.ih_code}</td>
+                <td className="px-3 py-1.5 text-[#64748B]">{r.device || '-'}</td>
+                <td className="px-3 py-1.5"><StatusBadge status={r.status} /></td>
+                <td className="px-3 py-1.5 text-[#94A3B8]">{tsKst(r.assigned_at)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
