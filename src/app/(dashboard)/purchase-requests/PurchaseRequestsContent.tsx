@@ -287,6 +287,11 @@ function MyCard({
             </p>
           )}
 
+          {/* 구매요청서 다운로드 */}
+          <div className="pt-1">
+            <DownloadFormButton req={req} />
+          </div>
+
           {canCancel && (
             <div className="pt-1">
               {confirmCan ? (

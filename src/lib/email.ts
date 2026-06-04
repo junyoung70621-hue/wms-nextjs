@@ -36,7 +36,7 @@ export function infoTable(headers: string[], rows: Cell[][]): string {
       const style = `padding:8px 14px; font-size:13px; color:${cell.color ?? '#334155'};`
         + (cell.right ? 'text-align:right;' : '')
         + (cell.bold ? 'font-weight:700;' : '')
-        + 'border-top:1px solid #eef1f5;'
+        + 'border-top:1px solid #eef1f5; word-break:break-word; overflow-wrap:anywhere;'
       return `<td style="${style}">${cell.text}</td>`
     }).join('') + '</tr>'
   ).join('')

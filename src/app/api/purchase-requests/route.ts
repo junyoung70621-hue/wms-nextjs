@@ -72,8 +72,15 @@ export async function POST(request: Request) {
       .map(u => u.email)
 
     const who = `${session.user.name} (${session.user.assigned_center ?? session.user.center})`
-    const itemRows: Cell[][] = items.map((it: Record<string, unknown>, i: number) =>
-      [String(i + 1), String(it['품명'] ?? ''), { text: String(it['수량'] ?? ''), right: true }, String(it['링크'] ?? '-')])
+    const itemRows: Cell[][] = items.map((it: Record<string, unknown>, i: number) => {
+      const link = String(it['링크'] ?? '').trim()
+      return [
+        String(i + 1),
+        String(it['품명'] ?? ''),
+        { text: String(it['수량'] ?? ''), right: true },
+        { text: link ? `<a href="${link}" target="_blank" style="color:#2563EB; text-decoration:underline;">링크 ↗</a>` : '-' },
+      ]
+    })
 
     if (emails.length) {
       await sendMail(
