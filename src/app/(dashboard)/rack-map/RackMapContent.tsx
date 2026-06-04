@@ -78,11 +78,16 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
     category_large: item.category_large ?? '',
     category_mid: item.category_mid ?? '',
   })
+  const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }))
 
+  // 수량이 기존과 달라졌는지 → 사유 입력 노출/필수
+  const qtyChanged = (Number(form.quantity) || 0) !== (item.quantity ?? 0)
+
   async function save() {
+    if (qtyChanged && !reason.trim()) { setMsg('수량 변경 사유를 입력해 주세요.'); return }
     setSaving(true); setMsg('')
     try {
       const res = await fetch('/api/warehouse/item', {
@@ -96,6 +101,7 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
           box_no: form.box_no || null,
           category_large: form.category_large || null,
           category_mid: form.category_mid || null,
+          reason: qtyChanged ? reason.trim() : undefined,
         }),
       })
       const d = await res.json()
@@ -139,6 +145,20 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
                 </div>
               ))}
             </div>
+            {qtyChanged && (
+              <div>
+                <label className="text-[11px] text-[#64748B] block mb-0.5">
+                  수량 변경 사유 <span className="text-[#B32646]">*</span>
+                  <span className="text-[#94A3B8] ml-1">({item.quantity.toLocaleString()} → {(Number(form.quantity) || 0).toLocaleString()})</span>
+                </label>
+                <Input
+                  value={reason}
+                  onChange={e => setReason(e.target.value)}
+                  placeholder="예: 실사 조정 / 입고 / 폐기"
+                  className="h-8 text-[12px] bg-white"
+                />
+              </div>
+            )}
             {msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={onClose}
@@ -266,7 +286,8 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
     reload(c)
   }
 
-  const canEdit = user.role === 'admin'
+  // 수정 권한: 관리자 / 자재센터 직원(자재파트 포함, guest 제외) — /warehouse·박스단말기와 동일 기준
+  const canEdit = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest')
 
   const filtered = useMemo(() => {
     if (!search.trim()) return items

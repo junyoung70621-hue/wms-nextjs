@@ -31,14 +31,20 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: data ?? [] })
 }
 
-// PATCH: 자재 정보 수정 (admin 전용)
+// 수정 권한: 관리자 / 자재센터 직원(자재파트 포함, guest 제외)
+function canEditItem(user: { role: string; center: string; assigned_center: string | null }) {
+  const center = user.assigned_center ?? user.center
+  return user.role === 'admin' || (center === '자재센터' && user.role !== 'guest')
+}
+
+// PATCH: 자재 정보 수정 (admin / 자재센터 직원)
 export async function PATCH(request: Request) {
   const session = await getSession()
-  if (!session.user || session.user.role !== 'admin') {
+  if (!session.user || !canEditItem(session.user)) {
     return NextResponse.json({ error: '권한 없음' }, { status: 403 })
   }
 
-  const { id, ...fields } = await request.json()
+  const { id, reason, ...fields } = await request.json()
   if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
 
   const allowed = new Set([
@@ -60,13 +66,15 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.from('warehouse').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 수정 이력 기록
+  // 수정 이력 기록 (수량이 바뀌면 입력받은 사유, 아니면 '정보 수정')
+  const qtyChanged = update.quantity !== undefined && Number(update.quantity) !== (before?.quantity ?? 0)
+  const reasonText = (typeof reason === 'string' && reason.trim()) || (qtyChanged ? '수량 변경' : '정보 수정')
   await supabase.from('history').insert({
     actor_id:             session.user.id,
     item_id:              id,
     action_type:          'edit',
     quantity:             update.quantity !== undefined ? Number(update.quantity) : (before?.quantity ?? 0),
-    reason:               '정보 수정',
+    reason:               reasonText,
     from_center:          before?.location ?? null,
     to_center:            (update.location as string | undefined) ?? null,
     snapshot_qty_before:  before?.quantity ?? 0,
