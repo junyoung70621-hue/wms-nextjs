@@ -104,27 +104,39 @@ export interface TaxiStatus {
   drivers: DriverGroup[]
 }
 
-// insDesc / outsDesc : uploaded_at DESC 정렬된 전체 in / out 레코드
+// insDesc / outsDesc : 전체 in / out 레코드
 // deliveredSet       : taxi_deliveries 에 존재하는 trcn_id 집합
+//
+// ※ "가장 최신" 판단 기준: 실제 이동 날짜(upload_date) 우선, 같은 날짜면 업로드 시각(uploaded_at).
+//    (과거 이력을 뒤늦게 업로드하면 uploaded_at 만으로는 시간 역전이 생겨 보유 위치가 뒤바뀜.
+//     예: 5/11 입고를 6/1에 입력 → uploaded_at 기준으론 5/27 출고보다 최신으로 잘못 잡힘.
+//     wms_v2 원본은 uploaded_at 만 비교했으나, 이동 날짜 기준이 실제 단말기 위치와 맞아 변경함.)
 export function computeTaxiStatus(
   insDesc: TaxiMovement[],
   outsDesc: TaxiMovement[],
   deliveredSet: Set<string>,
 ): TaxiStatus {
-  // trcn_id별 "가장 최신 in/out" 1건만 (DESC + 첫 등장 = setdefault)
-  const latestIn = new Map<string, TaxiMovement>()
-  for (const r of insDesc) if (!latestIn.has(r.trcn_id)) latestIn.set(r.trcn_id, r)
-  const latestOut = new Map<string, TaxiMovement>()
-  for (const r of outsDesc) if (!latestOut.has(r.trcn_id)) latestOut.set(r.trcn_id, r)
+  // 비교 키: 이동 날짜(YYYY-MM-DD) + 업로드 시각(ISO) → 문자열 사전순 비교로 시간순 일치
+  const key = (r: TaxiMovement) => `${r.upload_date ?? ''}|${r.uploaded_at ?? ''}`
 
-  const ts = (s: string) => Date.parse(s)
+  // trcn_id별 "가장 최신 in/out" 1건만 (key 가 가장 큰 레코드)
+  const latestIn = new Map<string, TaxiMovement>()
+  for (const r of insDesc) {
+    const cur = latestIn.get(r.trcn_id)
+    if (!cur || key(r) > key(cur)) latestIn.set(r.trcn_id, r)
+  }
+  const latestOut = new Map<string, TaxiMovement>()
+  for (const r of outsDesc) {
+    const cur = latestOut.get(r.trcn_id)
+    if (!cur || key(r) > key(cur)) latestOut.set(r.trcn_id, r)
+  }
 
   // 자재센터 측 재고 (in이 out보다 최신)
   const repairing: TaxiStatusItem[] = []
   const stored: TaxiStatusItem[] = []
   for (const [trcn, inRec] of latestIn) {
     const outRec = latestOut.get(trcn)
-    if (!outRec || ts(inRec.uploaded_at) >= ts(outRec.uploaded_at)) {
+    if (!outRec || key(inRec) >= key(outRec)) {
       const item: TaxiStatusItem = {
         id: inRec.id, trcn_id: inRec.trcn_id, device_type: inRec.device_type,
         upload_date: inRec.upload_date, is_terminated: inRec.is_terminated,
@@ -138,7 +150,7 @@ export function computeTaxiStatus(
   const driverMap = new Map<string, DriverGroup['items']>()
   for (const [trcn, outRec] of latestOut) {
     const inRec = latestIn.get(trcn)
-    if (!inRec || ts(outRec.uploaded_at) >= ts(inRec.uploaded_at)) {
+    if (!inRec || key(outRec) > key(inRec)) {
       if (!deliveredSet.has(trcn)) {
         const d = outRec.driver_name || UNASSIGNED
         if (!driverMap.has(d)) driverMap.set(d, [])
