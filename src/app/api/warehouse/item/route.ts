@@ -66,19 +66,26 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.from('warehouse').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 수정 이력 기록 (수량이 바뀌면 입력받은 사유, 아니면 '정보 수정')
-  const qtyChanged = update.quantity !== undefined && Number(update.quantity) !== (before?.quantity ?? 0)
-  const reasonText = (typeof reason === 'string' && reason.trim()) || (qtyChanged ? '수량 변경' : '정보 수정')
+  // 이력 기록: 수량이 늘면 입고(in), 줄면 출고(out), 수량 변화 없으면 정보 수정(edit)
+  const beforeQty = before?.quantity ?? 0
+  const afterQty  = update.quantity !== undefined ? Number(update.quantity) : beforeQty
+  const delta     = afterQty - beforeQty
+  const itemCenter = (update.location as string | undefined) ?? before?.location ?? null
+  const reasonText = (typeof reason === 'string' && reason.trim())
+    || (delta > 0 ? '수량 증가' : delta < 0 ? '수량 감소' : '정보 수정')
+
   await supabase.from('history').insert({
     actor_id:             session.user.id,
     item_id:              id,
-    action_type:          'edit',
-    quantity:             update.quantity !== undefined ? Number(update.quantity) : (before?.quantity ?? 0),
+    action_type:          delta > 0 ? 'in' : delta < 0 ? 'out' : 'edit',
+    // 입·출고는 변동량(절대값), 정보 수정은 현재 수량 기록
+    quantity:             delta !== 0 ? Math.abs(delta) : afterQty,
     reason:               reasonText,
-    from_center:          before?.location ?? null,
-    to_center:            (update.location as string | undefined) ?? null,
-    snapshot_qty_before:  before?.quantity ?? 0,
-    snapshot_qty_after:   update.quantity !== undefined ? Number(update.quantity) : (before?.quantity ?? 0),
+    // 입고는 들어온 센터(to), 출고는 빠진 센터(from)
+    from_center:          delta < 0 ? itemCenter : null,
+    to_center:            delta > 0 ? itemCenter : null,
+    snapshot_qty_before:  beforeQty,
+    snapshot_qty_after:   afterQty,
   })
 
   return NextResponse.json({ ok: true })
