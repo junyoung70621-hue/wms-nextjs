@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
+import { downloadPurchaseRequest } from '@/lib/purchaseRequestExcel'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 type PurchaseItem = { 품명: string; 수량: number; 링크?: string }
@@ -41,6 +42,31 @@ function tsKst(ts: string) {
     return new Date(new Date(ts).getTime() + 9 * 3600 * 1000)
       .toISOString().slice(0, 16).replace('T', ' ')
   } catch { return ts.slice(0, 10) }
+}
+
+// ── 구매요청서 다운로드 버튼 ─────────────────────────────────────────────────
+function DownloadFormButton({ req }: { req: PurchaseRequest }) {
+  const [busy, setBusy] = useState(false)
+  const handleDownload = async () => {
+    setBusy(true)
+    try {
+      await downloadPurchaseRequest({
+        requester_name:   req.requester_name,
+        requester_center: req.requester_center,
+        requested_at:     req.requested_at,
+        reason:           req.reason,
+        cost_note:        req.cost_note,
+        notes:            req.notes,
+        items:            req.items ?? [],
+      })
+    } finally { setBusy(false) }
+  }
+  return (
+    <Button size="sm" variant="outline" disabled={busy} onClick={handleDownload}
+      className="text-[12px] text-[#B32646] border-[#B32646]/40 hover:bg-[#B32646]/5">
+      {busy ? '생성 중...' : '📄 구매요청서 다운로드'}
+    </Button>
+  )
 }
 
 // ── 요청 카드 (관리자 전체 현황) ─────────────────────────────────────────────
@@ -129,6 +155,11 @@ function ManagerCard({
               {req.processed_at && ` · ${tsKst(req.processed_at)}`}
             </p>
           )}
+
+          {/* 구매요청서 다운로드 */}
+          <div className="pt-1">
+            <DownloadFormButton req={req} />
+          </div>
 
           {/* 상태 변경 */}
           <div className="space-y-2 pt-1">

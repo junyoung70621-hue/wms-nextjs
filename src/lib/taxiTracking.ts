@@ -105,16 +105,18 @@ export interface TaxiStatus {
 }
 
 // insDesc / outsDesc : 전체 in / out 레코드
-// deliveredSet       : taxi_deliveries 에 존재하는 trcn_id 집합
+// latestDelivery     : trcn_id → 가장 최신 배송완료 키("배송날짜|배송시각")
 //
 // ※ "가장 최신" 판단 기준: 실제 이동 날짜(upload_date) 우선, 같은 날짜면 업로드 시각(uploaded_at).
 //    (과거 이력을 뒤늦게 업로드하면 uploaded_at 만으로는 시간 역전이 생겨 보유 위치가 뒤바뀜.
 //     예: 5/11 입고를 6/1에 입력 → uploaded_at 기준으론 5/27 출고보다 최신으로 잘못 잡힘.
 //     wms_v2 원본은 uploaded_at 만 비교했으나, 이동 날짜 기준이 실제 단말기 위치와 맞아 변경함.)
+// ※ 배송완료 제외도 날짜 인식: 배송이 "최신 OUT 이후"일 때만 기사 보유에서 제외.
+//    (배송 후 회수→재출고되면 다시 기사 보유. 단순 "배송이력 존재" 제외는 재출고를 놓침.)
 export function computeTaxiStatus(
   insDesc: TaxiMovement[],
   outsDesc: TaxiMovement[],
-  deliveredSet: Set<string>,
+  latestDelivery: Map<string, string>,
 ): TaxiStatus {
   // 비교 키: 이동 날짜(YYYY-MM-DD) + 업로드 시각(ISO) → 문자열 사전순 비교로 시간순 일치
   const key = (r: TaxiMovement) => `${r.upload_date ?? ''}|${r.uploaded_at ?? ''}`
@@ -146,12 +148,14 @@ export function computeTaxiStatus(
     }
   }
 
-  // 기사 보유 재고 (out이 in보다 최신, 아직 배송 안 됨)
+  // 기사 보유 재고 (out이 in보다 최신, 그리고 그 out 이후로 배송된 적 없음)
   const driverMap = new Map<string, DriverGroup['items']>()
   for (const [trcn, outRec] of latestOut) {
     const inRec = latestIn.get(trcn)
     if (!inRec || key(outRec) > key(inRec)) {
-      if (!deliveredSet.has(trcn)) {
+      const delv = latestDelivery.get(trcn)
+      // 배송이 이 출고 이후(>=)면 배송완료로 빠짐, 출고가 더 최신이면(재출고) 기사 보유
+      if (!delv || key(outRec) > delv) {
         const d = outRec.driver_name || UNASSIGNED
         if (!driverMap.has(d)) driverMap.set(d, [])
         driverMap.get(d)!.push({ trcn_id: outRec.trcn_id, device_type: outRec.device_type, out_id: outRec.id })
