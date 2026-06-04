@@ -137,6 +137,9 @@ function ItemDetailModal({
   const [delSaving,   setDelSaving]   = useState(false)
 
   const isAdmin     = user.role === 'admin'
+  // 자재 정보 수정: 관리자 / 자재센터 직원(자재파트 포함, guest 제외) — /api/warehouse/item PATCH·자재창고지도와 동일 기준
+  const userCenter   = user.assigned_center ?? user.center
+  const canEditItem  = isAdmin || (userCenter === '자재센터' && user.role !== 'guest')
   const canTransfer = ['admin', 'manager', 'user'].includes(user.role) ||
                       (user.role === 'materials' && center === '자재센터')
 
@@ -202,7 +205,7 @@ function ItemDetailModal({
     } finally { setDelSaving(false) }
   }
 
-  const modalTabs = ['history', ...(canTransfer ? ['transfer'] : []), ...(isAdmin ? ['edit'] : [])]
+  const modalTabs = ['history', ...(canTransfer ? ['transfer'] : []), ...(canEditItem ? ['edit'] : [])]
   const tabLabel = (t: string) => ({ history: '📋 이력', transfer: '🚚 이동 신청', edit: '✏️ 수정' }[t] ?? t)
 
   return (
@@ -294,7 +297,7 @@ function ItemDetailModal({
             </div>
           )}
 
-          {/* 수정 (admin) */}
+          {/* 수정 (관리자 / 자재센터 직원) */}
           {tab === 'edit' && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -332,7 +335,7 @@ function ItemDetailModal({
                   {editSaving ? '저장 중...' : '💾 저장'}
                 </Button>
                 <div className="ml-auto">
-                  {!delConfirm ? (
+                  {!isAdmin ? null : !delConfirm ? (
                     <Button variant="outline" onClick={() => setDelConfirm(true)}
                       className="text-red-500 border-red-200 text-[12px]">
                       🗑️ 삭제
@@ -360,7 +363,7 @@ function ItemDetailModal({
             <div className="mt-4">
               <TerminalBoxSection
                 item={item}
-                canEdit={user.role === 'admin' || (center === '자재센터' && user.role !== 'guest')}
+                canEdit={canEditItem}
                 location={item.location}
                 onChanged={onUpdated}
               />
