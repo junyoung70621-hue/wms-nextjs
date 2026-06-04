@@ -559,46 +559,63 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
   onToggle?: (id: string) => void
   onToggleAll?: (ids: string[]) => void
 }) {
-  const { sorted, sortKey, sortDir, toggle } = useSort(items)
+  const [q, setQ] = useState('')
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return s ? items.filter(i =>
+      i.trcn_id.toLowerCase().includes(s) || (i.device_type ?? '').toLowerCase().includes(s)) : items
+  }, [items, q])
+  const { sorted, sortKey, sortDir, toggle } = useSort(filtered)
   if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">없음</div>
-  const ids = items.map(i => i.id)
+  const ids = filtered.map(i => i.id)
+  const colSpan = selectable ? 5 : 4
   return (
-    <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-72">
-      <table className="w-full text-[11px]">
-        <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]">
-          <tr>
-            {selectable && (
-              <th className="px-2 py-1.5 w-8">
-                <input type="checkbox" checked={!!selected && selected.size === ids.length && ids.length > 0}
-                  onChange={() => onToggleAll?.(ids)} className="cursor-pointer" />
-              </th>
-            )}
-            <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-            <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-            <SortTh label="입고일" field="upload_date" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-            <SortTh label="해지" field="is_terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle}
-              className="px-2 py-1.5 text-center font-semibold" />
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map(it => (
-            <tr key={it.id} className="border-t border-[#F1F5F9]">
+    <div className="space-y-1.5">
+      <div className="relative">
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종 검색"
+          className="h-7 w-full text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
+        {q && <button type="button" onClick={() => setQ('')}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B] text-[11px]">✕</button>}
+      </div>
+      <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-72">
+        <table className="w-full text-[11px]">
+          <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]">
+            <tr>
               {selectable && (
-                <td className="px-2 py-1.5 text-center">
-                  <input type="checkbox" checked={!!selected?.has(it.id)}
-                    onChange={() => onToggle?.(it.id)} className="cursor-pointer" />
-                </td>
+                <th className="px-2 py-1.5 w-8">
+                  <input type="checkbox" checked={!!selected && ids.length > 0 && ids.every(id => selected.has(id))}
+                    onChange={() => onToggleAll?.(ids)} className="cursor-pointer" />
+                </th>
               )}
-              <td className="px-2 py-1.5 font-mono text-[#475569]">{it.trcn_id}</td>
-              <td className="px-2 py-1.5 text-[#1E293B]">{it.device_type}</td>
-              <td className="px-2 py-1.5 text-[#94A3B8]">{it.upload_date}</td>
-              <td className="px-2 py-1.5 text-center">
-                {it.is_terminated && <span className="text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-0.5">해지</span>}
-              </td>
+              <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="입고일" field="upload_date" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+              <SortTh label="해지" field="is_terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle}
+                className="px-2 py-1.5 text-center font-semibold" />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.length === 0 ? (
+              <tr><td colSpan={colSpan} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
+            ) : sorted.map(it => (
+              <tr key={it.id} className="border-t border-[#F1F5F9]">
+                {selectable && (
+                  <td className="px-2 py-1.5 text-center">
+                    <input type="checkbox" checked={!!selected?.has(it.id)}
+                      onChange={() => onToggle?.(it.id)} className="cursor-pointer" />
+                  </td>
+                )}
+                <td className="px-2 py-1.5 font-mono text-[#475569]">{it.trcn_id}</td>
+                <td className="px-2 py-1.5 text-[#1E293B]">{it.device_type}</td>
+                <td className="px-2 py-1.5 text-[#94A3B8]">{it.upload_date}</td>
+                <td className="px-2 py-1.5 text-center">
+                  {it.is_terminated && <span className="text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-0.5">해지</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -644,7 +661,15 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
   const [dealer, setDealer] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const { sorted, sortKey, sortDir, toggle } = useSort(group.items)
+  const [q, setQ] = useState('')
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return s ? group.items.filter(i =>
+      i.trcn_id.toLowerCase().includes(s) || (i.device_type ?? '').toLowerCase().includes(s)) : group.items
+  }, [group.items, q])
+  const { sorted, sortKey, sortDir, toggle } = useSort(filtered)
+  const visIds = filtered.map(i => i.trcn_id)
+  const allVisSel = visIds.length > 0 && visIds.every(id => sel.has(id))
 
   async function submit() {
     const rows = group.items.filter(i => sel.has(i.trcn_id))
@@ -680,20 +705,38 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
               <Input value={dealer} onChange={e => setDealer(e.target.value)} className="h-8 text-[12px]" placeholder="예: ○○대리점" />
             </div>
           </div>
-          <div className="text-[11px] text-[#64748B]">배송 처리할 단말기 ({sel.size}/{group.items.length})</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[11px] text-[#64748B]">
+              배송 처리할 단말기 ({sel.size}/{group.items.length})
+              {q.trim() && <span className="text-[#B32646] ml-1">· 검색 {filtered.length}건</span>}
+            </div>
+            <div className="relative">
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종 검색"
+                className="h-7 w-40 text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
+              {q && <button type="button" onClick={() => setQ('')}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B] text-[11px]">✕</button>}
+            </div>
+          </div>
           <div className="max-h-60 overflow-y-auto rounded border border-[#E2E8F0]">
             <table className="w-full text-[11px]">
               <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
                 <th className="px-2 py-1.5 w-8">
-                  <input type="checkbox" checked={sel.size === group.items.length}
-                    onChange={() => setSel(sel.size === group.items.length ? new Set() : new Set(group.items.map(i => i.trcn_id)))}
+                  <input type="checkbox" checked={allVisSel}
+                    onChange={() => setSel(prev => {
+                      const n = new Set(prev)
+                      if (allVisSel) visIds.forEach(id => n.delete(id))
+                      else visIds.forEach(id => n.add(id))
+                      return n
+                    })}
                     className="cursor-pointer" />
                 </th>
                 <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
               </tr></thead>
               <tbody>
-                {sorted.map(it => (
+                {sorted.length === 0 ? (
+                  <tr><td colSpan={3} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
+                ) : sorted.map(it => (
                   <tr key={it.out_id} className="border-t border-[#F1F5F9]">
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={sel.has(it.trcn_id)}
