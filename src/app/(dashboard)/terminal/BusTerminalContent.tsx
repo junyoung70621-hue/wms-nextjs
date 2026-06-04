@@ -515,6 +515,13 @@ function ManagePanel({ rows, perms, onChanged, defaultOpen = false }: { rows: Te
               <div key={uid} className="border border-[#E2E8F0] rounded-lg p-2.5 bg-[#f8f9ff]">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="text-[11px] text-[#475569]">
+                    {(() => {
+                      // 출고는 도착센터, 입고는 출발센터(=실제 단말기를 다룬 센터)
+                      const c = recs[0].direction === 'in' ? recs[0].from_center : recs[0].to_center
+                      return c ? (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#fbe9ee] text-[#B32646] font-semibold mr-1.5">{c}</span>
+                      ) : null
+                    })()}
                     <b>{recs[0].file_name || '직접입력'}</b> · {recs.length}건 · {recs[0].upload_date}
                   </div>
                   {manageable && (
