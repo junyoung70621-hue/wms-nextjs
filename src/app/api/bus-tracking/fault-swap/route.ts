@@ -63,11 +63,12 @@ export async function POST(req: Request) {
   }
 
   // ── 적용: OLD 보유 레코드 → 교체완료, NEW 양품 보유 신규 생성 + 이력 ───────────────
+  // recordId 없음(보유자 미발견) → OLD 교체완료 생략하고 NEW만 지정 센터에 보관(미배정) 등록.
   if (body.action === 'apply') {
     const items: {
-      recordId: string; oldIh: string; newIh: string
+      recordId: string | null; oldIh: string; newIh: string
       center: string; employee_id: string | null; employee_name: string | null
-      oldStatus: string
+      oldStatus: string | null
     }[] = body.items ?? []
     if (!items.length) return NextResponse.json({ ok: true, applied: 0 })
 
@@ -75,31 +76,35 @@ export async function POST(req: Request) {
     let applied = 0
     const errors: string[] = []
     for (const it of items) {
-      if (!it.recordId || !it.newIh) continue
+      if (!it.newIh || !it.center) continue
       try {
         const [nd, ns] = classifyTerminal(it.newIh)
         const [od, os] = classifyTerminal(it.oldIh)
-        const newStatus = it.employee_id ? 'holding' : 'unassigned' // 직원 보유 vs 센터보관
+        // 보유분(recordId)이 있으면 직원 보유, 미발견이면 센터보관
+        const newStatus = it.recordId && it.employee_id ? 'holding' : 'unassigned'
 
-        // 1) 불량(OLD) 보유 레코드 → 교체완료
-        await supabase.from(TABLE).update({ status: 'exchanged', returned_at: now }).eq('id', it.recordId)
-        // 2) 신규(NEW) 양품 보유 레코드 생성 (동일 보유자/센터)
+        // 1) 불량(OLD) 보유 레코드 → 교체완료 (미발견이면 건너뜀)
+        if (it.recordId) {
+          await supabase.from(TABLE).update({ status: 'exchanged', returned_at: now }).eq('id', it.recordId)
+        }
+        // 2) 신규(NEW) 양품 레코드 생성 (보유분: 동일 보유자, 미발견: 센터보관)
         await supabase.from(TABLE).insert({
           ih_code: it.newIh,
           device_type: nd !== '미분류' ? nd : null,
           sub_type: nd !== '미분류' ? ns : null,
           center: it.center,
-          employee_id: it.employee_id ?? null,
-          employee_name: it.employee_name ?? null,
+          employee_id: it.recordId ? (it.employee_id ?? null) : null,
+          employee_name: it.recordId ? (it.employee_name ?? null) : '(미배정)',
           assigned_at: now, assigned_by: u.id, status: newStatus,
         })
-        // 3) 변경이력 (swap)
+        // 3) 변경이력 (swap). 미발견은 from_status='미발견(보유자 없음)' 의미로 null 유지.
         await supabase.from(HIST).insert({
           center: it.center, action: 'swap', ih_code: it.oldIh,
           device_type: od !== '미분류' ? od : null,
           sub_type: od !== '미분류' ? os : null,
           from_employee: it.employee_name ?? null,
-          from_status: it.oldStatus ?? null, to_status: 'exchanged',
+          from_status: it.oldStatus ?? null,
+          to_status: it.recordId ? 'exchanged' : 'unassigned',
           extra_ih: it.newIh, acted_by: u.id, acted_by_name: u.name, acted_at: now,
         })
         applied++

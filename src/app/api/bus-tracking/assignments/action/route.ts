@@ -5,6 +5,7 @@ import { classifyTerminal } from '@/lib/busTracking'
 
 const TABLE = 'bus_terminal_assignments'
 const HIST  = 'bus_terminal_history'
+const RESET = 'bus_terminal_resets'
 
 function nowKst() { return new Date(Date.now() + 9 * 3600000).toISOString() }
 
@@ -19,8 +20,24 @@ export async function PATCH(req: Request) {
   // ── swap: 불량 교체 ──────────────────────────────────────────────────────────
   if (action === 'swap') {
     const { holding_id, defective_ih, center, employee_id, employee_name,
-            orig_ih, orig_status, orig_dtype, orig_stype } = body
+            orig_ih, orig_status, orig_dtype, orig_stype, same_ih } = body
     if (!holding_id || !defective_ih) return NextResponse.json({ error: '필수값 누락' }, { status: 400 })
+
+    // 양품불량(동일 IH): 들고나간 양품 단말기 자체가 불량인 경우.
+    // 새 레코드 없이 같은 IH 보유분을 양품→불량으로 상태만 변경(직원 보유 유지).
+    if (same_ih) {
+      await supabase.from(TABLE).update({ status: 'defective' }).eq('id', holding_id)
+      // 이력은 동일 IH 양품→불량 상태변경으로 기록. action은 DB CHECK 제약상 'swap' 사용
+      // (extra_ih 없음 + from/to 상태로 일반 교체와 구분됨).
+      await supabase.from(HIST).insert({
+        center, action: 'swap', ih_code: orig_ih,
+        device_type: orig_dtype || null, sub_type: orig_stype || null,
+        from_employee: employee_name, to_employee: employee_name,
+        from_status: orig_status, to_status: 'defective',
+        acted_by: u.id, acted_by_name: u.name, acted_at: now,
+      })
+      return NextResponse.json({ ok: true })
+    }
 
     await supabase.from(TABLE).update({ status: 'exchanged', returned_at: now }).eq('id', holding_id)
 
@@ -116,6 +133,15 @@ export async function PATCH(req: Request) {
       // 완전초기화: 대상 센터의 모든 상태(보유/불량/교체완료/반납/미배정) 레코드 삭제.
       // 변경이력(bus_terminal_history)은 별도 테이블이라 보존됨.
       await supabase.from(TABLE).delete().in('center', clear_centers)
+      // 출고풀 초기화: terminal_movements(출고)는 다른 페이지와 공유되는 원본이라
+      // 삭제하지 않는 대신, 센터별 '초기화 기준시각'을 기록한다. 센터 보유현황의
+      // 출고풀은 이 시각 이후 출고분만 표시하므로, 초기화 이전 출고는 더 이상 뜨지 않는다.
+      // reset_at은 terminal_movements.uploaded_at과 비교한다. uploaded_at도 nowKst()
+      // (KST를 +00:00으로 라벨링한 보정 시각)로 저장되므로, reset_at도 동일하게 now(KST)를 쓴다.
+      await supabase.from(RESET).upsert(
+        clear_centers.map((c: string) => ({ center: c, reset_at: now })),
+        { onConflict: 'center' },
+      )
     }
 
     await supabase.from(TABLE).insert(records)

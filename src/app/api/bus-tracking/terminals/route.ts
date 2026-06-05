@@ -10,9 +10,16 @@ export async function GET(req: Request) {
   const center = searchParams.get('center')
   if (!center) return NextResponse.json({ error: 'center 필요' }, { status: 400 })
 
+  // 완전초기화 기준시각: 이 시각 이전 출고는 출고풀에서 제외(초기화 이전 단말 숨김).
+  // 테이블이 아직 없거나(미생성) 레코드가 없으면 null → 종전대로 전체 출고 표시.
+  let resetAt: string | null = null
+  const { data: resetRow } = await supabase.from('bus_terminal_resets')
+    .select('reset_at').eq('center', center).maybeSingle()
+  if (resetRow?.reset_at) resetAt = resetRow.reset_at
+
   // terminal_movements 출고 → 이 센터로 간 단말기
   const { data: outRows } = await supabase.from('terminal_movements')
-    .select('trcn_id,device_type,sub_type,upload_date')
+    .select('trcn_id,device_type,sub_type,upload_date,uploaded_at')
     .eq('direction', 'out').eq('to_center', center).limit(5000)
 
   // terminal_movements 입고 → 이 센터에서 반납된 IH
@@ -30,6 +37,8 @@ export async function GET(req: Request) {
   // 가용풀: 출고됐지만 반납/배정 안 된 단말기
   const outMap: Record<string, { device_type: string; sub_type: string; upload_date: string }> = {}
   for (const r of outRows ?? []) {
+    // 초기화 기준시각 이전(이하) 출고는 건너뜀.
+    if (resetAt && r.uploaded_at && r.uploaded_at <= resetAt) continue
     if (!outMap[r.trcn_id]) {
       outMap[r.trcn_id] = { device_type: r.device_type, sub_type: r.sub_type, upload_date: r.upload_date }
     }

@@ -239,9 +239,11 @@ function AssignModal({
 // ── 모달: 불량 교체 ────────────────────────────────────────────────────────────
 function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => void; onDone: () => void }) {
   const [defIh,   setDefIh]   = useState('')
+  const [sameIh,  setSameIh]  = useState(false)   // 들고나간 단말기 자체가 불량(동일 IH)
   const [saving,  setSaving]  = useState(false)
   const [msg,     setMsg]     = useState('')
   const [typeOk,  setTypeOk]  = useState(false)
+  const canSameIh = rec.status === 'holding'      // 양품 보유분만 양품→불량 대상
 
   const [expDtype, expStype] = useMemo(() => {
     if (rec.device_type) return [rec.device_type, rec.sub_type ?? '']
@@ -258,13 +260,14 @@ function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => v
   }
 
   const handleSave = async () => {
-    if (!typeOk) return
+    if (!sameIh && !typeOk) return
     setSaving(true)
     const res = await fetch('/api/bus-tracking/assignments/action', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'swap', holding_id: rec.id, defective_ih: defIh.trim(),
+        action: 'swap', holding_id: rec.id,
+        defective_ih: sameIh ? rec.ih_code : defIh.trim(), same_ih: sameIh,
         center: rec.center, employee_id: rec.employee_id, employee_name: rec.employee_name,
         orig_ih: rec.ih_code, orig_status: rec.status,
         orig_dtype: rec.device_type, orig_stype: rec.sub_type,
@@ -277,19 +280,32 @@ function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => v
 
   return (
     <Modal title="🔄 불량 교체" onClose={onClose}>
-      <p className="text-[12px] text-[#64748B] mb-1">설치할 단말기 IH: <strong className="font-mono">{rec.ih_code}</strong></p>
+      <p className="text-[12px] text-[#64748B] mb-1">{sameIh ? '단말기 IH' : '설치할 단말기 IH'}: <strong className="font-mono">{rec.ih_code}</strong></p>
       {expDtype && <p className="text-[12px] text-[#64748B] mb-3">기종: <strong>{expDtype} {expStype}</strong></p>}
-      <div className="mb-3">
-        <label className="text-[11px] text-[#64748B] block mb-1">수거한 불량 IH 번호</label>
-        <Input value={defIh} onChange={e => { setDefIh(e.target.value); checkType(e.target.value) }}
-          placeholder="예: 100456" className="h-8 text-[12px]" />
-        {defIh && typeOk && <p className="text-[11px] text-green-600 mt-1">기종 일치 ✅</p>}
-        {msg && <p className="text-[11px] text-red-500 mt-1">{msg}</p>}
-      </div>
+      {canSameIh && (
+        <label className="flex items-center gap-2 text-[12px] text-[#475569] mb-3">
+          <input type="checkbox" checked={sameIh} onChange={e => { setSameIh(e.target.checked); setMsg('') }} className="accent-[#B32646]" />
+          <span>양품불량 — 들고나간 단말기가 불량 <span className="text-[#94A3B8]">(IH 동일 · 양품→불량)</span></span>
+        </label>
+      )}
+      {sameIh ? (
+        <p className="text-[12px] text-[#64748B] mb-3 bg-[#FAFAFA] border border-[#E2E8F0] rounded p-2">
+          동일 IH <strong className="font-mono">{rec.ih_code}</strong> 를 <strong className="text-[#B32646]">불량 보유중</strong>으로 변경합니다. (직원 보유 유지)
+        </p>
+      ) : (
+        <div className="mb-3">
+          <label className="text-[11px] text-[#64748B] block mb-1">수거한 불량 IH 번호</label>
+          <Input value={defIh} onChange={e => { setDefIh(e.target.value); checkType(e.target.value) }}
+            placeholder="예: 100456" className="h-8 text-[12px]" />
+          {defIh && typeOk && <p className="text-[11px] text-green-600 mt-1">기종 일치 ✅</p>}
+          {msg && <p className="text-[11px] text-red-500 mt-1">{msg}</p>}
+        </div>
+      )}
+      {sameIh && msg && <p className="text-[11px] text-red-500 mb-2">{msg}</p>}
       <div className="flex gap-2">
-        <Button onClick={handleSave} disabled={saving || !typeOk || defIh.trim() === rec.ih_code}
+        <Button onClick={handleSave} disabled={saving || (sameIh ? false : (!typeOk || defIh.trim() === rec.ih_code))}
           className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
-          {saving ? '처리 중...' : '교체 확정'}
+          {saving ? '처리 중...' : sameIh ? '불량 처리' : '교체 확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
       </div>
@@ -1296,8 +1312,8 @@ function TabHistory({ selCenter }: { selCenter: string }) {
 }
 
 // ── 탭 5: 초기 등록 ────────────────────────────────────────────────────────────
-function TabInit({ selCenter, userId, canManage }: {
-  selCenter: string; userId: string; canManage: boolean
+function TabInit({ selCenter, userId, canManage, onRefresh }: {
+  selCenter: string; userId: string; canManage: boolean; onRefresh: () => void
 }) {
   type ParsedRow = { ih: string; name: string; center: string; dtype: string; stype: string }
   const fileRef   = useRef<HTMLInputElement>(null)
@@ -1404,6 +1420,7 @@ function TabInit({ selCenter, userId, canManage }: {
     setParsed([]); setRawRows([]); setCols([])
     if (fileRef.current) fileRef.current.value = ''
     setSaving(false)
+    onRefresh()
   }
 
   return (
@@ -1513,7 +1530,7 @@ function TabInit({ selCenter, userId, canManage }: {
             <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#B32646]" />
             <span>
               완전초기화 — 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 데이터 <b className="text-[#B32646]">전체 삭제</b> 후 등록
-              <span className="text-[#94A3B8]"> (불량·반납·미배정 포함 / 변경이력은 보존)</span>
+              <span className="text-[#94A3B8]"> (불량·반납·미배정 + 센터창고 출고풀 포함 / 변경이력은 보존)</span>
             </span>
           </label>
           <Button onClick={handleSave} disabled={saving}
@@ -1535,6 +1552,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
   const [rows, setRows] = useState<FaultPreview[]>([])
   const [sel, setSel] = useState<Record<number, boolean>>({})
   const [pick, setPick] = useState<Record<number, number>>({})
+  const [umCenter, setUmCenter] = useState<Record<number, string>>({}) // 미발견 행: 신규 등록 센터
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
@@ -1543,7 +1561,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setFileName(file.name); setMsg(''); setRows([]); setSel({}); setPick({}); setLoading(true)
+    setFileName(file.name); setMsg(''); setRows([]); setSel({}); setPick({}); setUmCenter({}); setLoading(true)
     try {
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(new Uint8Array(buf), { type: 'array' })
@@ -1571,27 +1589,38 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
     setLoading(false)
   }
 
-  async function apply() {
-    const items = rows.flatMap((row, i) => {
-      if (!sel[i]) return []
+  // 적용 대상: 매칭 행(보유분 교체) + 미발견 행(센터 지정 시 신규 등록).
+  const selItems = useMemo(() => rows.flatMap((row, i) => {
+    if (!sel[i]) return []
+    if (row.matches.length >= 1) {
       const m = row.matches[pick[i] ?? 0]
       if (!m) return []
       return [{
-        recordId: m.id, oldIh: row.oldIh, newIh: row.newIh,
-        center: m.center, employee_id: m.employee_id, employee_name: m.employee_name, oldStatus: m.status,
+        recordId: m.id as string | null, oldIh: row.oldIh, newIh: row.newIh,
+        center: m.center, employee_id: m.employee_id, employee_name: m.employee_name, oldStatus: m.status as string | null,
       }]
-    })
-    if (!items.length) { setMsg('적용할(매칭된) 항목이 없습니다.'); return }
+    }
+    // 미발견 → 센터를 골랐을 때만 신규(센터보관) 등록
+    const c = umCenter[i]
+    if (!c) return []
+    return [{
+      recordId: null as string | null, oldIh: row.oldIh, newIh: row.newIh,
+      center: c, employee_id: null, employee_name: null, oldStatus: null as string | null,
+    }]
+  }), [rows, sel, pick, umCenter])
+
+  async function apply() {
+    if (!selItems.length) { setMsg('적용할 항목이 없습니다. (미발견 행은 센터를 지정하세요)'); return }
     setBusy(true); setMsg('')
     try {
       const res = await fetch('/api/bus-tracking/fault-swap', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'apply', items }),
+        body: JSON.stringify({ action: 'apply', items: selItems }),
       })
       const d = await res.json()
       if (d.error) { setMsg(d.error); setBusy(false); return }
       setMsg(`✅ 자동 교체 완료: ${d.applied}건${d.errors?.length ? ` (실패 ${d.errors.length})` : ''}`)
-      setRows([]); setSel({}); setPick({}); setFileName('')
+      setRows([]); setSel({}); setPick({}); setUmCenter({}); setFileName('')
       if (fileRef.current) fileRef.current.value = ''
       onRefresh()
     } catch { setMsg('적용 실패') }
@@ -1599,7 +1628,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
   }
 
   const matchedCount = rows.filter(r => r.matches.length >= 1).length
-  const selectedCount = Object.entries(sel).filter(([, v]) => v).length
+  const selectedCount = selItems.length
 
   return (
     <div className="space-y-3">
@@ -1608,6 +1637,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
         <p className="text-[11px] text-[#64748B] leading-relaxed">
           장애목록의 <b>처리내용(AL열)</b>에서 <b>「교체 (불량IH → 신규IH)」</b>를 자동 추출합니다.
           불량 IH를 <b>보유 중인 직원/센터</b>를 찾아, 그 보유분을 <b>신규 IH</b>로 교체(불량은 교체완료 처리)합니다.
+          <b>보유자 미발견</b> 행은 <b>센터를 지정</b>하면 신규 IH를 그 센터 <b>보관(미배정)</b>으로 등록합니다.
           아래 미리보기에서 확인 후 적용하세요.
         </p>
         <input ref={fileRef} type="file" accept=".xls,.xlsx" onChange={handleFile} className="hidden" />
@@ -1646,7 +1676,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
                   return (
                     <tr key={i} className={`border-t border-[#E2E8F0] ${!has ? 'bg-[#fff7f7]' : ''}`}>
                       <td className="px-2 py-1.5 text-center">
-                        <input type="checkbox" disabled={!has}
+                        <input type="checkbox" disabled={!has && !umCenter[i]}
                           checked={!!sel[i]} onChange={e => setSel(s => ({ ...s, [i]: e.target.checked }))} />
                       </td>
                       <td className="px-2 py-1.5 font-mono whitespace-nowrap">
@@ -1662,7 +1692,19 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
                       </td>
                       <td className="px-2 py-1.5">
                         {!has ? (
-                          <span className="text-[#c62828]">❌ 보유자 미발견</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[#c62828] whitespace-nowrap">❌ 미발견</span>
+                            <select className="text-[11px] border border-[#E2E8F0] rounded px-1 py-0.5 bg-white"
+                              value={umCenter[i] ?? ''}
+                              onChange={e => {
+                                const c = e.target.value
+                                setUmCenter(u => ({ ...u, [i]: c }))
+                                setSel(s => ({ ...s, [i]: !!c }))   // 센터 선택 시 자동 체크
+                              }}>
+                              <option value="">센터 지정…</option>
+                              {TRACKING_CENTERS.map(c => <option key={c} value={c}>{c} 보관 등록</option>)}
+                            </select>
+                          </div>
                         ) : row.matches.length === 1 ? (
                           <span className="text-[#475569]">
                             {m.center} · {m.employee_name || '센터보관'} · {STATUS_LABEL[m.status] ?? m.status}
@@ -1765,7 +1807,8 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
         {canInit && (
           <TabsContent value="init" className="mt-4">
             <TabInit key={`init-${selCenter}`} selCenter={selCenter}
-              userId={user.id} canManage={canManage} />
+              userId={user.id} canManage={canManage}
+              onRefresh={() => setRefreshKey(k => k + 1)} />
           </TabsContent>
         )}
       </Tabs>
