@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { sendMail, emailLayout, infoTable, type Cell } from '@/lib/email'
 import { firePush, sendPushToRoles } from '@/lib/push'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
@@ -59,6 +60,59 @@ export async function POST(request: Request) {
     url: '/material-requests?tab=pending',
     tag: 'material-request',
   }))
+
+  // 관리자·자재파트 알림 메일 + 신청자 접수 확인 메일
+  try {
+    const { data: targets } = await supabase
+      .from('users').select('email, assigned_center')
+      .in('role', ['admin', 'materials']).eq('is_approved', true)
+
+    const emails = (targets ?? [])
+      .filter(t => t.email && t.assigned_center !== '고객지원사업부')
+      .map(t => t.email)
+
+    const who = `${u.name} (${fromCenter})`
+    const itemRows: Cell[][] = (items as Record<string, unknown>[]).map((it, i) => [
+      String(i + 1),
+      String(it['item_name'] ?? ''),
+      { text: String(it['current_qty'] ?? ''), right: true },
+      { text: String(it['requested_qty'] ?? ''), right: true },
+    ])
+
+    if (emails.length) {
+      await sendMail(
+        emails,
+        `[에이텍모빌리티 자재관리] 자재 요청 접수 · ${who}`,
+        emailLayout({
+          title: '자재 요청이 접수되었습니다',
+          bodyHtml: `
+            ${infoTable(['항목', '내용'], [
+              ['요청자', { text: `<b>${who}</b>` }],
+              ...(notes?.trim() ? [['요청메모', notes.trim()] as Cell[]] : []),
+            ])}
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">요청 품목</p>
+            ${infoTable(['No', '자재명', '현재재고', '요청수량'], itemRows)}`,
+        }),
+      )
+    }
+
+    // 신청자 접수 확인 메일
+    if (u.email) {
+      await sendMail(
+        u.email,
+        '[에이텍모빌리티 자재관리] 자재 요청 접수 확인',
+        emailLayout({
+          title: '자재 요청이 정상 접수되었습니다',
+          greetingName: u.name,
+          bodyHtml: `
+            <p>요청하신 자재 건이 접수되었습니다. 관리자 검토 후 처리 결과를 안내드립니다.</p>
+            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">요청 품목</p>
+            ${infoTable(['No', '자재명', '현재재고', '요청수량'], itemRows)}`,
+        }),
+      )
+    }
+  } catch { /* 메일 실패 무시 */ }
+
   return NextResponse.json({ ok: true })
 }
 
