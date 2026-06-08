@@ -390,6 +390,126 @@ function transferDestinations(center: string): string[] {
   return []
 }
 
+// ── 자재 추가 모달 ────────────────────────────────────────────────────────────
+// 권한: admin / 자재센터 인원(guest 제외). location·랙 정보를 함께 저장하면
+// 자재창고지도(/rack-map)에 자동 연동된다.
+function AddItemModal({ defaultCenter, onClose, onAdded }: {
+  defaultCenter: string; onClose: () => void; onAdded: () => void
+}) {
+  const blank = {
+    item_name: '', quantity: '0', location: defaultCenter || '자재센터',
+    rack_no: '', shelf: '', box_no: '',
+    category_large: '', category_mid: '', category_small: '',
+    erp_name: '', erp_code: '', notes: '',
+  }
+  const [form,   setForm]   = useState(blank)
+  const [saving, setSaving] = useState(false)
+  const [msg,    setMsg]    = useState('')
+  const set = (k: keyof typeof blank) => (v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function submit() {
+    if (!form.item_name.trim() || !form.location) { setMsg('품명과 센터는 필수입니다.'); return }
+    setSaving(true); setMsg('')
+    try {
+      const res = await fetch('/api/warehouse/add', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, quantity: Number(form.quantity) || 0 }),
+      })
+      const d = await res.json()
+      if (d.error) { setMsg(d.error); setSaving(false); return }
+      onAdded()
+      onClose()
+    } catch { setMsg('오류 발생'); setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E2E8F0]">
+          <h3 className="text-[14px] font-bold text-[#1E293B]">➕ 자재 추가</h3>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">품명 *</label>
+              <Input value={form.item_name} onChange={e => set('item_name')(e.target.value)}
+                placeholder="품명 입력" className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">수량 *</label>
+              <Input type="number" min="0" value={form.quantity}
+                onChange={e => set('quantity')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">센터 *</label>
+              <Select value={form.location} onValueChange={v => v !== null && set('location')(v)}>
+                <SelectTrigger className="h-8 text-[12px]"><SelectValue placeholder="센터 선택" /></SelectTrigger>
+                <SelectContent>
+                  {CENTERS.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">랙 번호</label>
+              <Input value={form.rack_no} onChange={e => set('rack_no')(e.target.value)}
+                placeholder="예: A-01" className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">선반</label>
+              <Input value={form.shelf} onChange={e => set('shelf')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">박스 번호</label>
+              <Input value={form.box_no} onChange={e => set('box_no')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">대분류</label>
+              <Input value={form.category_large} onChange={e => set('category_large')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">중분류</label>
+              <Input value={form.category_mid} onChange={e => set('category_mid')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">소분류</label>
+              <Input value={form.category_small} onChange={e => set('category_small')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">ERP 품명</label>
+              <Input value={form.erp_name} onChange={e => set('erp_name')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">ERP 코드</label>
+              <Input value={form.erp_code} onChange={e => set('erp_code')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#64748B] mb-1 block">비고</label>
+              <Input value={form.notes} onChange={e => set('notes')(e.target.value)} className="h-8 text-[12px]" />
+            </div>
+          </div>
+
+          <p className="text-[11px] text-[#94A3B8]">
+            💡 센터를 <b>자재센터</b>로, 랙 번호를 입력하면 자재창고지도에 함께 표시됩니다.
+          </p>
+          {msg && (
+            <p className={`text-[12px] ${msg.includes('완료') || msg.includes('추가') ? 'text-green-600' : 'text-red-500'}`}>{msg}</p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" className="text-[12px] h-8" onClick={onClose}>취소</Button>
+            <Button onClick={submit} disabled={saving}
+              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+              {saving ? '추가 중...' : '자재 추가'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 재고 현황 탭 ──────────────────────────────────────────────────────────────
 function InventoryTab({ user, center, onCenterChange }: {
   user: SessionUser; center: string; onCenterChange: (c: string) => void
@@ -399,6 +519,10 @@ function InventoryTab({ user, center, onCenterChange }: {
   const canStock = user.role === 'admin' || user.role === 'materials'   // 입고/출고
   const canAct   = user.role === 'manager' || user.role === 'user'      // 이동신청/사용내역입력
   const canSelect = canStock || canAct
+  // 자재 추가: admin 또는 자재센터 인원 전체(guest 제외)
+  const userCenter = user.assigned_center ?? user.center
+  const canAddItem = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest')
+  const [showAdd, setShowAdd] = useState(false)
 
   const [data,    setData]    = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
@@ -579,6 +703,12 @@ function InventoryTab({ user, center, onCenterChange }: {
           <Button variant="outline" onClick={() => fetchData(center)} disabled={loading} className="text-[12px]">
             {loading ? '...' : '🔄'}
           </Button>
+          {canAddItem && (
+            <Button onClick={() => setShowAdd(true)}
+              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px]">
+              ➕ 자재 추가
+            </Button>
+          )}
         </div>
         {selected.size > 0 && (
           <div className="flex gap-2 flex-wrap">
@@ -797,6 +927,12 @@ function InventoryTab({ user, center, onCenterChange }: {
         <ItemDetailModal item={detailItem} user={user} center={center}
           onClose={() => setDetailItem(null)}
           onUpdated={() => { fetchData(center); setDetailItem(null) }} />
+      )}
+
+      {showAdd && (
+        <AddItemModal defaultCenter={center}
+          onClose={() => setShowAdd(false)}
+          onAdded={() => fetchData(center)} />
       )}
     </div>
   )
