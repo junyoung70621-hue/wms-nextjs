@@ -160,36 +160,58 @@ export async function POST(request: Request) {
   })
 }
 
-// 출고 도착 센터의 bus_terminal_assignments 에 '미배정' 레코드 생성 (이미 있는 IH는 제외)
+// 출고 도착 센터의 bus_terminal_assignments 에 '미배정' 으로 등록(귀속)하고
+// bus_terminal_history 에 '센터 입고' 이력을 남긴다.
+//  - 레코드가 없는 신규 IH → 미배정으로 삽입
+//  - 과거 반납('returned') 상태로 남아있던 IH 가 다시 출고됨 → 미배정으로 재활성화
+//    (안 하면 배정 시 'unassigned' 만 재활용하므로 동일 IH 의 중복 레코드가 생긴다)
+//  - 이미 활성 상태(holding/unassigned 등)인 IH 는 건드리지 않는다
 async function stockToCenter(
   items: { id: string; device: string; sub: string }[],
   center: string,
-  u: { id: string },
+  u: { id: string; name: string },
   now: string,
 ): Promise<number> {
   const ihs = items.map(r => r.id)
-  const existing = new Set<string>()
+  const existing = new Map<string, string>() // ih_code → status
   for (let i = 0; i < ihs.length; i += 200) {
     const chunk = ihs.slice(i, i + 200)
     const { data } = await supabase.from(ASSIGN)
-      .select('ih_code').eq('center', center).in('ih_code', chunk)
-    for (const r of data ?? []) existing.add(r.ih_code)
+      .select('ih_code,status').eq('center', center).in('ih_code', chunk)
+    for (const r of data ?? []) existing.set(r.ih_code, r.status)
   }
-  const fresh = items.filter(r => !existing.has(r.id))
-  if (!fresh.length) return 0
 
-  await supabase.from(ASSIGN).insert(fresh.map(r => ({
-    ih_code: r.id,
-    device_type: r.device,
-    sub_type: r.sub,
-    center,
-    employee_id: null,
-    employee_name: '(미배정)',
-    assigned_at: now,
-    assigned_by: u.id,
-    status: 'unassigned',
-  })))
-  return fresh.length
+  // 신규: 미배정으로 삽입
+  const fresh = items.filter(r => !existing.has(r.id))
+  if (fresh.length) {
+    await supabase.from(ASSIGN).insert(fresh.map(r => ({
+      ih_code: r.id, device_type: r.device, sub_type: r.sub, center,
+      employee_id: null, employee_name: '(미배정)',
+      assigned_at: now, assigned_by: u.id, status: 'unassigned',
+    })))
+  }
+
+  // 재출고: 반납 상태 → 미배정으로 재활성화
+  const reactivate = items.filter(r => existing.get(r.id) === 'returned')
+  for (let i = 0; i < reactivate.length; i += 200) {
+    const chunk = reactivate.slice(i, i + 200).map(r => r.id)
+    await supabase.from(ASSIGN)
+      .update({ status: 'unassigned', employee_id: null, employee_name: '(미배정)',
+                assigned_at: now, assigned_by: u.id, returned_at: null })
+      .eq('center', center).eq('status', 'returned').in('ih_code', chunk)
+  }
+
+  // 이력: 이번 출고로 센터에 (재)입고된 단말만 기록
+  const stocked = [...fresh, ...reactivate]
+  if (stocked.length) {
+    await supabase.from(HIST).insert(stocked.map(r => ({
+      center, action: 'inbound', ih_code: r.id,
+      device_type: r.device, sub_type: r.sub,
+      to_employee: '(미배정)', to_status: 'unassigned',
+      acted_by: u.id, acted_by_name: u.name, acted_at: now,
+    })))
+  }
+  return stocked.length
 }
 
 async function autoReturnAssignments(

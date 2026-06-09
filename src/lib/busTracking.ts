@@ -14,6 +14,7 @@ export const STATUS_LABEL: Record<string, string> = {
 export const ACTIVE_STATUSES = ['holding', 'defective', 'center_defective', 'exchanged']
 
 export const ACTION_LABEL: Record<string, string> = {
+  inbound:  '센터 입고',
   assign:   '배정',
   swap:     '불량 교체',
   transfer: '직원 이동',
