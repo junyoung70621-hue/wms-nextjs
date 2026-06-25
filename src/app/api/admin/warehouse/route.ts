@@ -46,12 +46,24 @@ export async function POST(request: Request) {
 }
 
 // ── 자재 삭제 ─────────────────────────────────────────────────────────────────
+// id 지정 시 단건 삭제, center 지정 시 해당 센터 전체 재고 삭제 (관리자 전용)
 export async function DELETE(request: Request) {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: '권한 없음' }, { status: 403 })
 
-  const { id } = await request.json()
-  if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+  const { id, center } = await request.json()
+
+  if (center) {
+    const { data, error } = await supabase
+      .from('warehouse')
+      .delete()
+      .eq('location', center)
+      .select('id')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, deleted: data?.length ?? 0 })
+  }
+
+  if (!id) return NextResponse.json({ error: 'id 또는 center 필요' }, { status: 400 })
 
   const { error } = await supabase.from('warehouse').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

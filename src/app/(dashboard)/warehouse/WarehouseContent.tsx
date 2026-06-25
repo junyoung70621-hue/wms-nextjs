@@ -1084,9 +1084,43 @@ function TransferTab({ user }: { user: SessionUser }) {
 }
 
 // ── 관리자 탭 ─────────────────────────────────────────────────────────────────
-function AdminTab({ center, viewable }: { center: string; viewable: string[] }) {
+function AdminTab({ center, viewable, onChanged }: { center: string; viewable: string[]; onChanged: () => void }) {
   const [downloading,    setDownloading]    = useState(false)
   const [dlAllLoading,   setDlAllLoading]   = useState(false)
+
+  // 센터 지정 삭제 (관리자 전용)
+  const [delCenter,  setDelCenter]  = useState(center)
+  const [delCount,   setDelCount]   = useState<number | null>(null)
+  const [delConfirm, setDelConfirm] = useState(false)
+  const [delSaving,  setDelSaving]  = useState(false)
+  const [delMsg,     setDelMsg]     = useState('')
+
+  // 선택 센터의 현재 재고 품목 수 조회
+  useEffect(() => {
+    let cancelled = false
+    setDelCount(null); setDelConfirm(false); setDelMsg('')
+    fetch(`/api/warehouse?center=${encodeURIComponent(delCenter)}`)
+      .then(r => r.json())
+      .then(j => { if (!cancelled) setDelCount((j.data ?? []).length) })
+      .catch(() => { if (!cancelled) setDelCount(0) })
+    return () => { cancelled = true }
+  }, [delCenter])
+
+  const handleDeleteCenter = async () => {
+    setDelSaving(true); setDelMsg('')
+    try {
+      const res = await fetch('/api/admin/warehouse', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ center: delCenter }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setDelMsg(`❌ ${j.error}`); return }
+      setDelMsg(`✅ ${delCenter} 재고 ${j.deleted ?? 0}건 삭제 완료`)
+      setDelConfirm(false); setDelCount(0)
+      onChanged()
+    } finally { setDelSaving(false) }
+  }
 
   const buildCsv = (rows: Item[]) => {
     const cols = ['자재명','수량','대분류','중분류','소분류','렉번호','단','박스번호','ERP코드','ERP품명','비고','센터']
@@ -1129,7 +1163,7 @@ function AdminTab({ center, viewable }: { center: string; viewable: string[] }) 
   }
 
   return (
-    <div className="space-y-4 max-w-md">
+    <div className="space-y-4 max-w-xl">
       <div className="border rounded-lg p-4 space-y-3">
         <h3 className="text-[14px] font-bold text-[#1E293B]">💾 데이터 내보내기</h3>
         <div className="flex flex-col gap-2">
@@ -1147,6 +1181,47 @@ function AdminTab({ center, viewable }: { center: string; viewable: string[] }) 
           </div>
         </div>
       </div>
+
+      {/* 센터 지정 삭제 (관리자 전용) */}
+      <div className="border border-red-200 rounded-lg p-4 space-y-3">
+        <h3 className="text-[14px] font-bold text-red-600">🗑️ 센터 재고 삭제</h3>
+        <p className="text-[11px] text-[#94A3B8]">
+          선택한 센터의 <b>모든 재고 품목</b>이 영구 삭제됩니다. 되돌릴 수 없습니다.
+        </p>
+        <div className="flex items-center gap-2">
+          <Select value={delCenter} onValueChange={v => v !== null && setDelCenter(v)}>
+            <SelectTrigger className="w-[150px] h-8 text-[12px]"><SelectValue /></SelectTrigger>
+            <SelectContent>{viewable.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
+          </Select>
+          <span className="text-[12px] text-[#64748B]">
+            {delCount === null ? '조회 중...' : `${delCount.toLocaleString()}개 품목`}
+          </span>
+        </div>
+
+        {delMsg && (
+          <p className={`text-[12px] ${delMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{delMsg}</p>
+        )}
+
+        {!delConfirm ? (
+          <Button variant="outline" onClick={() => setDelConfirm(true)}
+            disabled={!delCount}
+            className="text-red-600 border-red-300 hover:bg-red-50 text-[12px] h-8">
+            🗑️ {delCenter} 재고 전체 삭제
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12px] text-red-600 font-semibold">
+              정말 {delCenter}의 {delCount?.toLocaleString()}개 품목을 삭제하시겠습니까?
+            </span>
+            <Button onClick={handleDeleteCenter} disabled={delSaving}
+              className="bg-red-600 hover:bg-red-700 text-white text-[12px] h-8">
+              {delSaving ? '삭제 중...' : '확인 삭제'}
+            </Button>
+            <Button variant="outline" onClick={() => setDelConfirm(false)} disabled={delSaving}
+              className="text-[12px] h-8">취소</Button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1158,6 +1233,7 @@ export default function WarehouseContent({ user, initialTab }: { user: SessionUs
     [user]
   )
   const [center, setCenter] = useState(viewable[0] ?? '자재센터')
+  const [invNonce, setInvNonce] = useState(0)   // 관리자 삭제 후 재고 탭 강제 갱신
   const isAdmin  = user.role === 'admin'
   const isGuest  = user.role === 'guest'
 
@@ -1191,7 +1267,7 @@ export default function WarehouseContent({ user, initialTab }: { user: SessionUs
         </TabsList>
 
         <TabsContent value="inventory" className="mt-4">
-          <InventoryTab user={user} center={center} onCenterChange={setCenter} />
+          <InventoryTab key={invNonce} user={user} center={center} onCenterChange={setCenter} />
         </TabsContent>
 
         <TabsContent value="transfers" className="mt-4">
@@ -1212,7 +1288,7 @@ export default function WarehouseContent({ user, initialTab }: { user: SessionUs
 
         {isAdmin && (
           <TabsContent value="admin" className="mt-4">
-            <AdminTab center={center} viewable={viewable} />
+            <AdminTab center={center} viewable={viewable} onChanged={() => setInvNonce(n => n + 1)} />
           </TabsContent>
         )}
       </Tabs>
