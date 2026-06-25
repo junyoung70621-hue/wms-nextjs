@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import * as XLSX from 'xlsx'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -1083,6 +1084,59 @@ function TransferTab({ user }: { user: SessionUser }) {
   )
 }
 
+// ── 재고 일괄 등록: 엑셀/CSV 파싱 (내보내기 CSV 포맷과 동일) ──────────────────
+type BulkRow = {
+  item_name: string; quantity: number; location: string
+  rack_no: string; shelf: string; box_no: string
+  category_large: string; category_mid: string; category_small: string
+  erp_code: string; erp_name: string; notes: string
+}
+
+function parseWarehouseFile(buf: ArrayBuffer): BulkRow[] {
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' })
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  if (!ws) return []
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' })
+  if (aoa.length < 2) return []
+
+  const header = (aoa[0] as unknown[]).map(h => String(h ?? '').trim())
+  const col = (names: string[]) => {
+    for (const n of names) { const i = header.findIndex(h => h === n); if (i !== -1) return i }
+    return -1
+  }
+  const idx = {
+    name:   col(['자재명', 'item_name', '품명']),
+    qty:    col(['수량', 'quantity']),
+    large:  col(['대분류', 'category_large']),
+    mid:    col(['중분류', 'category_mid']),
+    small:  col(['소분류', 'category_small']),
+    rack:   col(['렉번호', '랙번호', 'rack_no']),
+    shelf:  col(['단', 'shelf']),
+    box:    col(['박스번호', 'box_no']),
+    erpC:   col(['ERP코드', 'erp_code']),
+    erpN:   col(['ERP품명', 'erp_name']),
+    notes:  col(['비고', 'notes']),
+    loc:    col(['센터', 'location']),
+  }
+  if (idx.name === -1) return []
+
+  const cell = (cells: unknown[], i: number) => i >= 0 ? String(cells[i] ?? '').trim() : ''
+  return (aoa.slice(1) as unknown[][]).map(cells => ({
+    item_name:      cell(cells, idx.name),
+    quantity:       idx.qty >= 0 ? (parseInt(String(cells[idx.qty] ?? '0')) || 0) : 0,
+    category_large: cell(cells, idx.large),
+    category_mid:   cell(cells, idx.mid),
+    category_small: cell(cells, idx.small),
+    rack_no:        cell(cells, idx.rack),
+    shelf:          cell(cells, idx.shelf),
+    box_no:         cell(cells, idx.box),
+    erp_code:       cell(cells, idx.erpC),
+    erp_name:       cell(cells, idx.erpN),
+    notes:          cell(cells, idx.notes),
+    location:       cell(cells, idx.loc),
+  })).filter(r => r.item_name)
+}
+
 // ── 관리자 탭 ─────────────────────────────────────────────────────────────────
 function AdminTab({ center, viewable, onChanged }: { center: string; viewable: string[]; onChanged: () => void }) {
   const [downloading,    setDownloading]    = useState(false)
@@ -1121,6 +1175,53 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
       onChanged()
     } finally { setDelSaving(false) }
   }
+
+  // 재고 일괄 등록 (관리자 전용)
+  const [upRows,    setUpRows]    = useState<BulkRow[]>([])
+  const [upCenter,  setUpCenter]  = useState(center)   // 센터 칸이 빈 행에 적용할 기본 센터
+  const [upSaving,  setUpSaving]  = useState(false)
+  const [upMsg,     setUpMsg]     = useState('')
+  const upFileRef = useRef<HTMLInputElement>(null)
+
+  const handleUpFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUpRows([]); setUpMsg('')
+    const reader = new FileReader()
+    reader.onload = ev => {
+      try {
+        const parsed = parseWarehouseFile(ev.target?.result as ArrayBuffer)
+        if (!parsed.length) { setUpMsg('❌ 올바른 양식이 아니거나, 자재명이 있는 행이 없습니다.'); return }
+        setUpRows(parsed)
+        setUpMsg(`📄 ${parsed.length}개 행 인식됨 — 내용 확인 후 등록하세요.`)
+      } catch { setUpMsg('❌ 파일을 읽지 못했습니다.') }
+    }
+    reader.readAsArrayBuffer(file)
+  }
+
+  const handleBulkRegister = async () => {
+    if (!upRows.length) return
+    setUpSaving(true); setUpMsg('')
+    try {
+      const res = await fetch('/api/admin/warehouse/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: upRows, defaultCenter: upCenter }),
+      })
+      const j = await res.json()
+      if (!res.ok) {
+        setUpMsg(`❌ ${j.error}${j.errors?.length ? ` (${j.errors.slice(0, 3).join(' / ')}${j.errors.length > 3 ? ' …' : ''})` : ''}`)
+        return
+      }
+      const warn = j.errors?.length ? ` ⚠️ ${j.errors.length}행 건너뜀` : ''
+      setUpMsg(`✅ ${j.inserted}건 등록 완료${warn}`)
+      setUpRows([])
+      if (upFileRef.current) upFileRef.current.value = ''
+      onChanged()
+    } finally { setUpSaving(false) }
+  }
+
+  const upNoCenter = useMemo(() => upRows.filter(r => !r.location).length, [upRows])
 
   const buildCsv = (rows: Item[]) => {
     const cols = ['자재명','수량','대분류','중분류','소분류','렉번호','단','박스번호','ERP코드','ERP품명','비고','센터']
@@ -1180,6 +1281,43 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* 재고 일괄 등록 (관리자 전용) */}
+      <div className="border rounded-lg p-4 space-y-3">
+        <h3 className="text-[14px] font-bold text-[#1E293B]">📤 재고 일괄 등록</h3>
+        <p className="text-[11px] text-[#94A3B8]">
+          내보내기 CSV/엑셀과 동일한 양식(자재명·수량·분류·렉/단/박스·ERP·비고·센터)을 업로드하면 일괄 추가됩니다.
+          <br />행에 <b>센터</b> 값이 없으면 아래 <b>기본 센터</b>로 등록됩니다.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input ref={upFileRef} type="file" accept=".xlsx,.xls,.csv"
+            onChange={handleUpFile}
+            className="text-[12px] file:mr-2 file:rounded file:border file:border-[#cbd5e1] file:bg-white file:px-2 file:py-1 file:text-[12px]" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-[#64748B]">기본 센터</span>
+            <Select value={upCenter} onValueChange={v => v !== null && setUpCenter(v)}>
+              <SelectTrigger className="w-[140px] h-8 text-[12px]"><SelectValue /></SelectTrigger>
+              <SelectContent>{viewable.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {upRows.length > 0 && (
+          <div className="text-[11px] text-[#64748B]">
+            인식된 행 {upRows.length}개
+            {upNoCenter > 0 && <span className="text-amber-600"> · 센터 미지정 {upNoCenter}개 → {upCenter}</span>}
+          </div>
+        )}
+
+        {upMsg && (
+          <p className={`text-[12px] ${upMsg.startsWith('✅') ? 'text-green-600' : upMsg.startsWith('❌') ? 'text-red-500' : 'text-[#64748B]'}`}>{upMsg}</p>
+        )}
+
+        <Button onClick={handleBulkRegister} disabled={upSaving || upRows.length === 0}
+          className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          {upSaving ? '등록 중...' : `⬆️ ${upRows.length || ''}건 등록`}
+        </Button>
       </div>
 
       {/* 센터 지정 삭제 (관리자 전용) */}
