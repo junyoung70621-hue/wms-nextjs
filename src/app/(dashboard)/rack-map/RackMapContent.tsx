@@ -22,6 +22,15 @@ type Item = {
   category_small: string | null
 }
 
+type BoxTerminal = {
+  trcn_id: string
+  rack_no: string | null
+  shelf: string | null
+  box_no: string | null
+  warehouse_id: number | null
+  device_type: string | null
+}
+
 type RackGroup = {
   rack_no: string
   shelves: Record<string, Item[]>
@@ -82,6 +91,11 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  // 단말기 IH 추가/삭제로 박스 수량이 서버에서 바뀌면(adjustBoxQuantity) 수량 입력칸도 자동 동기화
+  useEffect(() => {
+    setForm(f => ({ ...f, quantity: String(item.quantity ?? 0) }))
+  }, [item.quantity])
 
   // 수량이 기존과 달라졌는지 → 사유 입력 노출/필수
   const qtyChanged = (Number(form.quantity) || 0) !== (item.quantity ?? 0)
@@ -242,6 +256,7 @@ function RackDetailModal({ rackNo, label, items, onItemClick, onClose }: {
 
 export default function RackMapContent({ user }: { user: SessionUser }) {
   const [items,    setItems]    = useState<Item[]>([])
+  const [terminals, setTerminals] = useState<BoxTerminal[]>([])
   const [centers,  setCenters]  = useState<string[]>([])
   const [center,   setCenter]   = useState('')
   const [loading,  setLoading]  = useState(true)
@@ -262,22 +277,26 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
         setCenters(d.centers ?? [])
         setCenter(isManager ? (d.centers?.[0] ?? '') : userCenter)
         setItems(d.data ?? [])
+        setTerminals(d.terminals ?? [])
       })
       .catch(() => setError('로드 실패'))
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const reload = useCallback(async (c: string) => {
-    if (!c) return
+  const reload = useCallback(async (c: string): Promise<Item[] | null> => {
+    if (!c) return null
     setLoading(true)
     setError('')
     try {
       const res = await fetch(`/api/rack-map?center=${encodeURIComponent(c)}`)
       const d = await res.json()
-      if (d.error) { setError(d.error); return }
-      setItems(d.data ?? [])
-    } catch { setError('로드 실패') }
+      if (d.error) { setError(d.error); return null }
+      const data: Item[] = d.data ?? []
+      setItems(data)
+      setTerminals(d.terminals ?? [])
+      return data
+    } catch { setError('로드 실패'); return null }
     finally { setLoading(false) }
   }, [])
 
@@ -289,15 +308,37 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
   // 수정 권한: 관리자 / 자재센터 직원(자재파트 포함, guest 제외) — /warehouse·박스단말기와 동일 기준
   const canEdit = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest')
 
+  // 자재 id → 그 박스에 보관된 단말기 IH 목록 (IH 번호 검색용)
+  // box_terminals 는 warehouse_id 우선, 없으면 좌표(랙/선반/박스)로 자재와 연결
+  const itemIhMap = useMemo(() => {
+    const coordKey = (r: string | null, s: string | null, b: string | null) => `${r ?? ''}|${s ?? ''}|${b ?? ''}`
+    const byCoord = new Map<string, number>()
+    for (const it of items) byCoord.set(coordKey(it.rack_no, it.shelf, it.box_no), it.id)
+    const m = new Map<number, string[]>()
+    for (const t of terminals) {
+      let id = t.warehouse_id ?? null
+      if (id == null) { const f = byCoord.get(coordKey(t.rack_no, t.shelf, t.box_no)); if (f != null) id = f }
+      if (id == null) continue
+      const arr = m.get(id) ?? []
+      arr.push(t.trcn_id)
+      m.set(id, arr)
+    }
+    return m
+  }, [items, terminals])
+
+  const ihHit = useCallback((id: number, q: string) =>
+    (itemIhMap.get(id) ?? []).find(ih => ih.toLowerCase().includes(q)), [itemIhMap])
+
   const filtered = useMemo(() => {
     if (!search.trim()) return items
     const q = search.toLowerCase()
     return items.filter(i =>
       i.item_name.toLowerCase().includes(q) ||
       (i.rack_no ?? '').toLowerCase().includes(q) ||
-      (i.category_large ?? '').toLowerCase().includes(q)
+      (i.category_large ?? '').toLowerCase().includes(q) ||
+      !!ihHit(i.id, q)
     )
-  }, [items, search])
+  }, [items, search, ihHit])
 
   const { racks, noRack } = useMemo(() => groupByRack(filtered), [filtered])
 
@@ -311,17 +352,23 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
   const isManager = user.role === 'admin' || user.role === 'materials'
   const isHub = center === '자재센터'
 
-  // 약도 검색: 자재명/분류 매칭 → 위치(랙·선반·박스) 표시, 매칭 렉 강조
+  // 약도 검색: 자재명/분류/IH 매칭 → 위치(랙·선반·박스) 표시, 매칭 렉 강조
   const matches = useMemo(() => {
     if (!isHub || !search.trim()) return []
     const q = search.toLowerCase()
-    return items.filter(i =>
-      i.rack_no && (
+    const out: (Item & { _ih?: string })[] = []
+    for (const i of items) {
+      if (!i.rack_no) continue
+      const nameHit =
         i.item_name.toLowerCase().includes(q) ||
         (i.category_large ?? '').toLowerCase().includes(q) ||
         (i.category_mid ?? '').toLowerCase().includes(q)
-      ))
-  }, [isHub, search, items])
+      const hitIh = ihHit(i.id, q)
+      if (nameHit) out.push(i)
+      else if (hitIh) out.push({ ...i, _ih: hitIh })
+    }
+    return out
+  }, [isHub, search, items, ihHit])
   const highlightRacks = useMemo(
     () => new Set(matches.map(m => m.rack_no!).filter(Boolean)),
     [matches],
@@ -347,7 +394,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
         {isHub ? (
           <div className="relative">
             <Input
-              placeholder="자재명 검색 → 랙·선반·박스 위치"
+              placeholder="자재명·IH 검색 → 랙·선반·박스 위치"
               value={search}
               onChange={e => setSearch(e.target.value)}
               onFocus={() => setFocused(true)}
@@ -370,7 +417,10 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
                         onMouseDown={() => { setSelectedRack({ rackNo: m.rack_no!, label: `랙${m.rack_no}` }); setFocused(false) }}
                         className="w-full text-left px-3 py-2 hover:bg-[#f1f5f9] border-b border-[#f1f5f9] last:border-0"
                       >
-                        <div className="text-[12px] font-medium text-[#1E293B] truncate">{m.item_name}</div>
+                        <div className="text-[12px] font-medium text-[#1E293B] truncate">
+                          {m.item_name}
+                          {m._ih && <span className="ml-1.5 font-mono text-[10px] text-[#2563eb]">IH {m._ih}</span>}
+                        </div>
                         <div className="text-[11px] text-[#64748B] mt-0.5 flex flex-wrap items-center gap-1.5">
                           <span className="px-1.5 py-0.5 rounded bg-[#fbe9ee] text-[#B32646] font-semibold">랙 {m.rack_no}</span>
                           <span className="px-1.5 py-0.5 rounded bg-[#F1F5F9]">선반 {m.shelf ?? '-'}</span>
@@ -389,7 +439,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
           </div>
         ) : (
           <Input
-            placeholder="품명 / 랙 검색"
+            placeholder="품명 / IH / 랙 검색"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="h-8 text-[12px] w-48"
@@ -494,7 +544,11 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
           location={center}
           onClose={() => setSelected(null)}
           onSaved={() => { setSelected(null); reload(center) }}
-          onBoxChanged={() => reload(center)}
+          onBoxChanged={async () => {
+            const data = await reload(center)
+            // 모달에 표시 중인 박스의 최신 수량으로 갱신 → 단말기 IH 추가 즉시 수량 반영
+            if (data) setSelected(prev => (prev ? data.find(i => i.id === prev.id) ?? prev : prev))
+          }}
         />
       )}
     </div>

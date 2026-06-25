@@ -27,5 +27,12 @@ export async function GET(request: Request) {
     .order('item_name')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data: data ?? [], centers: viewable })
+
+  // 박스 안 단말기(IH) — 자재창고지도에서 IH 번호로도 검색할 수 있도록 함께 반환
+  const { data: terminals } = await supabase
+    .from('box_terminals')
+    .select('trcn_id, rack_no, shelf, box_no, warehouse_id, device_type')
+    .eq('location', location)
+
+  return NextResponse.json({ data: data ?? [], centers: viewable, terminals: terminals ?? [] })
 }

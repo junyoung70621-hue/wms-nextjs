@@ -66,6 +66,15 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.from('warehouse').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // 박스(랙/선반/박스/센터) 위치가 바뀌면 그 박스 안 단말기(box_terminals)도 함께 이동
+  // — box_terminals 는 좌표 기준으로 조회되므로 동기화하지 않으면 단말기가 옛 위치에 남는다.
+  const coordCols = ['location', 'rack_no', 'shelf', 'box_no'] as const
+  if (coordCols.some(c => c in update)) {
+    const coordUpdate: Record<string, unknown> = {}
+    for (const c of coordCols) if (c in update) coordUpdate[c] = update[c]
+    await supabase.from('box_terminals').update(coordUpdate).eq('warehouse_id', id)
+  }
+
   // 이력 기록: 수량이 늘면 입고(in), 줄면 출고(out), 수량 변화 없으면 정보 수정(edit)
   const beforeQty = before?.quantity ?? 0
   const afterQty  = update.quantity !== undefined ? Number(update.quantity) : beforeQty
