@@ -12,6 +12,8 @@ import {
 import { Boxes, ClipboardCheck, TriangleAlert, PackageX, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
+import { GUEST_VIEWER } from '@/lib/guestViewer'
+import GuestCallout from '@/components/auth/GuestCallout'
 import { getViewableCenters, CENTERS } from '@/constants/centers'
 import TerminalBoxSection from '@/components/TerminalBoxSection'
 import MaterialRequestsContent from '../material-requests/MaterialRequestsContent'
@@ -99,7 +101,7 @@ function KpiCard({ enLabel, koLabel, value, unit = '개', color, icon: Icon, act
       </div>
       <div className="mt-3 text-[11px] text-[#64748B]">{koLabel}</div>
       <div className="flex items-baseline gap-1 mt-0.5">
-        <span className="text-[28px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
+        <span data-guest-blur className="text-[28px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
         <span className="text-[12px] text-[#94A3B8]">{unit}</span>
       </div>
     </div>
@@ -517,12 +519,13 @@ function InventoryTab({ user, center, onCenterChange }: {
 }) {
   const viewable = getViewableCenters(user.role, user.assigned_center ?? user.center)
   const isHub    = center === '자재센터'
+  const isBrowse = user.id === GUEST_VIEWER.id // 둘러보기: 버튼을 보여주고 안내(클릭은 로그인 팝업)
   const canStock = user.role === 'admin' || user.role === 'materials'   // 입고/출고
   const canAct   = user.role === 'manager' || user.role === 'user'      // 이동신청/사용내역입력
   const canSelect = canStock || canAct
   // 자재 추가: admin 또는 자재센터 인원 전체(guest 제외)
   const userCenter = user.assigned_center ?? user.center
-  const canAddItem = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest')
+  const canAddItem = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest') || isBrowse
   const [showAdd, setShowAdd] = useState(false)
 
   const [data,    setData]    = useState<Item[]>([])
@@ -710,6 +713,7 @@ function InventoryTab({ user, center, onCenterChange }: {
               ➕ 자재 추가
             </Button>
           )}
+          <GuestCallout label="품명·분류·위치 입력해 새 자재 등록" />
         </div>
         {selected.size > 0 && (
           <div className="flex gap-2 flex-wrap">
@@ -842,7 +846,7 @@ function InventoryTab({ user, center, onCenterChange }: {
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
       {/* 테이블 정보 */}
       <div className="flex items-center justify-between text-[12px] text-gray-500">
-        <span><b className="text-[#1E293B]">{center}</b> — {sorted.length.toLocaleString()}개 품목</span>
+        <span><b className="text-[#1E293B]">{center}</b> — <span data-guest-blur>{sorted.length.toLocaleString()}</span>개 품목<GuestCallout label="행 선택 → 입고·출고·이동신청 처리" /></span>
         <Select value={String(pageSize)} onValueChange={v => { setPageSize(Number(v)); setPage(1) }}>
           <SelectTrigger className="w-[85px] h-7 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{[20, 50, 100, 200].map(n => <SelectItem key={n} value={String(n)}>{n}개씩</SelectItem>)}</SelectContent>
@@ -898,11 +902,11 @@ function InventoryTab({ user, center, onCenterChange }: {
                   <td className={`px-3 py-1.5 text-right font-mono ${qtyColor(item.quantity ?? 0)}`}>
                     {(item.quantity ?? 0).toLocaleString()}
                   </td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_large ?? ''}</td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_mid ?? ''}</td>
-                  <td className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_small ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_large ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_mid ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_small ?? ''}</td>
                   {isHub && (
-                    <td className="px-3 py-1.5 text-[#64748B] font-mono text-[11px] whitespace-nowrap">
+                    <td data-guest-clear className="px-3 py-1.5 text-[#64748B] font-mono text-[11px] whitespace-nowrap">
                       {[item.rack_no, item.shelf, item.box_no].filter(Boolean).join(' / ')}
                     </td>
                   )}

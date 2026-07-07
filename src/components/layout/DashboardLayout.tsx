@@ -3,7 +3,7 @@ import SessionGuard from './SessionGuard'
 import SidebarShell from './SidebarShell'
 
 interface DashboardLayoutProps {
-  user: SessionUser
+  user: SessionUser | null
   children: React.ReactNode
 }
 
@@ -13,7 +13,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-[#f8f9ff]">
-      <SessionGuard />
+      {user && <SessionGuard />}
       <SidebarShell user={user}>{children}</SidebarShell>
     </div>
   )

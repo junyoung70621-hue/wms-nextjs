@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Settings, LogOut } from 'lucide-react'
+import { Settings, LogOut, LogIn, UserPlus } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
+import { useAuthGate } from '../auth/AuthGate'
 
 const ROLE_LABEL: Record<string, string> = {
   admin: '관리자', materials: '자재파트',
@@ -56,7 +57,7 @@ type Counts = {
 }
 
 interface TopBarProps {
-  user: SessionUser
+  user: SessionUser | null
   collapsed: boolean
   onToggle: () => void
 }
@@ -78,22 +79,26 @@ function today(): string {
 export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const { openLogin } = useAuthGate()
   const title = TITLE_MAP[pathname] ?? ''
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, tr_pending: 0, unread_notices: 0 })
   const [remaining, setRemaining] = useState<number | null>(null)
   const [activity, setActivity] = useState<ActivityState>('active')
   const lastActivityRef = useRef<number>(Date.now())
 
-  // 카운트 갱신
+  // 카운트 갱신 (게스트는 인증 API 호출 생략)
   useEffect(() => {
+    if (!user) return
     fetch('/api/notifications/counts')
       .then(r => r.json())
       .then(d => { if (!d.error) setCounts(d) })
       .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   // 활동 추적 → 자동 로그아웃까지 남은 시간 + 상태 색상 (활동중/자리비움/위험)
   useEffect(() => {
+    if (!user) return
     const onActivity = () => { lastActivityRef.current = Date.now() }
     ACTIVITY_EVENTS.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
 
@@ -112,14 +117,15 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
       clearInterval(timer)
       ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, onActivity))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const center = user.assigned_center ?? user.center
+  const center = user ? (user.assigned_center ?? user.center) : ''
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
-    router.refresh()
+    // 풀 리로드 → 게스트 미리보기 모드로 전환
+    window.location.href = '/dashboard'
   }
 
   return (
@@ -158,7 +164,27 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
         </span>
       </div>
 
-      {/* 우측 정보 영역 */}
+      {/* 우측 정보 영역 — 게스트는 로그인/회원가입 버튼만 */}
+      {!user ? (
+        <div className="flex-1 flex items-center justify-end gap-2 pr-3 md:pr-5">
+          <button
+            onClick={() => openLogin('login')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[rgba(179,38,70,0.35)] text-[#b32646] hover:bg-[#fbe9ee] transition-colors"
+            aria-label="로그인"
+          >
+            <LogIn size={16} strokeWidth={1.9} />
+            <span className="text-[12px] font-semibold whitespace-nowrap">로그인</span>
+          </button>
+          <button
+            onClick={() => openLogin('register')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#b32646] text-white hover:bg-[#9a1f3c] transition-colors"
+            aria-label="회원가입"
+          >
+            <UserPlus size={16} strokeWidth={1.9} />
+            <span className="text-[12px] font-semibold whitespace-nowrap">회원가입</span>
+          </button>
+        </div>
+      ) : (
       <div className="flex-1 flex items-center justify-end gap-0 pr-5 overflow-hidden">
 
         {/* 공지사항 */}
@@ -238,6 +264,7 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
           </button>
         </div>
       </div>
+      )}
     </header>
   )
 }

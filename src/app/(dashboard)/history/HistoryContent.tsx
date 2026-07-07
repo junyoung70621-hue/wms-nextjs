@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import type { SessionUser } from '@/lib/session'
+import GuestCallout from '@/components/auth/GuestCallout'
 import { CENTERS } from '@/constants/centers'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
@@ -238,6 +239,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         >
           ⬇️ CSV
         </Button>
+        <GuestCallout side="left" label="유형·검색어·기간 필터 → 목록 CSV 다운로드" />
       </div>
       </div>
 
@@ -255,10 +257,10 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         return (
           <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
           <div className="flex flex-wrap gap-3 text-[12px]">
-            <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
-            {inQty  > 0 && <span className="text-[#2e7d32]">📥 입고 <b>{inQty.toLocaleString()}</b>개</span>}
-            {outQty > 0 && <span className="text-[#c62828]">📤 출고 <b>{outQty.toLocaleString()}</b>개</span>}
-            {trQty  > 0 && <span className="text-[#1565c0]">🚚 이동 <b>{trQty.toLocaleString()}</b>개</span>}
+            <span className="text-[#64748B]">총 <b data-guest-blur className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
+            {inQty  > 0 && <span className="text-[#2e7d32]">📥 입고 <b data-guest-blur>{inQty.toLocaleString()}</b>개</span>}
+            {outQty > 0 && <span className="text-[#c62828]">📤 출고 <b data-guest-blur>{outQty.toLocaleString()}</b>개</span>}
+            {trQty  > 0 && <span className="text-[#1565c0]">🚚 이동 <b data-guest-blur>{trQty.toLocaleString()}</b>개</span>}
           </div>
           </div>
         )
@@ -297,7 +299,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
                     key={h.id}
                     className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
                   >
-                    <td className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#475569]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#475569]">
                       {tsKst(h.acted_at)}
                     </td>
                     <td className="px-3 py-1.5 whitespace-nowrap text-[#1E293B]">
@@ -306,10 +308,10 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
                     <td className="px-3 py-1.5 text-[#1E293B] max-w-[200px] truncate">
                       {h.warehouse?.item_name ?? ''}
                     </td>
-                    <td className="px-3 py-1.5 whitespace-nowrap text-[#64748B]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#64748B]">
                       {h.warehouse?.location ?? ''}
                     </td>
-                    <td className="px-3 py-1.5 whitespace-nowrap">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap">
                       {ACTION_LABEL[h.action_type] ?? h.action_type}
                     </td>
                     <td className="px-3 py-1.5 text-right font-mono text-[#1E293B]">
@@ -321,7 +323,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
                     <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">
                       {h.snapshot_qty_after ?? ''}
                     </td>
-                    <td className="px-3 py-1.5 whitespace-nowrap text-[#64748B] text-[11px]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#64748B] text-[11px]">
                       {route}
                     </td>
                     <td className="px-3 py-1.5 text-[#475569] max-w-[200px] truncate">

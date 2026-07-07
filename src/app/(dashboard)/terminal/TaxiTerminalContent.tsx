@@ -14,6 +14,7 @@ import {
   Truck, PackageX, X, Ban, Send,
 } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
+import GuestCallout from '@/components/auth/GuestCallout'
 import {
   classifyTaxi, normalizeTrcnId, findTrcnIndex, countByDevice,
   TAXI_DEVICE_ORDER, DRIVER_PRIORITY,
@@ -72,7 +73,7 @@ function DeviceChips({ items }: { items: { device_type: string }[] }) {
     <div className="flex flex-wrap gap-1.5">
       {counts.map(c => (
         <span key={c.device} className="px-2 py-0.5 rounded bg-[#F1F5F9] text-[11px] text-[#475569]">
-          {c.device} <b className="text-[#B32646]">{c.count}</b>
+          {c.device} <b data-guest-blur className="text-[#B32646]">{c.count}</b>
         </span>
       ))}
     </div>
@@ -245,7 +246,7 @@ function MetricCard({ icon: Icon, label, value, sub, color }: {
       <div className="min-w-0">
         <div className="text-[11px] text-[#64748B] truncate">{label}</div>
         <div className="flex items-baseline gap-1">
-          <span className="text-[22px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
+          <span data-guest-blur className="text-[22px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
           <span className="text-[11px] text-[#94A3B8]">대</span>
           {sub && <span className="text-[10px] text-[#94A3B8] ml-1">{sub}</span>}
         </div>
@@ -408,6 +409,7 @@ function StatusTab({ perms }: { perms: Perms }) {
         <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
           <div className="text-[13px] font-bold text-[#1E293B]">🚗 물류기사 재고현황
             <span className="text-[#94A3B8] font-normal"> ({st.drivers.reduce((a, g) => a + g.count, 0)})</span>
+            <GuestCallout side="left" label="기사별 보유 현황 · 배송완료 처리" />
           </div>
           {st.drivers.length === 0 ? (
             <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">기사 보유 재고 없음</div>
@@ -628,8 +630,8 @@ function DriverCard({ group, canWrite, onDeliver }: { group: DriverGroup; canWri
         <button type="button" onClick={() => setOpen(o => !o)}
           className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1E293B] hover:text-[#B32646]">
           {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          {group.driver}
-          <span className="text-[#B32646] font-bold">{group.count}</span>
+          <span data-guest-blur>{group.driver}</span>
+          <span data-guest-blur className="text-[#B32646] font-bold">{group.count}</span>
         </button>
         <div className="ml-auto flex items-center gap-2">
           <DeviceChips items={group.items} />
@@ -643,7 +645,7 @@ function DriverCard({ group, canWrite, onDeliver }: { group: DriverGroup; canWri
       {open && (
         <div className="px-3 py-2 flex flex-wrap gap-1.5">
           {group.items.map(it => (
-            <span key={it.out_id} className="px-2 py-0.5 rounded bg-white border border-[#E2E8F0] text-[10px] text-[#475569]">
+            <span key={it.out_id} data-guest-blur className="px-2 py-0.5 rounded bg-white border border-[#E2E8F0] text-[10px] text-[#475569]">
               <span className="font-mono">{it.trcn_id}</span>
               <span className="text-[#94A3B8] ml-1">{it.device_type}</span>
             </span>

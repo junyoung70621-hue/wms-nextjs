@@ -1,11 +1,6 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/session'
 
-export default async function Home() {
-  const session = await getSession()
-  if (session.user) {
-    redirect('/dashboard')
-  } else {
-    redirect('/login')
-  }
+export default function Home() {
+  // 비로그인도 대시보드(게스트 미리보기)로 진입
+  redirect('/dashboard')
 }

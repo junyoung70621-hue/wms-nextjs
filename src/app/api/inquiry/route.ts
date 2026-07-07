@@ -5,7 +5,8 @@ import { sendMail, emailLayout, infoTable, textBlock } from '@/lib/email'
 
 export async function GET() {
   const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  // 둘러보기 모드: 문의는 개인 데이터(이메일 포함)라 익명에겐 빈 목록만 반환
+  if (!session.user) return NextResponse.json({ data: [] })
 
   const isAdmin = session.user.role === 'admin'
   let query = supabase.from('inquiries').select('*').order('created_at', { ascending: false })

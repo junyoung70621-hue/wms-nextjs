@@ -12,7 +12,7 @@ const HELD_STATUSES = ['holding', 'defective', 'center_defective', 'exchanged', 
 function nowKst() { return new Date(Date.now() + 9 * 3600000).toISOString() }
 
 function canSwap(user: { role: string }) {
-  return user.role === 'admin' || user.role === 'materials' || user.role === 'manager'
+  return user.role === 'admin' || user.role === 'materials' || user.role === 'manager' || user.role === 'user'
 }
 
 type Pair = { row: number; oldIh: string; newIh: string; raw: string }

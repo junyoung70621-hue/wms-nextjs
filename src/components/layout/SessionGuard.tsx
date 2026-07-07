@@ -1,18 +1,14 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
+// 로그인 상태에서만 마운트됨 — 세션 만료 감지 시 풀 리로드로 게스트 미리보기 전환
 export default function SessionGuard() {
-  const router = useRouter()
-
   useEffect(() => {
     const check = async () => {
       const res = await fetch('/api/auth/me').catch(() => null)
       if (!res || res.status === 401) {
-        const cur = window.location.pathname + window.location.search
-        const next = cur.startsWith('/login') ? '' : cur
-        router.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')
+        window.location.reload()
       }
     }
 
@@ -23,7 +19,7 @@ export default function SessionGuard() {
 
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
-  }, [router])
+  }, [])
 
   return null
 }

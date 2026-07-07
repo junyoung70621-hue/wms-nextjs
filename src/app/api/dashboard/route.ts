@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { getViewableCenters } from '@/constants/centers'
+import { GUEST_VIEWER, maskActorNames } from '@/lib/guestViewer'
 
 export async function GET() {
   const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
-
-  const u = session.user
+  // 둘러보기 모드: 익명은 게스트 뷰어로 읽기 전용 조회 (개인 이름은 마스킹)
+  const anonymous = !session.user
+  const u = session.user ?? GUEST_VIEWER
   const isManager = u.role === 'admin' || u.role === 'materials'
   const userCenter = u.assigned_center ?? u.center
   const viewable = getViewableCenters(u.role, userCenter)
@@ -85,6 +86,7 @@ export async function GET() {
   }
 
   const { data: history } = await histQuery
+  const historyRows = anonymous ? maskActorNames(history ?? []) : (history ?? [])
 
   return NextResponse.json({
     summary: {
@@ -96,7 +98,7 @@ export async function GET() {
       zero_stock:   (warehouseRows ?? []).filter(r => (r.quantity ?? 0) === 0).length,
     },
     centers,
-    history: history ?? [],
+    history: historyRows,
     zero_stock_items: zeroStock,
   })
 }

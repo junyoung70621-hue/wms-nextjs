@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { firePush, sendPushToAll } from '@/lib/push'
+import { maskActorNames } from '@/lib/guestViewer'
 
 // 첨부파일 정규화 — { name, url } 형태만 허용 (최대 10개)
 function sanitizeAttachments(input: unknown): { name: string; url: string }[] {
@@ -15,10 +16,10 @@ function sanitizeAttachments(input: unknown): { name: string; url: string }[] {
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
 export async function GET() {
   const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  // 둘러보기 모드: 익명은 활성 공지만 읽기 허용 (작성자 이름 마스킹, 읽음 상태 없음)
+  const anonymous = !session.user
 
-  const isAdmin = session.user.role === 'admin'
-  const userId  = session.user.id
+  const isAdmin = session.user?.role === 'admin'
 
   let query = supabase
     .from('notices')
@@ -30,15 +31,20 @@ export async function GET() {
   const { data: notices, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 읽음 상태
-  const { data: reads } = await supabase
-    .from('notice_reads')
-    .select('notice_id')
-    .eq('user_id', userId)
+  // 읽음 상태 (로그인 사용자만)
+  let readIds: number[] = []
+  if (session.user) {
+    const { data: reads } = await supabase
+      .from('notice_reads')
+      .select('notice_id')
+      .eq('user_id', session.user.id)
+    readIds = (reads ?? []).map(r => r.notice_id)
+  }
 
-  const readIds = (reads ?? []).map(r => r.notice_id)
-
-  return NextResponse.json({ notices: notices ?? [], readIds })
+  return NextResponse.json({
+    notices: anonymous ? maskActorNames(notices ?? []) : (notices ?? []),
+    readIds,
+  })
 }
 
 // ── 공지 생성 (admin) ─────────────────────────────────────────────────────

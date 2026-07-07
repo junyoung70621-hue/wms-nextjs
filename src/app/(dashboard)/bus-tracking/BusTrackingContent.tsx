@@ -9,6 +9,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import type { SessionUser } from '@/lib/session'
+import { GUEST_VIEWER } from '@/lib/guestViewer'
+import GuestCallout from '@/components/auth/GuestCallout'
 import {
   TRACKING_CENTERS, STATUS_LABEL, ACTIVE_STATUSES, ACTION_LABEL,
   classifyTerminal, tsKst,
@@ -90,12 +92,12 @@ function DeviceSummary({ rows }: { rows: Assignment[] }) {
       {Object.entries(counts).sort(([a],[b])=>a.localeCompare(b,'ko')).map(([k,v]) => (
         <div key={k} className="flex justify-between text-[12px]">
           <span className="text-[#475569]">{k}</span>
-          <span className="font-bold text-[#1E293B]">{v}</span>
+          <span data-guest-blur className="font-bold text-[#1E293B]">{v}</span>
         </div>
       ))}
       <div className="flex justify-between text-[12px] border-t border-[rgba(0,0,0,0.08)] pt-1 mt-1">
         <span className="font-bold text-[#64748B]">합계</span>
-        <span className="font-bold text-[#B32646]">{total}대</span>
+        <span data-guest-blur className="font-bold text-[#B32646]">{total}대</span>
       </div>
     </div>
   )
@@ -524,17 +526,19 @@ function TabAssignments({
     }
   }, [selCenter, canManage])
 
+  const isBrowse = user.id === GUEST_VIEWER.id // 둘러보기(비로그인) — 센터 전체를 읽기 전용으로 노출
+
   const visibleRows = useMemo(() => {
     let base = rows.filter(r => ACTIVE_STATUSES.includes(r.status))
-    if (!canManage) {
+    if (!canManage && !isBrowse) {
       base = base.filter(r =>
         r.employee_id === user.id || (!r.employee_id && r.employee_name === user.name)
       )
-    } else if (viewEmp !== '__all__') {
+    } else if (canManage && viewEmp !== '__all__') {
       base = base.filter(r => r.employee_id === viewEmp)
     }
     return base
-  }, [rows, canManage, viewEmp, user])
+  }, [rows, canManage, isBrowse, viewEmp, user])
 
   const selRecs  = visibleRows.filter(r => selected.has(r.id))
   const selIds   = selRecs.map(r => r.id)
@@ -553,7 +557,7 @@ function TabAssignments({
       {/* 상단 버튼 + 직원 선택 */}
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
         <div className="flex flex-wrap items-center gap-2">
-          {canWrite && (
+          {(canWrite || isBrowse) && (
             <Button onClick={() => setModal('assign')} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
               ➕ 새 배정
             </Button>
@@ -568,6 +572,7 @@ function TabAssignments({
             </Select>
           )}
           <Button variant="outline" onClick={fetchData} className="text-[12px] h-8">🔄</Button>
+          <GuestCallout label="새 배정: 직원에게 단말 배정 · 행 선택 → 불량교체·직원이동·반납" />
         </div>
       </div>
 
@@ -1747,14 +1752,17 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
   const canManage  = user.role === 'admin' || user.role === 'materials'
   const canWrite   = user.role !== 'guest'
   const canInit    = canManage || user.role === 'manager'
+  const canFaultSwap = canInit || user.role === 'user'   // 자동교체는 사용자까지 허용
+  const isBrowse   = user.id === GUEST_VIEWER.id         // 둘러보기(비로그인) 읽기 전용
 
   const [selCenter, setSelCenter] = useState(
+    isBrowse ? '강남센터' : // 둘러보기: 배정 데이터가 있는 센터를 기본으로
     canManage ? TRACKING_CENTERS[0] :
     TRACKING_CENTERS.includes(userCenter) ? userCenter : ''
   )
   const [refreshKey, setRefreshKey] = useState(0)
 
-  if (!canManage && !TRACKING_CENTERS.includes(userCenter)) {
+  if (!canManage && !isBrowse && !TRACKING_CENTERS.includes(userCenter)) {
     return <p className="text-[#94A3B8] text-[13px]">이 페이지는 강서·강북·강동·강남·자재센터 소속 직원만 이용할 수 있습니다.</p>
   }
 
@@ -1782,7 +1790,7 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
           <TabsTrigger value="center"      className="text-[12px]">🏢 센터 보유현황</TabsTrigger>
           <TabsTrigger value="transfer"    className="text-[12px]">🚛 센터간이동</TabsTrigger>
           <TabsTrigger value="history"     className="text-[12px]">📜 변경이력</TabsTrigger>
-          {canInit && <TabsTrigger value="faultswap" className="text-[12px]">🔄 장애목록 자동교체</TabsTrigger>}
+          {canFaultSwap && <TabsTrigger value="faultswap" className="text-[12px]">🔄 장애목록 자동교체</TabsTrigger>}
           {canInit && <TabsTrigger value="init" className="text-[12px]">📤 초기 등록</TabsTrigger>}
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
@@ -1799,7 +1807,7 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
         <TabsContent value="history" className="mt-4">
           <TabHistory key={`hist-${selCenter}`} selCenter={selCenter} />
         </TabsContent>
-        {canInit && (
+        {canFaultSwap && (
           <TabsContent value="faultswap" className="mt-4">
             <TabFaultSwap key={`faultswap-${refreshKey}`} onRefresh={() => setRefreshKey(k => k + 1)} />
           </TabsContent>

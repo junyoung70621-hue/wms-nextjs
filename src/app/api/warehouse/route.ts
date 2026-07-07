@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 
+// 둘러보기 모드: 재고 목록은 익명 읽기 허용 (개인정보 없음, 쓰기 라우트는 별도로 세션 필수)
 export async function GET(request: Request) {
-  const session = await getSession()
-  if (!session.user) {
-    return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
-  }
-
   const { searchParams } = new URL(request.url)
   const location = searchParams.get('center')
 

@@ -34,11 +34,20 @@ export async function POST(request: Request) {
   if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
   if (session.user.role === 'guest') return NextResponse.json({ error: '권한 없음' }, { status: 403 })
 
-  const { items, reason, cost_note, notes } = await request.json()
+  const { items, reason, cost_note, notes, attachments } = await request.json()
 
   if (!items?.length) return NextResponse.json({ error: '구매 목록을 입력하세요.' }, { status: 400 })
   if (!reason?.trim()) return NextResponse.json({ error: '구매사유를 입력하세요.' }, { status: 400 })
   if (!cost_note?.trim()) return NextResponse.json({ error: '원가반영을 입력하세요.' }, { status: 400 })
+
+  // 첨부파일 정규화 — { name, url } 형태만 허용 (최대 5개)
+  const files: { name: string; url: string }[] = Array.isArray(attachments)
+    ? attachments
+        .filter((a: unknown): a is { name: string; url: string } =>
+          !!a && typeof (a as { name?: unknown }).name === 'string' && typeof (a as { url?: unknown }).url === 'string')
+        .slice(0, 5)
+        .map(a => ({ name: String(a.name).slice(0, 200), url: String(a.url) }))
+    : []
 
   const payload: Record<string, unknown> = {
     requester_id:     session.user.id,
@@ -48,6 +57,7 @@ export async function POST(request: Request) {
     reason:    reason.trim(),
     cost_note: cost_note.trim(),
     status:    'pending',
+    attachments: files,
   }
   if (notes?.trim()) payload.notes = notes.trim()
 
@@ -82,6 +92,23 @@ export async function POST(request: Request) {
       ]
     })
 
+    // 첨부파일 다운로드 → 메일 첨부 + 본문 목록
+    const mailAttachments: { filename: string; content: Buffer }[] = []
+    for (const f of files) {
+      try {
+        const res = await fetch(f.url)
+        if (!res.ok) continue
+        const buf = Buffer.from(await res.arrayBuffer())
+        mailAttachments.push({ filename: f.name, content: buf })
+      } catch { /* 개별 첨부 실패 무시 */ }
+    }
+    const attachHtml = files.length
+      ? `<p style="margin:12px 0 0; font-weight:700; color:#1E293B;">첨부파일 (${files.length})</p>`
+        + `<ul style="margin:6px 0 0; padding-left:18px; font-size:13px; color:#334155;">`
+        + files.map(f => `<li><a href="${f.url}" target="_blank" style="color:#2563EB; text-decoration:underline;">${f.name}</a></li>`).join('')
+        + `</ul>`
+      : ''
+
     if (emails.length) {
       await sendMail(
         emails,
@@ -95,8 +122,10 @@ export async function POST(request: Request) {
               ['원가반영', cost_note.trim()],
             ])}
             <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
-            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}`,
+            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}
+            ${attachHtml}`,
         }),
+        mailAttachments,
       )
     }
 
@@ -112,8 +141,10 @@ export async function POST(request: Request) {
             <p>요청하신 구매 건이 접수되었습니다. 관리자 검토 후 처리 결과를 안내드립니다.</p>
             ${infoTable(['항목', '내용'], [['구매사유', reason.trim()]])}
             <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
-            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}`,
+            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}
+            ${attachHtml}`,
         }),
+        mailAttachments,
       )
     }
   } catch { /* 메일 실패 무시 */ }

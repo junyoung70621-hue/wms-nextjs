@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import DashboardLayout from '@/components/layout/DashboardLayout'
@@ -23,15 +21,12 @@ export default async function DashboardGroupLayout({
   children: React.ReactNode
 }) {
   const session = await getSession()
-  if (!session.user) {
-    const path = (await headers()).get('x-pathname') ?? ''
-    // 안전한 내부 경로만 next로 보존 (오픈 리다이렉트 방지)
-    const safe = path.startsWith('/') && !path.startsWith('//') ? path : ''
-    redirect(safe && safe !== '/dashboard' ? `/login?next=${encodeURIComponent(safe)}` : '/login')
+
+  // 비로그인도 셸(사이드바+탑바)은 보여준다 — 게스트 미리보기 모드
+  if (session.user) {
+    // 마지막 접속 시각 갱신 (wms_V2 접속현황과 동일 기준)
+    touchLastSeen(session.user.id)
   }
 
-  // 마지막 접속 시각 갱신 (wms_V2 접속현황과 동일 기준)
-  touchLastSeen(session.user.id)
-
-  return <DashboardLayout user={session.user}>{children}</DashboardLayout>
+  return <DashboardLayout user={session.user ?? null}>{children}</DashboardLayout>
 }

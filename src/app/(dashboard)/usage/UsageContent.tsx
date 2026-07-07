@@ -10,6 +10,7 @@ import {
   SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import type { SessionUser } from '@/lib/session'
+import GuestCallout from '@/components/auth/GuestCallout'
 import { CENTERS } from '@/constants/centers'
 import { downloadUsageTemplate, type StockLite } from '@/lib/usageTemplate'
 
@@ -172,6 +173,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
             📂 엑셀 파일 선택
           </span>
         </label>
+        <GuestCallout label="양식 다운로드 → 사용수량 입력 → 업로드하면 재고 자동 차감" />
         {rows.length > 0 && (
           <Button variant="ghost" className="text-[12px] h-8 text-[#94A3B8]" onClick={reset}>✕ 초기화</Button>
         )}

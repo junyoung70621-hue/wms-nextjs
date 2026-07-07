@@ -25,8 +25,8 @@ function perms(user: { role: string; center: string; assigned_center: string | n
 
 // ── 조회 ──────────────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
-  const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  // 둘러보기 모드: 이동 목록은 익명 읽기 허용 (개인 이름 없음, 쓰기는 세션 필수)
+  await getSession()
 
   const { searchParams } = new URL(request.url)
   const direction = searchParams.get('direction')

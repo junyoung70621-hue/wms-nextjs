@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select'
 import { Upload, Pencil, ChevronDown, ChevronRight, FileDown, Plus, Send, X } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
+import { GUEST_VIEWER } from '@/lib/guestViewer'
+import GuestCallout from '@/components/auth/GuestCallout'
 import { CENTERS } from '@/constants/centers'
 import {
   classifyTerminal, normalizeTrcnId, findTrcnIndex,
@@ -198,7 +200,7 @@ function CenterCountList({ rows, field, label }: { rows: TerminalMovement[]; fie
       <div className="flex flex-wrap gap-1.5">
         {counts.map(c => (
           <span key={c.center} className="px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569]">
-            {c.center} <b className="text-[#B32646]">{c.count}</b>
+            {c.center} <b data-guest-blur className="text-[#B32646]">{c.count}</b>
           </span>
         ))}
       </div>
@@ -680,10 +682,11 @@ export default function BusTerminalContent({ user }: { user: SessionUser }) {
   const perms: Perms = useMemo(() => {
     const isAdmin = user.role === 'admin'
     const isJjae = center === HUB
+    const isBrowse = user.id === GUEST_VIEWER.id // 둘러보기: 버튼 노출용(클릭은 로그인 팝업이 가로챔)
     return {
       userId: user.id, center, isAdmin, isJjae,
-      canUpOut: isAdmin || (isJjae && user.role !== 'guest'),
-      canUpIn: user.role !== 'guest',
+      canUpOut: isAdmin || (isJjae && user.role !== 'guest') || isBrowse,
+      canUpIn: user.role !== 'guest' || isBrowse,
       canSelIn: isAdmin || isJjae,
     }
   }, [user, center])
@@ -693,6 +696,7 @@ export default function BusTerminalContent({ user }: { user: SessionUser }) {
       <Tabs defaultValue="today">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="today" className="text-[12px]">📊 오늘의 현황</TabsTrigger>
+          <TabsTrigger value="repair" className="text-[12px]">📦 수리완료 출고대기</TabsTrigger>
           <TabsTrigger value="monthly" className="text-[12px]">📈 월간 현황</TabsTrigger>
           <TabsTrigger value="history" className="text-[12px]">📋 이력 조회</TabsTrigger>
           <TabsTrigger value="cert" className="text-[12px]">📄 인수인계증</TabsTrigger>
@@ -700,11 +704,167 @@ export default function BusTerminalContent({ user }: { user: SessionUser }) {
         </TabsList>
 
         <TabsContent value="today" className="mt-4"><TodayTab perms={perms} /></TabsContent>
+        <TabsContent value="repair" className="mt-4"><RepairPoolTab perms={perms} /></TabsContent>
         <TabsContent value="monthly" className="mt-4"><MonthlyTab /></TabsContent>
         <TabsContent value="history" className="mt-4"><HistoryTab /></TabsContent>
         <TabsContent value="cert" className="mt-4"><CertTab perms={perms} /></TabsContent>
         {perms.isAdmin && <TabsContent value="admin" className="mt-4"><AdminTab /></TabsContent>}
       </Tabs>
+    </div>
+  )
+}
+
+// ── 탭: 수리완료 출고대기 ─────────────────────────────────────────────────────
+// 수리센터 연동으로 자재센터에 귀속된 버스단말기를 선택해 타센터로 출고.
+// 출고는 기존 /api/terminal/movements(out) 재사용 → 도착센터 보유현황 자동 등록 + 푸시.
+type PoolItem = { ih_code: string; device_type: string; sub_type: string; repair_date: string; worker: string | null }
+
+function RepairPoolTab({ perms }: { perms: Perms }) {
+  const [items, setItems] = useState<PoolItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sel, setSel] = useState<Set<string>>(new Set())
+  const [center, setCenter] = useState(NON_HUB_CENTERS[0] ?? '')
+  const [date, setDate] = useState(kstToday())
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const r = await fetch('/api/terminal/repair-pool')
+      const d = await r.json()
+      setItems(d.data ?? [])
+      setSel(new Set())
+    } finally { setLoading(false) }
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const allSelected = items.length > 0 && sel.size === items.length
+  const selUnclassified = useMemo(
+    () => items.filter(i => sel.has(i.ih_code) && i.device_type === '미분류').length, [items, sel])
+
+  function toggle(ih: string) {
+    setSel(prev => { const n = new Set(prev); if (n.has(ih)) n.delete(ih); else n.add(ih); return n })
+  }
+  function toggleAll() {
+    setSel(allSelected ? new Set() : new Set(items.map(i => i.ih_code)))
+  }
+
+  async function ship() {
+    if (!sel.size) { setMsg('출고할 단말기를 선택하세요.'); return }
+    if (!center) { setMsg('도착센터를 선택하세요.'); return }
+    setBusy(true); setMsg('')
+    try {
+      const r = await fetch('/api/terminal/movements', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          direction: 'out', upload_date: date,
+          from_center: HUB, to_center: center,
+          file_name: '수리완료출고', notes: '수리완료 출고대기 → 출고',
+          trcn_ids: [...sel], force: false,
+        }),
+      })
+      const d = await r.json()
+      if (d.error) { setMsg(d.error); setBusy(false); return }
+      let m = `${center}로 출고 완료: ${d.inserted}건`
+      if (d.unclassified) m += ` · 미분류 제외 ${d.unclassified}건`
+      if (d.dups) m += ` · 중복 ${d.dups}건`
+      if (d.stocked) m += ` · ${center} 보유 추가 ${d.stocked}건`
+      setMsg(m)
+      await load()
+    } catch { setMsg('출고 실패') }
+    setBusy(false)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-[12px] text-[#64748B]">
+        수리센터에서 수리완료되어 <b className="text-[#1E293B]">자재센터로 귀속</b>된 버스단말기입니다.
+        선택 후 도착센터로 출고하면 해당 센터 보유현황에 자동 등록됩니다.
+      </div>
+
+      {perms.canUpOut && (
+        <div className="flex flex-wrap gap-2 items-end p-3 bg-[#FAFAFA] rounded-lg border border-[#E2E8F0]">
+          <div>
+            <label className="text-[11px] text-[#64748B] block mb-0.5">도착센터</label>
+            <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
+              <SelectTrigger className="h-8 text-[12px] w-36 bg-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {NON_HUB_CENTERS.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-[11px] text-[#64748B] block mb-0.5">출고 날짜</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                   className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
+          </div>
+          <div className="text-[11px] text-[#94A3B8]">{HUB} → {center}</div>
+          <Button type="button" disabled={busy || !sel.size} onClick={ship} className="h-8 text-[12px] gap-1.5">
+            <Send size={14} strokeWidth={1.9} /> {busy ? '출고 중…' : `선택 ${sel.size}건 출고`}
+          </Button>
+          {selUnclassified > 0 && (
+            <span className="text-[11px] text-[#c62828]">미분류 {selUnclassified}건은 출고 시 제외됩니다.</span>
+          )}
+          {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-[12px] text-[#94A3B8] py-6 text-center">불러오는 중…</div>
+      ) : items.length === 0 ? (
+        <div className="text-[12px] text-[#94A3B8] py-6 text-center bg-[#F8F9FA] rounded">
+          출고대기 중인 수리완료 단말기가 없습니다.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+          <table className="w-full text-[12px] border-collapse">
+            <thead>
+              <tr className="bg-[#F8F9FA] text-[#64748B]">
+                {perms.canUpOut && (
+                  <th className="px-2 py-2 w-8 text-center border-b border-[#E2E8F0]">
+                    <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                  </th>
+                )}
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">단말기 IH</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">기종</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">유형</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">수리완료일</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">담당자</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(it => {
+                const checked = sel.has(it.ih_code)
+                return (
+                  <tr key={it.ih_code}
+                      className={`border-b border-[#F1F5F9] ${checked ? 'bg-[#FEF3F6]' : ''} ${perms.canUpOut ? 'cursor-pointer hover:bg-[#f8f9ff]' : ''}`}
+                      onClick={() => perms.canUpOut && toggle(it.ih_code)}>
+                    {perms.canUpOut && (
+                      <td className="px-2 py-1.5 text-center" onClick={e => e.stopPropagation()}>
+                        <Checkbox checked={checked} onCheckedChange={() => toggle(it.ih_code)} />
+                      </td>
+                    )}
+                    <td className="px-3 py-1.5 font-mono text-[#1E293B]">{it.ih_code}</td>
+                    <td className="px-3 py-1.5">
+                      {it.device_type === '미분류'
+                        ? <span className="text-[#c62828]">미분류</span>
+                        : <span className="text-[#1E293B]">{it.device_type}</span>}
+                    </td>
+                    <td className="px-3 py-1.5 text-[#64748B]">{it.sub_type}</td>
+                    <td className="px-3 py-1.5 text-[#64748B]">{it.repair_date}</td>
+                    <td className="px-3 py-1.5 text-[#64748B]">{it.worker ?? '-'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="text-[11px] text-[#94A3B8]">
+        총 {items.length}건 대기 중{perms.canUpOut && sel.size > 0 ? ` · ${sel.size}건 선택됨` : ''}
+      </div>
     </div>
   )
 }
@@ -755,7 +915,8 @@ function TodayTab({ perms }: { perms: Perms }) {
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
                  className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+          <GuestCallout label="날짜 선택 → 그날의 출고·입고 현황 조회" />
+          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
         </div>
       </div>
 
@@ -781,6 +942,7 @@ function TodayTab({ perms }: { perms: Perms }) {
                       title="Teams 채팅방으로 출고 현황 전송">
                       <Send size={12} strokeWidth={1.9} /> {teamsBusy ? '전송 중…' : 'Teams'}
                     </Button>
+                    <GuestCallout side="left" label="출고 추가·수정 / 현장센터 팀즈 발송" />
                   </div>
                 ) : undefined}
               />
@@ -815,6 +977,7 @@ function TodayTab({ perms }: { perms: Perms }) {
                       }}>
                       <FileDown size={13} strokeWidth={1.9} /> 인수인계증
                     </Button>
+                    <GuestCallout side="left" label="입고 추가·수정 / 인수인계증 엑셀 자동생성" />
                   </div>
                 }
               />
@@ -905,7 +1068,7 @@ function MonthlyTab() {
                   onClick={() => exportMonthly(out, inn, daily, `${year}${String(month).padStart(2, '0')}`)}>
             엑셀 내보내기
           </Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 {out.length} · 입고 {inn.length}</span>
+          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import type { SessionUser } from '@/lib/session'
+import GuestCallout from '@/components/auth/GuestCallout'
 import TerminalBoxSection from '@/components/TerminalBoxSection'
 import WarehouseMap from './WarehouseMap'
 
@@ -210,9 +211,24 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
   )
 }
 
-// 약도에서 렉 클릭 → 해당 rack_no 의 선반·박스 상세
-function RackDetailModal({ rackNo, label, items, onItemClick, onClose }: {
-  rackNo: string; label: string; items: Item[]; onItemClick: (it: Item) => void; onClose: () => void
+// 좌표(랙|선반|박스) 키 — box_terminals 와 자재(warehouse) 연결용
+const coordKey = (r: string | null, s: string | null, b: string | null) => `${r ?? ''}|${s ?? ''}|${b ?? ''}`
+
+// 한 박스(좌표/warehouse_id)에 속한 단말기(IH) 목록 추출 — itemIhMap 과 동일 규칙
+function terminalsForBox(boxItems: Item[], terminals: BoxTerminal[]): BoxTerminal[] {
+  const ids = new Set(boxItems.map(i => i.id))
+  const keys = new Set(boxItems.map(i => coordKey(i.rack_no, i.shelf, i.box_no)))
+  return terminals.filter(t =>
+    (t.warehouse_id != null && ids.has(t.warehouse_id)) ||
+    (t.warehouse_id == null && keys.has(coordKey(t.rack_no, t.shelf, t.box_no))))
+}
+
+type BoxGroup = { boxNo: string | null; items: Item[] }
+
+// 약도에서 렉 클릭 → 해당 rack_no 의 선반·박스 상세 (선반 reveal 애니메이션 + 박스번호)
+function RackDetailModal({ rackNo, label, items, terminals, onBoxClick, onClose }: {
+  rackNo: string; label: string; items: Item[]; terminals: BoxTerminal[]
+  onBoxClick: (b: { shelf: string; boxNo: string | null; items: Item[] }) => void; onClose: () => void
 }) {
   const rackItems = items.filter(i => i.rack_no === rackNo)
   const byShelf: Record<string, Item[]> = {}
@@ -220,14 +236,25 @@ function RackDetailModal({ rackNo, label, items, onItemClick, onClose }: {
     const s = it.shelf ?? '미지정'
     ;(byShelf[s] ??= []).push(it)
   }
-  const shelves = Object.entries(byShelf)
+  // 선반 → 박스(box_no) 2단 그룹
+  const shelves: [string, BoxGroup[]][] = Object.entries(byShelf)
     .sort(([a], [b]) => a.localeCompare(b, 'ko', { numeric: true }))
-  shelves.forEach(([, arr]) => arr.sort((x, y) =>
-    String(x.box_no ?? '').localeCompare(String(y.box_no ?? ''), 'ko', { numeric: true })))
+    .map(([shelfName, shelfItems]) => {
+      const boxMap = new Map<string, Item[]>()
+      for (const it of shelfItems) {
+        const k = it.box_no ?? ''
+        if (!boxMap.has(k)) boxMap.set(k, [])
+        boxMap.get(k)!.push(it)
+      }
+      const boxes: BoxGroup[] = [...boxMap.entries()]
+        .map(([b, arr]) => ({ boxNo: b === '' ? null : b, items: arr }))
+        .sort((x, y) => String(x.boxNo ?? '').localeCompare(String(y.boxNo ?? ''), 'ko', { numeric: true }))
+      return [shelfName, boxes] as [string, BoxGroup[]]
+    })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-[680px] max-w-full max-h-[82vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-xl w-[680px] max-w-full max-h-[82vh] flex flex-col modal-pop" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <span className="text-[14px] font-bold text-[#B32646]">📍 {label}</span>
@@ -238,13 +265,39 @@ function RackDetailModal({ rackNo, label, items, onItemClick, onClose }: {
         <div className="p-4 overflow-y-auto">
           {rackItems.length === 0 ? (
             <div className="text-[12px] text-[#94A3B8] py-8 text-center">이 렉에 등록된 자재가 없습니다.</div>
-          ) : shelves.map(([shelfName, shelfItems]) => (
-            <div key={shelfName} className="mb-3 last:mb-0">
-              <div className="text-[11px] text-[#64748B] font-semibold mb-1.5 px-1">선반 {shelfName} <span className="text-[#94A3B8] font-normal">({shelfItems.length})</span></div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
-                {shelfItems.map(item => (
-                  <ItemChip key={item.id} item={item} onClick={() => onItemClick(item)} />
-                ))}
+          ) : shelves.map(([shelfName, boxes], si) => (
+            <div
+              key={shelfName}
+              className="shelf-reveal mb-2.5 last:mb-0 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] overflow-hidden"
+              style={{ animationDelay: `${si * 70}ms` }}
+            >
+              {/* 선반 헤더 (렉 가로 칸처럼) */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#FBE9EE] to-transparent border-b border-[#E2E8F0]">
+                <span className="text-[11px] font-bold text-[#B32646]">🗄️ 선반 {shelfName}</span>
+                <span className="text-[10px] text-[#94A3B8]">박스 {boxes.length}개</span>
+              </div>
+              {/* 박스번호 칩 */}
+              <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                {boxes.map((box, bi) => {
+                  const qty = box.items.reduce((s, it) => s + (it.quantity || 0), 0)
+                  const ihCount = terminalsForBox(box.items, terminals).length
+                  return (
+                    <button
+                      key={box.boxNo ?? `none-${bi}`}
+                      onClick={() => onBoxClick({ shelf: shelfName, boxNo: box.boxNo, items: box.items })}
+                      className="text-left px-2.5 py-2 rounded-lg border border-[#E2E8F0] bg-white hover:border-[#B32646] hover:bg-[#FBE9EE]/40 hover:-translate-y-[1px] transition-all"
+                    >
+                      <div className="flex items-center gap-1 text-[12px] font-bold text-[#1E293B] truncate leading-tight">
+                        <span>📦</span>
+                        <span className="truncate">{box.boxNo ?? '박스 미지정'}</span>
+                      </div>
+                      <div className="text-[10px] text-[#94A3B8] mt-0.5">
+                        품목 {box.items.length} · {qty.toLocaleString()}개
+                        {ihCount > 0 && <span className="text-[#2563EB]"> · IH {ihCount}</span>}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
@@ -254,7 +307,77 @@ function RackDetailModal({ rackNo, label, items, onItemClick, onClose }: {
   )
 }
 
-export default function RackMapContent({ user }: { user: SessionUser }) {
+// 박스 클릭 → 박스 내용물(품목 + 단말기 IH) 팝업
+function BoxContentModal({ rackNo, shelf, boxNo, items, terminals, onItemClick, onClose }: {
+  rackNo: string; shelf: string; boxNo: string | null; items: Item[]; terminals: BoxTerminal[]
+  onItemClick: (it: Item) => void; onClose: () => void
+}) {
+  const ihList = terminalsForBox(items, terminals)
+  const sorted = [...items].sort((a, b) => a.item_name.localeCompare(b.item_name, 'ko', { numeric: true }))
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-[460px] max-w-full max-h-[85vh] flex flex-col modal-pop" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E2E8F0]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-[14px] font-bold text-[#1E293B] truncate">
+              <span>📦</span><span className="truncate">박스 {boxNo ?? '미지정'}</span>
+            </div>
+            <div className="text-[11px] text-[#94A3B8] mt-0.5">랙 {rackNo} · 선반 {shelf}</div>
+          </div>
+          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none flex-shrink-0">×</button>
+        </div>
+
+        <div className="p-4 overflow-y-auto space-y-4">
+          {/* 품목 목록 */}
+          <div>
+            <div className="text-[11px] font-bold text-[#64748B] mb-1.5">📋 품목 <span className="text-[#94A3B8] font-normal">({sorted.length})</span></div>
+            {sorted.length === 0 ? (
+              <div className="text-[11px] text-[#94A3B8]">품목이 없습니다.</div>
+            ) : (
+              <div className="space-y-1">
+                {sorted.map(it => {
+                  const low = it.quantity === 0
+                  return (
+                    <button
+                      key={it.id}
+                      onClick={() => onItemClick(it)}
+                      className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
+                        low ? 'bg-red-50 border-red-200 hover:bg-red-100' : 'bg-white border-[#E2E8F0] hover:bg-[#F1F5F9]'
+                      }`}
+                    >
+                      <span className="text-[12px] font-medium text-[#1E293B] truncate">{it.item_name}</span>
+                      <span className={`text-[11px] flex-shrink-0 ${low ? 'text-red-500 font-bold' : 'text-[#64748B]'}`}>{it.quantity.toLocaleString()}개</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 박스 내 단말기(IH) */}
+          {ihList.length > 0 && (
+            <div>
+              <div className="text-[11px] font-bold text-[#64748B] mb-1.5">📟 박스 내 단말기 <span className="text-[#94A3B8] font-normal">({ihList.length})</span></div>
+              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                {ihList.map(t => (
+                  <span key={t.trcn_id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[10px] text-[#475569]">
+                    <span className="font-mono">{t.trcn_id}</span>
+                    {t.device_type && <span className="text-[#94A3B8]">{t.device_type}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-[10px] text-[#94A3B8]">품목을 클릭하면 상세·수정 화면이 열립니다.</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function RackMapContent({ user }: { user: SessionUser | null }) {
   const [items,    setItems]    = useState<Item[]>([])
   const [terminals, setTerminals] = useState<BoxTerminal[]>([])
   const [centers,  setCenters]  = useState<string[]>([])
@@ -264,11 +387,19 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
   const [search,   setSearch]   = useState('')
   const [selected, setSelected] = useState<Item | null>(null)
   const [selectedRack, setSelectedRack] = useState<{ rackNo: string; label: string } | null>(null)
+  const [selectedBox, setSelectedBox] = useState<{ rackNo: string; shelf: string; boxNo: string | null; items: Item[] } | null>(null)
   const [focused, setFocused] = useState(false)
 
-  const userCenter = user.assigned_center ?? user.center
+  const userCenter = user ? (user.assigned_center ?? user.center) : '자재센터'
 
   useEffect(() => {
+    if (!user) {
+      // 게스트 미리보기: API는 401이므로 호출 생략, 자재센터 약도(빈 데이터)만 렌더
+      setCenters(['자재센터'])
+      setCenter('자재센터')
+      setLoading(false)
+      return
+    }
     const isManager = user.role === 'admin' || user.role === 'materials'
     fetch('/api/rack-map' + (isManager ? '' : `?center=${encodeURIComponent(userCenter)}`))
       .then(r => r.json())
@@ -306,12 +437,11 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
   }
 
   // 수정 권한: 관리자 / 자재센터 직원(자재파트 포함, guest 제외) — /warehouse·박스단말기와 동일 기준
-  const canEdit = user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest')
+  const canEdit = !!user && (user.role === 'admin' || (userCenter === '자재센터' && user.role !== 'guest'))
 
   // 자재 id → 그 박스에 보관된 단말기 IH 목록 (IH 번호 검색용)
   // box_terminals 는 warehouse_id 우선, 없으면 좌표(랙/선반/박스)로 자재와 연결
   const itemIhMap = useMemo(() => {
-    const coordKey = (r: string | null, s: string | null, b: string | null) => `${r ?? ''}|${s ?? ''}|${b ?? ''}`
     const byCoord = new Map<string, number>()
     for (const it of items) byCoord.set(coordKey(it.rack_no, it.shelf, it.box_no), it.id)
     const m = new Map<number, string[]>()
@@ -349,7 +479,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
     return m
   }, [items])
 
-  const isManager = user.role === 'admin' || user.role === 'materials'
+  const isManager = user?.role === 'admin' || user?.role === 'materials'
   const isHub = center === '자재센터'
 
   // 약도 검색: 자재명/분류/IH 매칭 → 위치(랙·선반·박스) 표시, 매칭 렉 강조
@@ -445,6 +575,7 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
             className="h-8 text-[12px] w-48"
           />
         )}
+        <GuestCallout label="자재명·IH 검색 → 랙·선반·박스 위치 표시" />
         <span className="text-[11px] text-[#94A3B8] ml-auto">
           {isHub
             ? (search.trim() ? `${matches.length}개 위치 매칭` : `${Object.keys(rackCounts).length}개 렉`)
@@ -526,14 +657,28 @@ export default function RackMapContent({ user }: { user: SessionUser }) {
         </div>
       )}
 
-      {/* 약도 렉 상세 (선반·박스) */}
+      {/* 약도 렉 상세 (선반·박스번호) */}
       {selectedRack && (
         <RackDetailModal
           rackNo={selectedRack.rackNo}
           label={selectedRack.label}
           items={items}
-          onItemClick={it => setSelected(it)}
+          terminals={terminals}
+          onBoxClick={b => setSelectedBox({ rackNo: selectedRack.rackNo, ...b })}
           onClose={() => setSelectedRack(null)}
+        />
+      )}
+
+      {/* 박스 내용물 팝업 */}
+      {selectedBox && (
+        <BoxContentModal
+          rackNo={selectedBox.rackNo}
+          shelf={selectedBox.shelf}
+          boxNo={selectedBox.boxNo}
+          items={selectedBox.items}
+          terminals={terminals}
+          onItemClick={it => { setSelected(it); setSelectedBox(null) }}
+          onClose={() => setSelectedBox(null)}
         />
       )}
 

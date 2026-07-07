@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { maskName } from '@/lib/guestViewer'
 
 const TABLE = 'bus_terminal_assignments'
 const HIST  = 'bus_terminal_history'
@@ -9,7 +10,8 @@ function nowKst() { return new Date(Date.now() + 9 * 3600000).toISOString() }
 
 export async function GET(req: Request) {
   const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  // 둘러보기 모드: 익명 읽기 허용 (직원 이름·사번은 마스킹)
+  const anonymous = !session.user
   const { searchParams } = new URL(req.url)
   const center      = searchParams.get('center')
   const status      = searchParams.get('status')
@@ -25,7 +27,16 @@ export async function GET(req: Request) {
 
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data: data ?? [] })
+
+  const rows = anonymous
+    ? (data ?? []).map(r => ({
+        ...r,
+        employee_name: maskName(r.employee_name),
+        employee_id: r.employee_id ? `${String(r.employee_id).slice(0, 2)}***` : r.employee_id,
+      }))
+    : (data ?? [])
+
+  return NextResponse.json({ data: rows })
 }
 
 export async function POST(req: Request) {

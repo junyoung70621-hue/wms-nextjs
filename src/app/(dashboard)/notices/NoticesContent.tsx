@@ -253,7 +253,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {!isRead && <span className="w-2 h-2 rounded-full bg-[#B32646] flex-shrink-0" />}
-                    <span className={`text-[13px] font-medium truncate ${inactive ? 'text-gray-400' : 'text-[#1E293B]'}`}>
+                    <span data-guest-blur className={`text-[13px] font-medium truncate ${inactive ? 'text-gray-400' : 'text-[#1E293B]'}`}>
                       {n.title}{inactive && <span className="ml-1 text-[11px] text-gray-400">[비활성]</span>}
                     </span>
                   </div>
@@ -268,6 +268,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                 {isOpen && (
                   <div className="px-4 pb-4 bg-white border-t border-[rgba(0,0,0,0.06)]">
                     <div
+                      data-guest-blur
                       className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#B32646] text-[13px] text-[#1E293B] whitespace-pre-wrap"
                     >
                       {n.content}

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import GuestCallout from '@/components/auth/GuestCallout'
 
 type Inquiry = {
   id: string
@@ -241,6 +242,7 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
             <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={submitLoad}>
               {submitLoad ? '제출 중...' : '📨 제출'}
             </Button>
+            <GuestCallout label="관리자에게 문의 접수 · 답변 메일 수신" />
           </form>
         </div>
 

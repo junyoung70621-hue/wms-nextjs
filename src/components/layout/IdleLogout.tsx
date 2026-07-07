@@ -1,13 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 const IDLE_MS = 30 * 60 * 1000 // 30분 무활동 시 자동 로그아웃
 const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'] as const
 
 export default function IdleLogout() {
-  const router = useRouter()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -19,10 +17,10 @@ export default function IdleLogout() {
       try {
         await fetch('/api/auth/logout', { method: 'POST' })
       } catch {
-        /* 네트워크 실패해도 로그인 화면으로 보낸다 */
+        /* 네트워크 실패해도 게스트 화면으로 보낸다 */
       }
-      router.push('/login?reason=idle')
-      router.refresh()
+      // 풀 리로드 → 게스트 미리보기 모드로 전환
+      window.location.href = '/dashboard'
     }
 
     const reset = () => {
@@ -38,7 +36,7 @@ export default function IdleLogout() {
       if (timer.current) clearTimeout(timer.current)
       EVENTS.forEach(e => window.removeEventListener(e, reset))
     }
-  }, [router])
+  }, [])
 
   return null
 }

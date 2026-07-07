@@ -3,6 +3,7 @@
 // 자재창고 약도 (3D) — 자재창고_약도.xlsx 레이아웃을 그대로 이식
 // 각 셀의 c/r/cs/rs 는 엑셀 병합셀 좌표에서 추출. 렉 클릭 → 해당 rack_no 상세.
 import { useState } from 'react'
+import GuestCallout from '@/components/auth/GuestCallout'
 
 type Cell = { label: string; c: number; r: number; cs: number; rs: number }
 
@@ -110,6 +111,7 @@ export default function WarehouseMap({
           {tilt ? '평면 보기' : '입체(3D) 보기'}
         </button>
         <span className="text-[11px] text-[#94A3B8]">렉을 클릭하면 선반·박스 상세가 열립니다.</span>
+        <GuestCallout label="평면↔3D 전환 · 렉 클릭 → 선반·박스 상세" />
       </div>
 
       <div className="overflow-auto rounded-lg border border-[#e2e8f0] bg-[#f1f5f9] p-6">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { SessionUser } from '@/lib/session'
+import GuestCallout from '@/components/auth/GuestCallout'
 
 type Summary = {
   total_items: number
@@ -74,6 +75,7 @@ function StatCard({
     >
       <span className="text-[11px] text-[#64748B] font-medium tracking-wide uppercase">{label}</span>
       <span
+        data-guest-blur
         className="text-[28px] font-bold leading-none"
         style={{ color: alert ? '#c62828' : (color ?? '#1E293B') }}
       >
@@ -199,7 +201,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
         <div className="lg:col-span-1 bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-[#1E293B]">
-              {isManager ? '센터별 재고' : '내 센터 재고'}
+              {isManager ? '센터별 재고' : '내 센터 재고'}<GuestCallout label="상세 → 재고 현황으로 이동" />
             </span>
             <Link href="/warehouse" className="text-[11px] text-[#B32646] hover:underline">
               상세 →
@@ -220,7 +222,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
               <tbody>
                 {centers.map((c, i) => (
                   <tr key={c.center} className={i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
-                    <td className="px-3 py-2 font-medium text-[#1E293B]">{c.center}</td>
+                    <td data-guest-clear className="px-3 py-2 font-medium text-[#1E293B]">{c.center}</td>
                     <td className="px-3 py-2 text-right text-[#475569]">{c.items.toLocaleString()}</td>
                     <td className="px-3 py-2 text-right text-[#475569]">{c.total_qty.toLocaleString()}</td>
                     <td className={`px-3 py-2 text-right font-bold ${c.zero > 0 ? 'text-red-500' : 'text-[#CBD5E1]'}`}>
@@ -236,7 +238,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
         {/* 최근 입출고 */}
         <div className="lg:col-span-1 bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
           <div className="px-4 py-3 border-b border-[rgba(0,0,0,0.06)] flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-[#1E293B]">최근 입출고</span>
+            <span className="text-[13px] font-semibold text-[#1E293B]">최근 입출고<GuestCallout label="전체 → 입출고 이력 보기" /></span>
             <Link href="/history" className="text-[11px] text-[#B32646] hover:underline">
               전체 →
             </Link>
@@ -259,9 +261,9 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
                       {act.label}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-medium text-[#1E293B] truncate">{itemName}</div>
+                      <div data-guest-blur className="text-[12px] font-medium text-[#1E293B] truncate">{itemName}</div>
                       <div className="text-[10px] text-[#94A3B8]">
-                        {location} · {actor} · {h.quantity.toLocaleString()}개
+                        {location} · {actor} · <span data-guest-blur>{h.quantity.toLocaleString()}개</span>
                       </div>
                     </div>
                     <span className="flex-shrink-0 text-[10px] text-[#CBD5E1]">
@@ -284,7 +286,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
               )}
             </span>
             {(summary?.zero_stock ?? 0) > 0 && (
-              <span className="text-[11px] font-bold text-red-500">{summary!.zero_stock}종</span>
+              <span data-guest-blur className="text-[11px] font-bold text-red-500">{summary!.zero_stock}종</span>
             )}
           </div>
           {zeroItems.length === 0 ? (
@@ -295,7 +297,7 @@ export default function DashboardContent({ user }: { user: SessionUser }) {
             <div className="divide-y divide-[rgba(0,0,0,0.05)]">
               {zeroItems.map(item => (
                 <div key={item.id} className="px-3 py-2">
-                  <div className="text-[12px] font-medium text-[#1E293B] truncate">{item.item_name}</div>
+                  <div data-guest-blur className="text-[12px] font-medium text-[#1E293B] truncate">{item.item_name}</div>
                   <div className="text-[10px] text-[#94A3B8]">
                     {item.location}{item.category_large ? ` · ${item.category_large}` : ''}
                   </div>

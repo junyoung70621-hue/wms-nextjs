@@ -17,7 +17,44 @@ type Item = { href: string; label: string; icon: LucideIcon }
 type Section = { title: string; items: Item[] }
 
 // ── 메뉴 구성 ────────────────────────────────────────────────────────────────
-function getMenuSections(user: SessionUser): Section[] {
+function getMenuSections(user: SessionUser | null): Section[] {
+  // 게스트(비로그인) 미리보기: 표준 메뉴 전체 노출, 단 관리자·접속 현황은 숨김
+  if (!user) {
+    return [
+      {
+        title: 'Dashboard',
+        items: [{ href: '/dashboard', label: '자재현황(전체)', icon: LayoutGrid }],
+      },
+      {
+        title: 'Asset Management',
+        items: [
+          { href: '/terminal/bus', label: '버스단말기 현황', icon: Bus },
+          { href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront },
+          { href: '/warehouse', label: '재고 현황', icon: Boxes },
+          { href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 },
+          { href: '/history', label: '입출고 이력', icon: History },
+          { href: '/usage', label: '사용내역 이력', icon: BarChart3 },
+        ],
+      },
+      {
+        title: 'Requests',
+        items: [
+          { href: '/material-requests', label: '자재요청현황', icon: ClipboardList },
+          { href: '/purchase-requests', label: '구매 요청', icon: ShoppingCart },
+        ],
+      },
+      {
+        title: 'Utilities',
+        items: [
+          { href: '/rack-map', label: '자재창고 지도', icon: Map },
+          { href: '/notices', label: '공지사항', icon: Megaphone },
+          { href: '/inquiry', label: '문의하기', icon: MessageSquare },
+          { href: '/mypage', label: '마이페이지', icon: CircleUser },
+        ],
+      },
+    ]
+  }
+
   const role = user.role
   const center = user.assigned_center ?? user.center
   const isAdmin = role === 'admin'
@@ -74,16 +111,18 @@ const ROLE_LABEL: Record<string, string> = {
   manager: 'MANAGER', user: 'USER', guest: 'GUEST',
 }
 
-export default function Sidebar({ user, collapsed }: { user: SessionUser; collapsed: boolean }) {
+export default function Sidebar({ user, collapsed }: { user: SessionUser | null; collapsed: boolean }) {
   const pathname = usePathname()
   const sections = getMenuSections(user)
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, unread_notices: 0 })
 
   useEffect(() => {
+    if (!user) return // 게스트는 인증 API 호출 생략
     fetch('/api/notifications/counts')
       .then(r => r.json())
       .then(d => { if (!d.error) setCounts(d) })
       .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   const BADGE_MAP: Record<string, number> = {
@@ -141,16 +180,18 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser; collap
       {/* 유저 카드 */}
       <div className="mx-2 mb-2 p-2 bg-[#f8f9ff] rounded-lg border border-[#e2e8f0] flex items-center gap-2 min-w-0">
         <div className="w-[28px] h-[28px] flex-shrink-0 rounded-full bg-[#fbe9ee] border border-[rgba(179,38,70,0.25)] flex items-center justify-center text-[12px] font-bold text-[#b32646]">
-          {user.name.charAt(0)}
+          {user ? user.name.charAt(0) : '?'}
         </div>
         <div className="min-w-0">
-          <div className="text-[12px] font-semibold text-[#1E293B] truncate">{user.name}</div>
+          <div className="text-[12px] font-semibold text-[#1E293B] truncate">{user ? user.name : '방문자'}</div>
           <div className="flex items-center gap-1 min-w-0">
             <span className="text-[9px] font-bold text-[#b32646] tracking-wide flex-shrink-0">
-              {ROLE_LABEL[user.role] ?? user.role.toUpperCase()}
+              {user ? (ROLE_LABEL[user.role] ?? user.role.toUpperCase()) : 'GUEST'}
             </span>
             <span className="text-[9px] text-[#CBD5E1] flex-shrink-0">·</span>
-            <span className="text-[9px] text-[#64748B] truncate">{user.assigned_center ?? user.center}</span>
+            <span className="text-[9px] text-[#64748B] truncate">
+              {user ? (user.assigned_center ?? user.center) : '로그인이 필요합니다'}
+            </span>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import {
   computeTaxiStatus, TAXI_TABLE, TAXI_DELIVERY_TABLE, type TaxiMovement,
 } from '@/lib/taxiTracking'
+import { maskName } from '@/lib/guestViewer'
 
 // 1000건씩 페이지네이션으로 전체 조회 (uploaded_at DESC 순서 보존)
 async function fetchAll(direction: 'in' | 'out'): Promise<TaxiMovement[]> {
@@ -51,13 +52,18 @@ async function fetchLatestDeliveryMap(): Promise<Map<string, string>> {
 // 현재 단말기 상태 스냅샷 (수리중 / 자재센터 보관 / 기사 보유 / 메트릭)
 export async function GET() {
   const session = await getSession()
-  if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  // 둘러보기 모드: 익명 읽기 허용 (기사 이름은 마스킹)
+  const anonymous = !session.user
 
   try {
     const [ins, outs, latestDelivery] = await Promise.all([
       fetchAll('in'), fetchAll('out'), fetchLatestDeliveryMap(),
     ])
-    return NextResponse.json(computeTaxiStatus(ins, outs, latestDelivery))
+    const status = computeTaxiStatus(ins, outs, latestDelivery)
+    if (anonymous) {
+      status.drivers = status.drivers.map(d => ({ ...d, driver: maskName(d.driver) }))
+    }
+    return NextResponse.json(status)
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }

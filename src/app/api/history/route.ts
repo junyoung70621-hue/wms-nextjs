@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { maskActorNames } from '@/lib/guestViewer'
 
 export async function GET(request: Request) {
   const session = await getSession()
-  if (!session.user) {
-    return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
-  }
+  // 둘러보기 모드: 익명 읽기 허용 (처리자 이름은 마스킹)
+  const anonymous = !session.user
 
   const { searchParams } = new URL(request.url)
   const actionType = searchParams.get('action')
@@ -41,5 +41,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data: data ?? [] })
+  return NextResponse.json({ data: anonymous ? maskActorNames(data ?? []) : (data ?? []) })
 }

@@ -135,6 +135,114 @@
   animation: page-enter 0.2s ease-out backwards;
 }
 
+/* 렉 상세: 선반이 아래에서 순차로 펼쳐지는 애니메이션 */
+@keyframes shelf-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.shelf-reveal {
+  animation: shelf-reveal 0.28s ease-out backwards;
+}
+
+/* 모달 카드 등장 (fade + zoom) */
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-pop {
+  animation: modal-pop 0.2s ease-out backwards;
+}
+
+/* 둘러보기(게스트) 모드 — 데이터 글자만 블러 처리
+   테이블 셀 전체 + data-guest-blur 로 표시한 값 요소만 가림 (라벨·헤더·버튼은 그대로) */
+.guest-veil td,
+.guest-veil [data-guest-blur] {
+  filter: blur(4.5px);
+  user-select: none;
+}
+.guest-veil td[data-guest-clear] {
+  filter: none;
+}
+
+/* 둘러보기 기능 안내 화살표+라벨 — guest-veil 안에서만 표시.
+   0폭·0높이 앵커 + 절대배치로 기존 레이아웃을 전혀 밀지 않는다. */
+.guest-callout {
+  display: none;
+}
+.guest-veil .guest-callout {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  user-select: none;
+  vertical-align: baseline;
+}
+.guest-veil .guest-callout-inner {
+  position: absolute;
+  left: 4px;
+  top: 9px; /* 버튼 오른쪽 아래에서 위(↖)를 가리킨다 */
+  z-index: 30;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  color: #e11d48;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+  transform: rotate(-1.5deg);
+  animation: callout-in 0.5s ease-out backwards;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.92), 0 -1px 0 rgba(255,255,255,0.92),
+               1px 0 0 rgba(255,255,255,0.92), -1px 0 0 rgba(255,255,255,0.92);
+}
+.guest-veil .guest-callout-inner svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-bottom: 1px;
+}
+/* 겹침 회피용 — 화살표를 길게 빼서 라벨을 더 아래·오른쪽으로 */
+.guest-veil .guest-callout-inner.long {
+  left: 12px;
+  top: 24px;
+}
+.guest-veil .guest-callout-inner.long svg {
+  width: 38px;
+  height: 38px;
+}
+/* 오른쪽 패널/우측 끝 버튼용 — 라벨이 앵커 기준 왼쪽 아래로 뻗는다 */
+.guest-veil .guest-callout-inner.side-left {
+  left: auto;
+  right: 2px;
+}
+.guest-veil .guest-callout-inner.side-left svg {
+  transform: scaleX(-1);
+}
+.guest-veil .guest-callout-inner.side-left.long {
+  right: 10px;
+}
+@keyframes callout-in {
+  from { opacity: 0; transform: translateY(5px) rotate(-1.5deg); }
+  to   { opacity: 1; transform: translateY(0) rotate(-1.5deg); }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

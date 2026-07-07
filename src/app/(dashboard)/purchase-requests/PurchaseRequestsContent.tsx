@@ -6,8 +6,15 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
 import { downloadPurchaseRequest } from '@/lib/purchaseRequestExcel'
+import { supabase } from '@/lib/supabase'
+
+// ── 첨부파일 설정 ───────────────────────────────────────────────────────────────
+const ATTACH_BUCKET = 'notice-attachments'
+const MAX_ATTACH    = 5
+const MAX_FILE_MB   = 20
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
+type Attachment = { name: string; url: string }
 type PurchaseItem = { 품명: string; 수량: number; 링크?: string }
 type PurchaseRequest = {
   id: number
@@ -22,6 +29,7 @@ type PurchaseRequest = {
   requested_at: string
   processed_at: string | null
   reply_message: string | null
+  attachments: Attachment[] | null
   processor: { name: string; center: string; assigned_center: string | null } | null
 }
 
@@ -148,6 +156,15 @@ function ManagerCard({
             <p className="text-[12px] text-[#0284C7] bg-[#F0F9FF] border border-[#BAE6FD] rounded px-3 py-2">
               💬 담당자: {req.reply_message}
             </p>
+          )}
+          {req.attachments && req.attachments.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[12px] font-semibold text-[#64748B]">📎 첨부파일</p>
+              {req.attachments.map((a, i) => (
+                <a key={i} href={a.url} target="_blank" rel="noreferrer"
+                  className="block text-[12px] text-[#2563EB] hover:underline truncate">📎 {a.name}</a>
+              ))}
+            </div>
           )}
           {req.processor?.name && (
             <p className="text-[11px] text-[#94A3B8]">
@@ -286,6 +303,15 @@ function MyCard({
               💬 담당자: {req.reply_message}
             </p>
           )}
+          {req.attachments && req.attachments.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[12px] font-semibold text-[#64748B]">📎 첨부파일</p>
+              {req.attachments.map((a, i) => (
+                <a key={i} href={a.url} target="_blank" rel="noreferrer"
+                  className="block text-[12px] text-[#2563EB] hover:underline truncate">📎 {a.name}</a>
+              ))}
+            </div>
+          )}
 
           {/* 구매요청서 다운로드 */}
           <div className="pt-1">
@@ -382,6 +408,8 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
   const [reason, setReason]     = useState('')
   const [costNote, setCostNote] = useState('')
   const [notes, setNotes]       = useState('')
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]       = useState('')
   const [success, setSuccess]   = useState(false)
@@ -392,6 +420,39 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
   const removeRow = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i))
   const updateItem = (i: number, field: keyof PurchaseItem, val: string | number) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it))
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = '' // 같은 파일 재선택 허용
+    if (files.length === 0) return
+    if (attachments.length + files.length > MAX_ATTACH) {
+      return setError(`첨부파일은 최대 ${MAX_ATTACH}개까지 가능합니다.`)
+    }
+    for (const f of files) {
+      if (f.size > MAX_FILE_MB * 1024 * 1024) {
+        return setError(`"${f.name}" 파일이 너무 큽니다 (최대 ${MAX_FILE_MB}MB).`)
+      }
+    }
+
+    setUploading(true); setError('')
+    try {
+      const uploaded: Attachment[] = []
+      for (const f of files) {
+        const ext  = f.name.includes('.') ? '.' + f.name.split('.').pop() : ''
+        const path = `purchase/${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`
+        const { error: upErr } = await supabase.storage
+          .from(ATTACH_BUCKET)
+          .upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined })
+        if (upErr) return setError(`업로드 실패: ${upErr.message}`)
+        const { data } = supabase.storage.from(ATTACH_BUCKET).getPublicUrl(path)
+        uploaded.push({ name: f.name, url: data.publicUrl })
+      }
+      setAttachments(prev => [...prev, ...uploaded])
+    } finally { setUploading(false) }
+  }
+
+  const removeAttachment = (idx: number) =>
+    setAttachments(prev => prev.filter((_, i) => i !== idx))
 
   const handleSubmit = async () => {
     const validItems = items.filter(it => it.품명.trim())
@@ -415,6 +476,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
           reason: reason.trim(),
           cost_note: costNote.trim(),
           notes: notes.trim() || undefined,
+          attachments,
         }),
       })
       const json = await res.json()
@@ -422,7 +484,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
       lastSubmitRef.current = Date.now()
       setSuccess(true)
       setItems([{ 품명: '', 수량: 1, 링크: '' }])
-      setReason(''); setCostNote(''); setNotes('')
+      setReason(''); setCostNote(''); setNotes(''); setAttachments([])
       onSubmitted()
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -531,13 +593,38 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
           className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
       </div>
 
+      {/* 첨부파일 */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[11px] font-semibold text-[#64748B]">첨부파일 (선택)</label>
+          <span className="text-[10px] text-[#94A3B8]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB · 메일로 함께 발송됩니다</span>
+        </div>
+        {attachments.length > 0 && (
+          <ul className="mb-2 space-y-1">
+            {attachments.map((a, i) => (
+              <li key={i} className="flex items-center justify-between gap-2 bg-[#F8F9FA] border rounded px-3 py-1.5">
+                <a href={a.url} target="_blank" rel="noreferrer"
+                  className="text-[12px] text-[#1E293B] truncate hover:text-[#B32646] hover:underline">📎 {a.name}</a>
+                <button type="button" onClick={() => removeAttachment(i)}
+                  className="flex-shrink-0 text-[#CBD5E1] hover:text-red-400 text-[14px] leading-none">×</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label className="inline-flex items-center gap-2 cursor-pointer text-[12px] text-[#B32646] border border-[#B32646]/40 hover:bg-[#B32646]/5 rounded px-3 py-1.5 transition-colors">
+          {uploading ? '업로드 중...' : '＋ 파일 추가'}
+          <input type="file" multiple className="hidden" disabled={uploading}
+            onChange={handleFilePick} />
+        </label>
+      </div>
+
       {error && (
         <p className="text-red-500 text-[12px] bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>
       )}
 
-      <Button onClick={handleSubmit} disabled={submitting}
+      <Button onClick={handleSubmit} disabled={submitting || uploading}
         className="bg-[#B32646] hover:bg-[#B0003D] text-white w-full">
-        {submitting ? '제출 중...' : '📨 요청 제출'}
+        {submitting ? '제출 중...' : uploading ? '파일 업로드 중...' : '📨 요청 제출'}
       </Button>
 
       {searchRow !== null && (
