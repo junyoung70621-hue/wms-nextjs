@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import { getViewableCenters } from '@/constants/centers'
+import { getViewableCenters, NO_WAREHOUSE } from '@/constants/centers'
 
 export async function GET(request: Request) {
   const session = await getSession()
@@ -10,6 +10,10 @@ export async function GET(request: Request) {
   const u = session.user
   const userCenter = u.assigned_center ?? u.center
   const viewable = getViewableCenters(u.role, userCenter)
+  // 자체 창고가 없는 센터(고객지원사업부)는 열람 목록이 비므로 자재센터 지도 열람 허용
+  if (NO_WAREHOUSE.has(userCenter) && viewable.length === 0 && u.role !== 'guest') {
+    viewable.push('자재센터')
+  }
 
   const { searchParams } = new URL(request.url)
   const location = searchParams.get('center') ?? (viewable[0] ?? '')

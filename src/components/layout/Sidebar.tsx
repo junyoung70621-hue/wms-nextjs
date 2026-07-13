@@ -9,6 +9,7 @@ import {
   MessageSquare, CircleUser, type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { NO_WAREHOUSE } from '@/constants/centers'
 import type { SessionUser } from '@/lib/session'
 
 type Counts = { mat_pending: number; pur_pending: number; unread_notices: number }
@@ -93,7 +94,9 @@ function getMenuSections(user: SessionUser | null): Section[] {
   }
 
   const utilItems: Item[] = []
-  if (isAdmin || isMaterials) utilItems.push({ href: '/rack-map', label: '자재창고 지도', icon: Map })
+  // 자재창고 지도: 관리자/자재파트 + 자체 창고가 없는 센터(고객지원사업부)는 자재센터 지도 열람
+  if (isAdmin || isMaterials || (!isGuest && NO_WAREHOUSE.has(center)))
+    utilItems.push({ href: '/rack-map', label: '자재창고 지도', icon: Map })
   if (isAdmin) {
     utilItems.push({ href: '/admin', label: '관리자', icon: Settings })
     utilItems.push({ href: '/online-users', label: '접속 현황', icon: Users })

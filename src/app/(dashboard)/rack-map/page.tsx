@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
+import { NO_WAREHOUSE } from '@/constants/centers'
 import RackMapContent from './RackMapContent'
 
 export default async function RackMapPage() {
@@ -8,7 +9,10 @@ export default async function RackMapPage() {
   if (!session.user) return <RackMapContent user={null} />
 
   const { role } = session.user
-  if (role !== 'admin' && role !== 'materials' && role !== 'manager') {
+  const center = session.user.assigned_center ?? session.user.center
+  // 자체 창고가 없는 센터(고객지원사업부)는 자재센터 지도 열람 허용
+  const noWarehouseViewer = role !== 'guest' && NO_WAREHOUSE.has(center)
+  if (role !== 'admin' && role !== 'materials' && role !== 'manager' && !noWarehouseViewer) {
     redirect('/dashboard')
   }
 

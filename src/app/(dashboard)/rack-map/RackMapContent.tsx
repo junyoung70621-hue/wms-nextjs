@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import type { SessionUser } from '@/lib/session'
+import { NO_WAREHOUSE } from '@/constants/centers'
 import GuestCallout from '@/components/auth/GuestCallout'
 import TerminalBoxSection from '@/components/TerminalBoxSection'
 import WarehouseMap from './WarehouseMap'
@@ -401,12 +402,14 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
       return
     }
     const isManager = user.role === 'admin' || user.role === 'materials'
-    fetch('/api/rack-map' + (isManager ? '' : `?center=${encodeURIComponent(userCenter)}`))
+    // 자체 창고가 없는 센터(고객지원사업부)는 서버가 허용한 자재센터 지도를 조회
+    const noOwnMap = NO_WAREHOUSE.has(userCenter)
+    fetch('/api/rack-map' + (isManager || noOwnMap ? '' : `?center=${encodeURIComponent(userCenter)}`))
       .then(r => r.json())
       .then(d => {
         if (d.error) { setError(d.error); return }
         setCenters(d.centers ?? [])
-        setCenter(isManager ? (d.centers?.[0] ?? '') : userCenter)
+        setCenter(isManager || noOwnMap ? (d.centers?.[0] ?? '') : userCenter)
         setItems(d.data ?? [])
         setTerminals(d.terminals ?? [])
       })
