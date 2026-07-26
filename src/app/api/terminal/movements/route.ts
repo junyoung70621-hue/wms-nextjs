@@ -25,8 +25,9 @@ function perms(user: { role: string; center: string; assigned_center: string | n
 
 // ── 조회 ──────────────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
-  // 둘러보기 모드: 이동 목록은 익명 읽기 허용 (개인 이름 없음, 쓰기는 세션 필수)
-  await getSession()
+  // 둘러보기 모드: 이동 목록은 익명 읽기 허용하되 IH(기기 시리얼)는 마스킹
+  const session = await getSession()
+  const anonymous = !session.user
 
   const { searchParams } = new URL(request.url)
   const direction = searchParams.get('direction')
@@ -48,7 +49,19 @@ export async function GET(request: Request) {
 
   const { data, error } = await q.limit(limit)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data: data ?? [] })
+
+  const list = (data ?? []) as unknown as Record<string, unknown>[]
+  const rows = anonymous
+    ? list.map(r => ({
+        ...r,
+        trcn_id: r.trcn_id
+          ? String(r.trcn_id).slice(0, 3) + '*'.repeat(Math.max(0, String(r.trcn_id).length - 3))
+          : r.trcn_id,
+        file_name: null,
+        notes: null,
+      }))
+    : list
+  return NextResponse.json({ data: rows })
 }
 
 // ── 저장 (업로드) ─────────────────────────────────────────────────────────────

@@ -49,6 +49,7 @@ export default function LoginModal({
   const [findLoading, setFindLoading] = useState(false)
 
   // 비밀번호 찾기
+  const [resetUsername, setResetUsername] = useState('')
   const [resetEmail, setResetEmail] = useState('')
   const [resetError, setResetError] = useState('')
   const [resetSuccess, setResetSuccess] = useState(false)
@@ -161,8 +162,8 @@ export default function LoginModal({
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!resetEmail) {
-      setResetError('이메일을 입력하세요.')
+    if (!resetUsername || !resetEmail) {
+      setResetError('아이디와 이메일을 입력하세요.')
       return
     }
     setResetLoading(true)
@@ -171,7 +172,7 @@ export default function LoginModal({
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({ username: resetUsername, email: resetEmail }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -422,18 +423,26 @@ export default function LoginModal({
                 {resetSuccess ? (
                   <div className="text-center py-4 space-y-2">
                     <p className="text-green-600 font-semibold text-lg">
-                      ✅ 임시 비밀번호 발송 완료
+                      ✅ 요청 완료
                     </p>
                     <p className="text-sm text-gray-500">
-                      {resetEmail}로 임시 비밀번호를 발송했습니다.
+                      입력하신 정보가 일치하면 {resetEmail}로 임시 비밀번호가 발송됩니다.
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleReset} className="space-y-3">
                     <p className="text-[13px] font-bold text-[#1E293B]">비밀번호 찾기</p>
                     <p className="text-sm text-gray-500">
-                      가입 시 등록한 회사 이메일로 임시 비밀번호를 발송합니다.
+                      아이디와 가입 시 등록한 회사 이메일이 일치하면 임시 비밀번호를 발송합니다.
                     </p>
+                    <div className="space-y-1">
+                      <Label>아이디</Label>
+                      <Input
+                        value={resetUsername}
+                        onChange={e => setResetUsername(e.target.value)}
+                        placeholder="아이디 입력"
+                      />
+                    </div>
                     <div className="space-y-1">
                       <Label>회사 이메일</Label>
                       <Input

@@ -22,25 +22,29 @@ export async function GET(req: Request) {
     .select('trcn_id,device_type,sub_type,upload_date,uploaded_at')
     .eq('direction', 'out').eq('to_center', center).limit(5000)
 
-  // terminal_movements 입고 → 이 센터에서 반납된 IH (IH별 최신 입고 시각)
+  // terminal_movements 입고 → 이 센터에서 반납된 IH (IH별 최신 입고)
   const { data: inRows } = await supabase.from('terminal_movements')
-    .select('trcn_id,uploaded_at').eq('direction', 'in').eq('from_center', center).limit(5000)
+    .select('trcn_id,upload_date,uploaded_at').eq('direction', 'in').eq('from_center', center).limit(5000)
 
-  // IH별 최신 출고/입고 시각. 반납 판정은 '최신 입고 > 최신 출고'일 때만 한다.
-  // (과거에 반납된 적 있어도 그 뒤 다시 출고됐으면 — 수리 후 재출고 등 — 보유 중으로 본다.
-  //  과거 입고만으로 영구 제외하면 재출고분이 배정가능 풀에서 사라진다.)
-  const lastOutAt: Record<string, string> = {}
+  // IH별 최신 출고/입고. 반납 판정은 '최신 입고 > 최신 출고'일 때만 한다.
+  // (과거에 반납된 적 있어도 그 뒤 다시 출고됐으면 — 수리 후 재출고 등 — 보유 중으로 본다.)
+  // ※ 최신 판단은 실제 이동 날짜(upload_date) 우선, 같은 날짜면 등록 시각(uploaded_at).
+  //   등록 시각만 비교하면 과거 이력 소급 입력 시 시간 역전으로 보유 단말이 반납 처리됨
+  //   (taxiTracking.computeTaxiStatus 와 동일 기준).
+  const keyOf = (r: { upload_date?: string | null; uploaded_at?: string | null }) =>
+    `${r.upload_date ?? ''}|${r.uploaded_at ?? ''}`
+  const lastOutKey: Record<string, string> = {}
   for (const r of outRows ?? []) {
-    if (r.uploaded_at && (!lastOutAt[r.trcn_id] || r.uploaded_at > lastOutAt[r.trcn_id]))
-      lastOutAt[r.trcn_id] = r.uploaded_at
+    const k = keyOf(r)
+    if (!lastOutKey[r.trcn_id] || k > lastOutKey[r.trcn_id]) lastOutKey[r.trcn_id] = k
   }
-  const lastInAt: Record<string, string> = {}
-  for (const r of (inRows ?? []) as { trcn_id: string; uploaded_at: string }[]) {
-    if (r.uploaded_at && (!lastInAt[r.trcn_id] || r.uploaded_at > lastInAt[r.trcn_id]))
-      lastInAt[r.trcn_id] = r.uploaded_at
+  const lastInKey: Record<string, string> = {}
+  for (const r of (inRows ?? []) as { trcn_id: string; upload_date?: string | null; uploaded_at: string }[]) {
+    const k = keyOf(r)
+    if (!lastInKey[r.trcn_id] || k > lastInKey[r.trcn_id]) lastInKey[r.trcn_id] = k
   }
   const returnedIhs = new Set(
-    Object.keys(lastInAt).filter(ih => !lastOutAt[ih] || lastInAt[ih] > lastOutAt[ih])
+    Object.keys(lastInKey).filter(ih => !lastOutKey[ih] || lastInKey[ih] > lastOutKey[ih])
   )
 
   // 이미 배정된 IH (활성 상태)

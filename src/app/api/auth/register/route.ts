@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { sendMail, emailLayout, infoTable } from '@/lib/email'
+import { CENTERS } from '@/constants/centers'
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,18 @@ export async function POST(request: Request) {
     if (!username || !password || !name || !email || !center) {
       return NextResponse.json(
         { error: '* 표시 항목은 필수입니다.' },
+        { status: 400 }
+      )
+    }
+    if (!(CENTERS as readonly string[]).includes(center)) {
+      return NextResponse.json(
+        { error: '올바른 소속 센터를 선택하세요.' },
+        { status: 400 }
+      )
+    }
+    if (String(password).length < 6) {
+      return NextResponse.json(
+        { error: '비밀번호는 6자 이상이어야 합니다.' },
         { status: 400 }
       )
     }

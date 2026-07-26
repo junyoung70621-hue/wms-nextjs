@@ -68,8 +68,11 @@ export async function POST(request: Request) {
 
   // 현재 재고 확인
   const { data: item } = await supabase
-    .from('warehouse').select('quantity, item_name').eq('id', item_id).single()
+    .from('warehouse').select('quantity, item_name, location').eq('id', item_id).single()
   if (!item) return NextResponse.json({ error: '자재를 찾을 수 없습니다.' }, { status: 404 })
+  if (item.location !== from_center) {
+    return NextResponse.json({ error: '자재의 소속 센터가 출발 센터와 다릅니다.' }, { status: 400 })
+  }
   if (item.quantity < quantity) {
     return NextResponse.json({ error: `재고 부족 (현재: ${item.quantity}개)` }, { status: 400 })
   }

@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { normalizeTrcnId, classifyTaxi } from '@/lib/taxiTracking'
 import { classifyTerminal } from '@/lib/terminal'
+import { adjustBoxQuantity } from '@/lib/stock'
 
 const TABLE = 'box_terminals'
 
@@ -26,15 +27,6 @@ function recognizedForBox(kind: BoxKind, ih: string): boolean {
   if (kind === 'taxi') return isTaxi
   if (kind === 'bus') return isBus
   return isTaxi || isBus // 대분류 불명확 시 둘 중 하나라도 인식되면 허용
-}
-
-// 박스(warehouse) 수량을 delta 만큼 증감 (음수 방지)
-export async function adjustBoxQuantity(warehouseId: number | null, delta: number) {
-  if (!warehouseId || !delta) return
-  const { data } = await supabase.from('warehouse').select('quantity').eq('id', warehouseId).single()
-  if (!data) return
-  const next = Math.max(0, (data.quantity ?? 0) + delta)
-  await supabase.from('warehouse').update({ quantity: next }).eq('id', warehouseId)
 }
 
 // 박스 안의 단말기(IH/기종) 목록 — warehouse_id 또는 좌표(rack_no/shelf/box_no)로 조회

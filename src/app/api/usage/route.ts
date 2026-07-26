@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { maskActorNames } from '@/lib/guestViewer'
+import { adjustStock } from '@/lib/stock'
 
 type UploadRow = {
   item_id?: number      // 앱 내 재고현황에서 직접 선택한 경우 (이름 매칭 대신 ID 사용)
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   const results: Record<string, unknown>[] = []
 
   for (const row of rows) {
-    if (!row.item_name?.trim() || !(row.quantity >= 1)) {
+    if (!row.item_name?.trim() || !Number.isInteger(row.quantity) || row.quantity < 1) {
       results.push({ ...row, ok: false, error: '자재명 또는 수량 오류' })
       continue
     }
@@ -72,19 +73,15 @@ export async function POST(request: Request) {
       continue
     }
 
-    if ((item.quantity ?? 0) < row.quantity) {
-      results.push({ ...row, ok: false, error: `재고 부족 (현재 ${item.quantity ?? 0}개)`, item_name: item.item_name })
-      continue
-    }
-
-    const before = item.quantity ?? 0
-    const after  = before - row.quantity
-
-    await supabase.from('warehouse').update({
-      quantity: after,
+    const r = await adjustStock(item.id, -row.quantity, {
       last_modified_by: u.id,
       last_modified_at: new Date().toISOString(),
-    }).eq('id', item.id)
+    })
+    if (!r.ok) {
+      results.push({ ...row, ok: false, error: r.error, item_name: item.item_name })
+      continue
+    }
+    const { before, after } = r
 
     await supabase.from('history').insert({
       actor_id:            u.id,

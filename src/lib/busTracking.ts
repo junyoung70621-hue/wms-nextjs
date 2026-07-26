@@ -13,6 +13,19 @@ export const STATUS_LABEL: Record<string, string> = {
 
 export const ACTIVE_STATUSES = ['holding', 'defective', 'center_defective', 'exchanged']
 
+// 버스단말 배정 데이터 수정 권한:
+// admin/materials 및 자재센터 소속(guest 제외)은 전체 센터, 그 외(guest 제외)는 본인 센터만
+// (terminal/movements 의 perms(isJjae) 기준과 동일)
+export function canManageBusCenter(
+  u: { role: string; center: string; assigned_center: string | null },
+  center?: string | null,
+): boolean {
+  if (u.role === 'guest') return false
+  const own = u.assigned_center ?? u.center
+  if (u.role === 'admin' || u.role === 'materials' || own === '자재센터') return true
+  return !!center && center === own
+}
+
 export const ACTION_LABEL: Record<string, string> = {
   inbound:  '센터 입고',
   assign:   '배정',

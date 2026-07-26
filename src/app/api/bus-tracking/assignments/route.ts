@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { maskName } from '@/lib/guestViewer'
+import { canManageBusCenter } from '@/lib/busTracking'
 
 const TABLE = 'bus_terminal_assignments'
 const HIST  = 'bus_terminal_history'
@@ -46,6 +47,9 @@ export async function POST(req: Request) {
   const { ih_list, center, target_id, target_name } = await req.json()
   if (!ih_list?.length || !center || !target_name) {
     return NextResponse.json({ error: '필수 파라미터 누락' }, { status: 400 })
+  }
+  if (!canManageBusCenter(u, center)) {
+    return NextResponse.json({ error: '해당 센터 수정 권한 없음' }, { status: 403 })
   }
 
   const now = nowKst()
@@ -92,6 +96,12 @@ export async function DELETE(req: Request) {
   const u = session.user
   const { ids, records_meta } = await req.json()
   if (!ids?.length) return NextResponse.json({ error: 'ids 필요' }, { status: 400 })
+
+  // 대상 레코드의 실제 센터 기준으로 권한 확인 (클라이언트 값 신뢰 안 함)
+  const { data: targets } = await supabase.from(TABLE).select('center').in('id', ids)
+  if ((targets ?? []).some(r => !canManageBusCenter(u, r.center))) {
+    return NextResponse.json({ error: '해당 센터 수정 권한 없음' }, { status: 403 })
+  }
 
   await supabase.from(TABLE).delete().in('id', ids)
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import { classifyTerminal } from '@/lib/busTracking'
+import { classifyTerminal, canManageBusCenter } from '@/lib/busTracking'
 
 const TABLE     = 'bus_terminal_transfer_requests'
 const ASSIGN    = 'bus_terminal_assignments'
@@ -23,7 +23,17 @@ export async function PATCH(req: Request) {
   const { data: reqData } = await supabase.from(TABLE).select('*').eq('id', id).single()
   if (!reqData) return NextResponse.json({ error: '이동신청 없음' }, { status: 404 })
 
+  // 승인/거절 권한: 출발 또는 도착 센터 담당자(admin/materials 포함)만
+  if (!canManageBusCenter(u, reqData.from_center) && !canManageBusCenter(u, reqData.to_center)) {
+    return NextResponse.json({ error: '처리 권한 없음' }, { status: 403 })
+  }
+
   if (action === 'approve') {
+    // pending 선점 (동시 승인 시 한 쪽만 통과 → 중복 이동 방지)
+    const { data: claimed } = await supabase.from(TABLE).update({
+      status: 'approved', processed_by: u.id, processed_by_name: u.name, processed_at: now,
+    }).eq('id', id).eq('status', 'pending').select('id')
+    if (!claimed?.length) return NextResponse.json({ error: '이미 처리된 신청입니다.' }, { status: 400 })
     const ihList = (reqData.ih_codes ?? []) as { ih_code: string; device_type?: string; sub_type?: string }[]
 
     for (const item of ihList) {
@@ -59,16 +69,14 @@ export async function PATCH(req: Request) {
       acted_by: u.id, acted_by_name: u.name, acted_at: now,
     })))
 
-    await supabase.from(TABLE).update({
-      status: 'approved', processed_by: u.id, processed_by_name: u.name, processed_at: now,
-    }).eq('id', id)
     return NextResponse.json({ ok: true })
   }
 
   if (action === 'reject') {
-    await supabase.from(TABLE).update({
+    const { data: claimed } = await supabase.from(TABLE).update({
       status: 'rejected', processed_by: u.id, processed_by_name: u.name, processed_at: now,
-    }).eq('id', id)
+    }).eq('id', id).eq('status', 'pending').select('id')
+    if (!claimed?.length) return NextResponse.json({ error: '이미 처리된 신청입니다.' }, { status: 400 })
     return NextResponse.json({ ok: true })
   }
 
@@ -78,8 +86,19 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   const session = await getSession()
   if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  const u = session.user
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+
+  // 신청자 본인 또는 출발/도착 센터 담당자만 삭제 가능
+  const { data: row } = await supabase.from(TABLE)
+    .select('requested_by, from_center, to_center').eq('id', id).single()
+  if (!row) return NextResponse.json({ error: '이동신청 없음' }, { status: 404 })
+  if (row.requested_by !== u.id &&
+      !canManageBusCenter(u, row.from_center) && !canManageBusCenter(u, row.to_center)) {
+    return NextResponse.json({ error: '삭제 권한 없음' }, { status: 403 })
+  }
+
   await supabase.from(TABLE).delete().eq('id', id)
   return NextResponse.json({ ok: true })
 }

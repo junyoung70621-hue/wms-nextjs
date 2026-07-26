@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
+import { adjustStock } from '@/lib/stock'
 
 // POST: 입고 / 출고
 export async function POST(request: Request) {
@@ -26,10 +27,10 @@ export async function POST(request: Request) {
   const histories: Record<string, unknown>[] = []
 
   for (const { item_id, quantity } of items) {
-    if (!item_id || quantity < 1) continue
+    if (!item_id || !Number.isInteger(quantity) || quantity < 1) continue
 
     const { data: item } = await supabase
-      .from('warehouse').select('id, item_name, quantity, location').eq('id', item_id).single()
+      .from('warehouse').select('id, item_name, location').eq('id', item_id).single()
     if (!item) { errors.push(`ID ${item_id}: 자재 없음`); continue }
 
     // 자재센터만 직접 입출고 (admin은 모든 센터)
@@ -37,23 +38,12 @@ export async function POST(request: Request) {
       errors.push(`${item.item_name}: 자재파트는 자재센터만 입출고 가능`); continue
     }
 
-    const before = item.quantity ?? 0
-    let after: number
-
-    if (action === 'in') {
-      after = before + quantity
-    } else {
-      if (before < quantity) {
-        errors.push(`${item.item_name}: 재고 부족 (현재 ${before}개)`); continue
-      }
-      after = before - quantity
-    }
-
-    await supabase.from('warehouse').update({
-      quantity: after,
+    const r = await adjustStock(item_id, action === 'in' ? quantity : -quantity, {
       last_modified_by: u.id,
       last_modified_at: new Date().toISOString(),
-    }).eq('id', item_id)
+    })
+    if (!r.ok) { errors.push(`${item.item_name}: ${r.error}`); continue }
+    const { before, after } = r
 
     histories.push({
       actor_id: u.id,

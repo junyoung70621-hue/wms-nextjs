@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { classifyTaxi, normalizeTrcnId, TAXI_TABLE } from '@/lib/taxiTracking'
+import { adjustBoxQuantity } from '@/lib/stock'
 
 const SELECT = 'id,upload_id,trcn_id,device_type,direction,is_terminated,is_repair_done,' +
                'driver_name,uploaded_by,uploaded_at,upload_date,file_name,notes'
@@ -127,10 +128,7 @@ export async function POST(request: Request) {
         if (r.warehouse_id) boxDelta.set(r.warehouse_id, (boxDelta.get(r.warehouse_id) ?? 0) - 1)
       }
     }
-    for (const [id, d] of boxDelta) {
-      const { data: w } = await supabase.from('warehouse').select('quantity').eq('id', id).single()
-      if (w) await supabase.from('warehouse').update({ quantity: Math.max(0, (w.quantity ?? 0) + d) }).eq('id', id)
-    }
+    for (const [id, d] of boxDelta) await adjustBoxQuantity(id, d)
   } catch { /* box_terminals 미설치/오류는 업로드를 막지 않음 */ }
 
   return NextResponse.json({ inserted: rows.length, unclassified, dups: dupSet.size, removedFromBox })

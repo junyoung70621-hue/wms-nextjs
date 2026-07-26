@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { sendMail, emailLayout, infoTable, noteBanner, MAIL_COLOR, type Cell } from '@/lib/email'
 import { firePush, sendPushToUsers } from '@/lib/push'
+import { adjustStock } from '@/lib/stock'
 
 const ACTION_LABEL: Record<string, string> = { approved: '승인', rejected: '거절', on_hold: '보류' }
 
@@ -18,21 +19,26 @@ export async function POST(request: Request) {
   // action: 'approved' | 'rejected' | 'on_hold' | 'pending'
   // allocations: [{ item_name, warehouse_id, quantity }] — 승인 시 박스별 차감 수량(여러 박스 분할 가능)
   if (!id || !action) return NextResponse.json({ error: '필수값 누락' }, { status: 400 })
+  if (!['approved', 'rejected', 'on_hold', 'pending'].includes(action)) {
+    return NextResponse.json({ error: '허용되지 않는 action' }, { status: 400 })
+  }
 
-  const { error } = await supabase.from('material_requests').update({
+  // 조건부 전환: 대기/보류 상태에서만 처리 가능 → 이중 승인(이중 차감) 차단
+  const { data: updatedRows, error } = await supabase.from('material_requests').update({
     status:       action,
     processed_at: new Date().toISOString(),
     processed_by: session.user.id,
     ...(replyMessage ? { reply_message: replyMessage } : {}),
-  }).eq('id', id)
+  }).eq('id', id).in('status', ['pending', 'on_hold']).select('*')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!updatedRows?.length) {
+    return NextResponse.json({ error: '이미 처리된 요청입니다.' }, { status: 409 })
+  }
 
-  // 승인 시 재고 차감은 복잡해서 간략 처리 (기존 Streamlit 로직과 동일하게 추후 상세 구현 가능)
+  // 승인 시 재고 차감
   if (action === 'approved') {
-    // 자재 요청 정보 조회
-    const { data: req } = await supabase
-      .from('material_requests').select('*').eq('id', id).single()
+    const req = updatedRows[0]
 
     if (req) {
       const items = req.items ?? []
@@ -60,43 +66,56 @@ export async function POST(request: Request) {
         }
       }
 
-      // 박스별 차감 + 이력 (여러 박스에서 나눠 차감)
+      // 박스별 차감 + 이력 (여러 박스에서 나눠 차감, 자재센터 박스만 허용)
       const deductedByItem = new Map<string, number>()
       for (const a of allocs) {
         const { data: src } = await supabase
-          .from('warehouse').select('quantity').eq('id', a.warehouse_id).single()
-        if (!src || src.quantity < a.quantity) continue
-        const newQty = src.quantity - a.quantity
-        await supabase.from('warehouse').update({
-          quantity: newQty, last_modified_by: approver_id, last_modified_at: 'now()',
-        }).eq('id', a.warehouse_id)
+          .from('warehouse').select('location').eq('id', a.warehouse_id).single()
+        if (!src || src.location !== '자재센터') continue
+        const r = await adjustStock(a.warehouse_id, -a.quantity, {
+          last_modified_by: approver_id, last_modified_at: new Date().toISOString(),
+        })
+        if (!r.ok) continue
         await supabase.from('history').insert({
           actor_id: approver_id, item_id: a.warehouse_id, action_type: 'transfer',
           quantity: a.quantity, reason: `자재 요청 승인 (${from_center})`,
           from_center: '자재센터', to_center: from_center,
-          snapshot_qty_before: src.quantity, snapshot_qty_after: newQty,
+          snapshot_qty_before: r.before, snapshot_qty_after: r.after,
         })
         deductedByItem.set(a.item_name, (deductedByItem.get(a.item_name) ?? 0) + a.quantity)
       }
 
-      // 요청 센터 재고 증가 (item_name 별 차감 합계)
+      // 요청 센터 재고 증가 (item_name 별 차감 합계, 행 없으면 신규 등록)
       for (const [item_name, qty] of deductedByItem) {
         const { data: dstList } = await supabase
-          .from('warehouse').select('id, quantity')
+          .from('warehouse').select('id')
           .eq('item_name', item_name).eq('location', from_center)
           .order('quantity', { ascending: false }).limit(1)
         if (dstList?.length) {
           const dst = dstList[0]
-          const dstNew = dst.quantity + qty
-          await supabase.from('warehouse').update({
-            quantity: dstNew, last_modified_by: approver_id, last_modified_at: 'now()',
-          }).eq('id', dst.id)
+          const r = await adjustStock(dst.id, qty, {
+            last_modified_by: approver_id, last_modified_at: new Date().toISOString(),
+          })
+          if (!r.ok) continue
           await supabase.from('history').insert({
             actor_id: approver_id, item_id: dst.id, action_type: 'transfer',
             quantity: qty, reason: `자재 요청 승인 (${from_center})`,
             from_center: '자재센터', to_center: from_center,
-            snapshot_qty_before: dst.quantity, snapshot_qty_after: dstNew,
+            snapshot_qty_before: r.before, snapshot_qty_after: r.after,
           })
+        } else {
+          // 요청 센터에 해당 자재 행이 없으면 신규 등록 (차감분 증발 방지)
+          const { data: ins } = await supabase.from('warehouse').insert({
+            item_name, quantity: qty, location: from_center, last_modified_by: approver_id,
+          }).select('id').single()
+          if (ins) {
+            await supabase.from('history').insert({
+              actor_id: approver_id, item_id: ins.id, action_type: 'transfer',
+              quantity: qty, reason: `자재 요청 승인 (${from_center})`,
+              from_center: '자재센터', to_center: from_center,
+              snapshot_qty_before: 0, snapshot_qty_after: qty,
+            })
+          }
         }
       }
     }

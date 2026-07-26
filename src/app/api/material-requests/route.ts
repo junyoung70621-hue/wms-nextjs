@@ -123,13 +123,25 @@ export async function PATCH(request: Request) {
 
   const { id, status } = await request.json()
   if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+  // 이 라우트는 본인 취소 전용. 승인/거절은 action 라우트(admin/materials)에서만.
+  if (status !== 'cancelled') return NextResponse.json({ error: '허용되지 않는 상태' }, { status: 400 })
 
-  const { error } = await supabase
+  const { data: reqRow } = await supabase
+    .from('material_requests').select('requester_id').eq('id', id).single()
+  if (!reqRow) return NextResponse.json({ error: '요청 없음' }, { status: 404 })
+  if (reqRow.requester_id !== session.user.id && session.user.role !== 'admin') {
+    return NextResponse.json({ error: '본인 요청만 취소할 수 있습니다.' }, { status: 403 })
+  }
+
+  const { data: updated, error } = await supabase
     .from('material_requests')
-    .update({ status, processed_at: new Date().toISOString(), processed_by: session.user.id })
+    .update({ status: 'cancelled', processed_at: new Date().toISOString(), processed_by: session.user.id })
     .eq('id', id)
+    .in('status', ['pending', 'on_hold'])
+    .select('id')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!updated?.length) return NextResponse.json({ error: '이미 처리된 요청입니다.' }, { status: 409 })
   return NextResponse.json({ ok: true })
 }
 

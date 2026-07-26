@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import { classifyTerminal } from '@/lib/busTracking'
+import { classifyTerminal, canManageBusCenter } from '@/lib/busTracking'
 
 const TABLE = 'bus_terminal_assignments'
 const HIST  = 'bus_terminal_history'
@@ -16,6 +16,34 @@ export async function PATCH(req: Request) {
   const body = await req.json()
   const { action } = body
   const now = nowKst()
+
+  // 권한: 대상 레코드의 실제 센터 기준 (클라이언트가 보낸 center 값은 신뢰하지 않음)
+  const checkIds = async (ids: string[]) => {
+    const { data } = await supabase.from(TABLE).select('center').in('id', ids)
+    return (data ?? []).every(r => canManageBusCenter(u, r.center))
+  }
+  if (action === 'swap' || action === 'edit') {
+    const targetId = action === 'swap' ? body.holding_id : body.id
+    if (targetId && !(await checkIds([targetId]))) {
+      return NextResponse.json({ error: '해당 센터 수정 권한 없음' }, { status: 403 })
+    }
+  }
+  if ((action === 'transfer' || action === 'return') && body.ids?.length) {
+    if (!(await checkIds(body.ids))) {
+      return NextResponse.json({ error: '해당 센터 수정 권한 없음' }, { status: 403 })
+    }
+  }
+  if (action === 'bulk_register') {
+    const centers = new Set<string>([
+      ...((body.records ?? []) as { center: string }[]).map(r => r.center),
+      ...((body.clear_centers ?? []) as string[]),
+    ])
+    for (const c of centers) {
+      if (!canManageBusCenter(u, c)) {
+        return NextResponse.json({ error: `${c} 수정 권한 없음` }, { status: 403 })
+      }
+    }
+  }
 
   // ── swap: 불량 교체 ──────────────────────────────────────────────────────────
   if (action === 'swap') {
