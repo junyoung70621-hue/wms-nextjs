@@ -13,6 +13,6 @@ export const EXTERNAL = new Set(['에이텍본사', '티머니(버스)', '티머
 export function getViewableCenters(role: string, center: string): string[] {
   const all = CENTERS.filter(c => !NO_WAREHOUSE.has(c))
   if (role === 'admin' || role === 'materials') return all
-  // manager/user/guest: 본인 센터만 (guest가 더 넓게 보이던 권한 역전 수정)
-  return all.filter(c => c === center && !EXTERNAL.has(c))
+  // manager/user/guest: 본인 센터 + 자재센터 (자재요청 폼이 자재센터 재고 조회 필요)
+  return all.filter(c => (c === center || c === '자재센터') && !EXTERNAL.has(c))
 }

@@ -633,7 +633,7 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
         { key: 'cancelled',label: '🚫 취소' },
       ]
 
-  const canRequest = !isManager && user.role !== 'guest'
+  const canRequest = user.role !== 'guest'
   const pendingCount = filterByStatus('pending').length
 
   // 탑바 처리대기 등에서 ?tab=pending 으로 들어오면 해당 탭으로 시작 (유효한 탭만)
