@@ -64,6 +64,33 @@ type Transfer = {
 
 type SortField = 'item_name' | 'quantity' | 'category_large' | 'category_mid' | 'category_small'
 
+// 자재명 단위 묶음 (같은 자재가 여러 박스에 나뉘어 있어도 한 줄로 표시)
+type Group = {
+  key: string; item_name: string; quantity: number
+  category_large: string | null; category_mid: string | null; category_small: string | null
+  boxes: Item[]; erpCodes: string[]
+}
+function groupItems(rows: Item[]): Group[] {
+  const m = new Map<string, Group>()
+  for (const r of rows) {
+    let g = m.get(r.item_name)
+    if (!g) {
+      g = { key: r.item_name, item_name: r.item_name, quantity: 0,
+        category_large: r.category_large, category_mid: r.category_mid, category_small: r.category_small,
+        boxes: [], erpCodes: [] }
+      m.set(r.item_name, g)
+    }
+    g.quantity += r.quantity ?? 0
+    g.boxes.push(r)
+    g.category_large ??= r.category_large; g.category_mid ??= r.category_mid; g.category_small ??= r.category_small
+    if (r.erp_code && !g.erpCodes.includes(r.erp_code)) g.erpCodes.push(r.erp_code)
+  }
+  return [...m.values()]
+}
+function boxLoc(r: Item): string {
+  return [r.rack_no, r.shelf, r.box_no].filter(Boolean).join(' / ') || '위치 미지정'
+}
+
 // ── 유틸 ─────────────────────────────────────────────────────────────────────
 function tsKst(ts: string) {
   if (!ts) return ''
@@ -386,6 +413,62 @@ const TR_ALL_CENTERS = [
 ]
 const TR_SPECIAL = new Set(TR_ALL_CENTERS.filter(c => c !== '자재센터' && !TR_REGIONAL.has(c)))
 
+// 자재 클릭 팝업: 위치별(박스별) 수량 · ERP코드 · 박스 상세로 이동
+function ItemGroupModal({ group, isHub, onClose, onOpenBox }: {
+  group: Group; isHub: boolean; onClose: () => void; onOpenBox: (item: Item) => void
+}) {
+  const boxes = [...group.boxes].sort((a, b) => boxLoc(a).localeCompare(boxLoc(b), 'ko'))
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-[640px] max-w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E2E8F0]">
+          <div className="min-w-0">
+            <div className="text-[14px] font-bold text-[#1E293B] truncate">{group.item_name}</div>
+            <div className="text-[11px] text-[#64748B] mt-0.5">
+              {[group.category_large, group.category_mid, group.category_small].filter(Boolean).join(' > ') || '분류 없음'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+            <div className="text-right">
+              <div className="text-[10px] text-[#94A3B8]">전체 수량</div>
+              <div className="text-[18px] font-bold font-mono text-[#B32646] leading-tight">{group.quantity.toLocaleString()}</div>
+            </div>
+            <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">×</button>
+          </div>
+        </div>
+        <div className="p-4 overflow-y-auto">
+          <div className="text-[11px] text-[#64748B] mb-2">{isHub ? '박스별 보관 현황' : '보관 현황'} · {boxes.length}건 — 행을 클릭하면 이력·수정·이동 상세가 열립니다.</div>
+          <div className="rounded border border-[#E2E8F0] overflow-hidden">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#F8F9FA]">
+                <tr>
+                  {[isHub ? '렉 / 단 / 박스' : '위치', '수량', 'ERP코드', 'ERP품명', ''].map((h, i) => (
+                    <th key={i} className={`px-3 py-1.5 text-[11px] font-semibold text-[#64748B] border-b ${h === '수량' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {boxes.map((b, i) => (
+                  <tr key={b.id} onClick={() => onOpenBox(b)}
+                    className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 cursor-pointer`}>
+                    <td data-guest-clear className="px-3 py-1.5 font-mono text-[11px] text-[#1E293B] whitespace-nowrap">{isHub ? boxLoc(b) : (b.location ?? '')}</td>
+                    <td className={`px-3 py-1.5 text-right font-mono ${(b.quantity ?? 0) === 0 ? 'text-red-500 font-bold' : (b.quantity ?? 0) <= 9 ? 'text-amber-500 font-semibold' : 'text-[#1E293B]'}`}>
+                      {(b.quantity ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-3 py-1.5 font-mono text-[11px] text-[#475569]">{b.erp_code ?? ''}</td>
+                    <td className="px-3 py-1.5 text-[11px] text-[#64748B] truncate max-w-[180px]">{b.erp_name ?? ''}</td>
+                    <td className="px-3 py-1.5 text-right text-[11px] text-[#B32646] whitespace-nowrap">상세 ›</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function transferDestinations(center: string): string[] {
   if (center === '자재센터') return TR_ALL_CENTERS.filter(c => c !== '자재센터')
   if (TR_REGIONAL.has(center)) return TR_ALL_CENTERS.filter(c => c === '자재센터' || (TR_REGIONAL.has(c) && c !== center))
@@ -552,6 +635,7 @@ function InventoryTab({ user, center, onCenterChange }: {
   const [stockMsg,    setStockMsg]    = useState('')
 
   const [detailItem, setDetailItem] = useState<Item | null>(null)
+  const [groupItem,  setGroupItem]  = useState<Group | null>(null)
 
   const fetchData = useCallback(async (c: string) => {
     setLoading(true); setError('')
@@ -571,6 +655,7 @@ function InventoryTab({ user, center, onCenterChange }: {
     setSearch(''); setKpiFilter('all'); setPage(1); setSelected(new Set())
   }, [center, fetchData])
 
+  const groups = useMemo(() => groupItems(data), [data])
   const largeList = useMemo(() => ['전체', ...Array.from(new Set(data.map(r => r.category_large).filter(Boolean) as string[])).sort()], [data])
   const midList   = useMemo(() => {
     const src = filterLarge === '전체' ? data : data.filter(r => r.category_large === filterLarge)
@@ -582,13 +667,13 @@ function InventoryTab({ user, center, onCenterChange }: {
   }, [data, filterLarge, filterMid])
 
   const kpi = useMemo(() => ({
-    all:  data.length,
-    low:  data.filter(r => (r.quantity ?? 0) >= 1 && (r.quantity ?? 0) <= 9).length,
-    zero: data.filter(r => (r.quantity ?? 0) === 0).length,
-  }), [data])
+    all:  groups.length,
+    low:  groups.filter(r => r.quantity >= 1 && r.quantity <= 9).length,
+    zero: groups.filter(r => r.quantity === 0).length,
+  }), [groups])
 
   const filtered = useMemo(() => {
-    let rows = data
+    let rows = groups
     if (filterLarge !== '전체') rows = rows.filter(r => r.category_large === filterLarge)
     if (filterMid   !== '전체') rows = rows.filter(r => r.category_mid   === filterMid)
     if (filterSmall !== '전체') rows = rows.filter(r => r.category_small === filterSmall)
@@ -596,18 +681,18 @@ function InventoryTab({ user, center, onCenterChange }: {
       const q = search.toLowerCase()
       rows = rows.filter(r =>
         r.item_name.toLowerCase().includes(q) ||
-        (r.erp_code ?? '').toLowerCase().includes(q) ||
+        r.erpCodes.some(c => c.toLowerCase().includes(q)) ||
         (r.category_large ?? '').toLowerCase().includes(q) ||
         (r.category_mid ?? '').toLowerCase().includes(q)
       )
     }
-    if (kpiFilter === 'low')  rows = rows.filter(r => (r.quantity ?? 0) >= 1 && (r.quantity ?? 0) <= 9)
-    if (kpiFilter === 'zero') rows = rows.filter(r => (r.quantity ?? 0) === 0)
+    if (kpiFilter === 'low')  rows = rows.filter(r => r.quantity >= 1 && r.quantity <= 9)
+    if (kpiFilter === 'zero') rows = rows.filter(r => r.quantity === 0)
     return rows
-  }, [data, filterLarge, filterMid, filterSmall, search, kpiFilter])
+  }, [groups, filterLarge, filterMid, filterSmall, search, kpiFilter])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
-    if (sortField === 'quantity') return sortDir === 'asc' ? (a.quantity ?? 0) - (b.quantity ?? 0) : (b.quantity ?? 0) - (a.quantity ?? 0)
+    if (sortField === 'quantity') return sortDir === 'asc' ? a.quantity - b.quantity : b.quantity - a.quantity
     const av = String(a[sortField] ?? ''); const bv = String(b[sortField] ?? '')
     return sortDir === 'asc' ? av.localeCompare(bv, 'ko') : bv.localeCompare(av, 'ko')
   }), [filtered, sortField, sortDir])
@@ -615,6 +700,7 @@ function InventoryTab({ user, center, onCenterChange }: {
   const totalPages  = Math.max(1, Math.ceil(sorted.length / pageSize))
   const currentPage = Math.min(page, totalPages)
   const paged       = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const pagedIds    = paged.flatMap(g => g.boxes.map(b => b.id))
 
   function handleSort(f: SortField) {
     if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -813,7 +899,10 @@ function InventoryTab({ user, center, onCenterChange }: {
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {actItems.map(r => (
                 <div key={r.id} className="flex items-center gap-2">
-                  <span className="text-[12px] flex-1 truncate">{r.item_name}</span>
+                  <span className="text-[12px] flex-1 truncate">
+                    {r.item_name}
+                    {isHub && <span className="text-[#94A3B8] font-mono text-[10px] ml-1.5">{boxLoc(r)}</span>}
+                  </span>
                   <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
                   <input type="number" min={1} value={stockQties[r.id] ?? 1}
                     onChange={e => setStockQties(prev => ({ ...prev, [r.id]: parseInt(e.target.value) || 1 }))}
@@ -865,8 +954,8 @@ function InventoryTab({ user, center, onCenterChange }: {
               <tr>
                 {canSelect && (
                   <th className="px-2 py-2 border-b w-8">
-                    <input type="checkbox" checked={selected.size === paged.length && paged.length > 0}
-                      onChange={() => setSelected(selected.size === paged.length ? new Set() : new Set(paged.map(r => r.id)))}
+                    <input type="checkbox" checked={pagedIds.length > 0 && pagedIds.every(id => selected.has(id))}
+                      onChange={() => setSelected(pagedIds.every(id => selected.has(id)) ? new Set() : new Set(pagedIds))}
                       className="cursor-pointer" />
                   </th>
                 )}
@@ -879,40 +968,42 @@ function InventoryTab({ user, center, onCenterChange }: {
                     {label}<SortIcon field={field} />
                   </th>
                 ))}
-                {isHub && <th className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b">렉/단/박스</th>}
-                <th className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b">ERP코드</th>
+                {isHub && <th className="px-3 py-2 text-right text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap">박스</th>}
               </tr>
             </thead>
             <tbody>
-              {paged.map((item, i) => (
-                <tr key={item.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+              {paged.map((g, i) => {
+                const ids = g.boxes.map(b => b.id)
+                const allSel = ids.every(id => selected.has(id))
+                return (
+                <tr key={g.key} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
                   {canSelect && (
                     <td className="px-2 py-1.5 text-center">
-                      <input type="checkbox" checked={selected.has(item.id)}
-                        onChange={() => setSelected(prev => { const n = new Set(prev); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n })}
+                      <input type="checkbox" checked={allSel}
+                        onChange={() => setSelected(prev => { const n = new Set(prev); if (allSel) ids.forEach(id => n.delete(id)); else ids.forEach(id => n.add(id)); return n })}
                         className="cursor-pointer" />
                     </td>
                   )}
-                  <td className="px-3 py-1.5 max-w-[200px] truncate">
-                    <button onClick={() => setDetailItem(item)}
+                  <td className="px-3 py-1.5 max-w-[260px] truncate">
+                    <button onClick={() => setGroupItem(g)}
                       className="text-[#1E293B] font-medium hover:text-[#B32646] hover:underline text-left w-full truncate">
-                      {item.item_name}
+                      {g.item_name}
                     </button>
                   </td>
-                  <td className={`px-3 py-1.5 text-right font-mono ${qtyColor(item.quantity ?? 0)}`}>
-                    {(item.quantity ?? 0).toLocaleString()}
+                  <td className={`px-3 py-1.5 text-right font-mono ${qtyColor(g.quantity)}`}>
+                    {g.quantity.toLocaleString()}
                   </td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_large ?? ''}</td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_mid ?? ''}</td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{item.category_small ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_large ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_mid ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_small ?? ''}</td>
                   {isHub && (
-                    <td data-guest-clear className="px-3 py-1.5 text-[#64748B] font-mono text-[11px] whitespace-nowrap">
-                      {[item.rack_no, item.shelf, item.box_no].filter(Boolean).join(' / ')}
+                    <td data-guest-clear className="px-3 py-1.5 text-right text-[#64748B] font-mono text-[11px] whitespace-nowrap">
+                      {g.boxes.length}
                     </td>
                   )}
-                  <td className="px-3 py-1.5 text-[#94A3B8] font-mono text-[11px]">{item.erp_code ?? ''}</td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -928,10 +1019,16 @@ function InventoryTab({ user, center, onCenterChange }: {
       )}
       </div>
 
+      {groupItem && !detailItem && (
+        <ItemGroupModal group={groupItem} isHub={isHub}
+          onClose={() => setGroupItem(null)}
+          onOpenBox={item => setDetailItem(item)} />
+      )}
+
       {detailItem && (
         <ItemDetailModal item={detailItem} user={user} center={center}
           onClose={() => setDetailItem(null)}
-          onUpdated={() => { fetchData(center); setDetailItem(null) }} />
+          onUpdated={() => { fetchData(center); setDetailItem(null); setGroupItem(null) }} />
       )}
 
       {showAdd && (
