@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
 
-type ReqItem = { item_name: string; current_qty: number; requested_qty: number }
+type ReqItem = { item_name: string; current_qty: number; requested_qty: number; approved_qty?: number }
 type Request = {
   id: number
   status: string
@@ -47,6 +47,16 @@ function boxLabel(o: BoxOpt) {
 }
 
 type Allocation = { item_name: string; warehouse_id: number; quantity: number }
+// 자동 분배: 재고 많은 박스부터 수량 채움 (한 박스로 모자라면 다음 박스로)
+function autoAlloc(opts: BoxOpt[], need: number) {
+  const m: Record<number, number> = {}
+  for (const o of opts) {
+    if (need <= 0) break
+    const take = Math.min(need, o.quantity)
+    if (take > 0) { m[o.id] = take; need -= take }
+  }
+  return m
+}
 function ApproveModal({ req, onClose, onConfirm }: {
   req: Request
   onClose: () => void
@@ -55,6 +65,9 @@ function ApproveModal({ req, onClose, onConfirm }: {
   const [boxes, setBoxes] = useState<Record<string, BoxOpt[]>>({})
   // item_name -> { warehouse_id: 차감수량 }
   const [alloc, setAlloc] = useState<Record<string, Record<number, number>>>({})
+  // item_name -> 승인수량 (0 = 제외)
+  const [approve, setApprove] = useState<Record<string, number>>(
+    () => Object.fromEntries((req.items ?? []).map(it => [it.item_name, it.requested_qty])))
   const [reply,  setReply]  = useState('')
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
@@ -71,25 +84,31 @@ function ApproveModal({ req, onClose, onConfirm }: {
             .map(r => ({ id: r.id, rack_no: r.rack_no, shelf: r.shelf, box_no: r.box_no, quantity: r.quantity }))
             .sort((a, b) => b.quantity - a.quantity)
           byName[it.item_name] = opts
-          // 자동 분배: 재고 많은 박스부터 요청수량 채움 (한 박스로 모자라면 다음 박스로)
-          let need = it.requested_qty
-          const m: Record<number, number> = {}
-          for (const o of opts) {
-            if (need <= 0) break
-            const take = Math.min(need, o.quantity)
-            if (take > 0) { m[o.id] = take; need -= take }
-          }
-          init[it.item_name] = m
+          init[it.item_name] = autoAlloc(opts, it.requested_qty)
         }
         setBoxes(byName); setAlloc(init)
       })
       .finally(() => setLoading(false))
   }, [req])
 
+  // 승인수량 변경 시 박스 배분 자동 재계산 (상한 = 요청수량)
+  function setApproveQty(name: string, v: number) {
+    const max = req.items.find(it => it.item_name === name)?.requested_qty ?? 0
+    const q = Math.min(max, Math.max(0, Math.floor(v) || 0))
+    setApprove(prev => ({ ...prev, [name]: q }))
+    setAlloc(prev => ({ ...prev, [name]: autoAlloc(boxes[name] ?? [], q) }))
+  }
+
   function setQty(name: string, id: number, max: number, v: number) {
     const q = Math.max(0, Math.min(max, Math.floor(v) || 0))
     setAlloc(prev => ({ ...prev, [name]: { ...(prev[name] ?? {}), [id]: q } }))
   }
+
+  const valid = !loading && (req.items ?? []).every(it => {
+    const target = approve[it.item_name] ?? 0
+    const assigned = Object.values(alloc[it.item_name] ?? {}).reduce((a, b) => a + b, 0)
+    return assigned === target
+  }) && (req.items ?? []).some(it => (approve[it.item_name] ?? 0) > 0)
 
   async function submit() {
     const allocations: Allocation[] = []
@@ -115,15 +134,30 @@ function ApproveModal({ req, onClose, onConfirm }: {
             const m = alloc[it.item_name] ?? {}
             const assigned = Object.values(m).reduce((a, b) => a + b, 0)
             const avail = opts.reduce((a, o) => a + o.quantity, 0)
-            const enough = assigned === it.requested_qty
+            const target = approve[it.item_name] ?? 0
+            const excluded = target === 0
+            const enough = assigned === target
             return (
-              <div key={i} className="border border-[#E2E8F0] rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-[#1E293B]">{it.item_name}</span>
-                  <span className="text-[12px] text-[#B32646] font-bold">요청 {it.requested_qty}개</span>
+              <div key={i} className={`border border-[#E2E8F0] rounded-lg p-3 space-y-2 ${excluded ? 'opacity-60 bg-[#F8F9FA]' : ''}`}>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className={`text-[13px] font-semibold text-[#1E293B] ${excluded ? 'line-through' : ''}`}>{it.item_name}</span>
+                  <div className="flex items-center gap-2 text-[12px]">
+                    <span className="text-[#64748B]">요청 {it.requested_qty}개</span>
+                    <span className="text-[#B32646] font-bold">승인</span>
+                    <input type="number" min={0} max={it.requested_qty} value={target}
+                      onChange={e => setApproveQty(it.item_name, parseInt(e.target.value))}
+                      className="w-16 border border-[#E2E8F0] rounded px-2 py-0.5 text-[12px] text-right bg-white focus:outline-none focus:border-[#B32646]" />
+                    <button type="button"
+                      onClick={() => setApproveQty(it.item_name, excluded ? it.requested_qty : 0)}
+                      className={`px-2 py-0.5 rounded border text-[11px] ${excluded ? 'border-[#2e7d32] text-[#2e7d32]' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#c62828] hover:text-[#c62828]'}`}>
+                      {excluded ? '포함' : '제외'}
+                    </button>
+                  </div>
                 </div>
-                {opts.length === 0 ? (
-                  <div className="text-[11px] text-[#c62828]">⚠️ 자재센터에 재고 박스가 없습니다 (차감 불가)</div>
+                {excluded ? (
+                  <div className="text-[11px] text-[#64748B]">이 품목은 승인에서 제외됩니다 (차감 없음)</div>
+                ) : opts.length === 0 ? (
+                  <div className="text-[11px] text-[#c62828]">⚠️ 자재센터에 재고 박스가 없습니다 (차감 불가) — 제외하거나 보류하세요</div>
                 ) : (
                   <>
                     <div className="space-y-1.5">
@@ -137,10 +171,11 @@ function ApproveModal({ req, onClose, onConfirm }: {
                       ))}
                     </div>
                     <div className={`text-[11px] font-semibold ${enough ? 'text-[#16a34a]' : 'text-[#c62828]'}`}>
-                      배정 {assigned} / 요청 {it.requested_qty}
-                      {!enough && (assigned < it.requested_qty
-                        ? (avail < it.requested_qty ? ` · ⚠️ 자재센터 재고 부족 (최대 ${avail})` : ' · ⚠️ 배정 수량이 부족합니다')
-                        : ' · ⚠️ 배정이 요청보다 많습니다')}
+                      배정 {assigned} / 승인 {target}
+                      {target !== it.requested_qty && <span className="text-[#f57c00]"> · 요청 {it.requested_qty}에서 수정됨</span>}
+                      {!enough && (assigned < target
+                        ? (avail < target ? ` · ⚠️ 자재센터 재고 부족 (최대 ${avail})` : ' · ⚠️ 배정 수량이 부족합니다')
+                        : ' · ⚠️ 배정이 승인수량보다 많습니다')}
                     </div>
                   </>
                 )}
@@ -155,7 +190,7 @@ function ApproveModal({ req, onClose, onConfirm }: {
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#E2E8F0]">
           <Button size="sm" variant="outline" onClick={onClose}>취소</Button>
-          <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white" disabled={saving || loading} onClick={submit}>
+          <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white" disabled={saving || !valid} onClick={submit}>
             {saving ? '처리 중…' : '승인 확정'}
           </Button>
         </div>
@@ -216,7 +251,7 @@ function RequestCard({
               <table className="w-full text-[12px]">
                 <thead className="bg-[#F8F9FA]">
                   <tr>
-                    {['자재명','현재재고','요청수량','재고상태'].map(h => (
+                    {['자재명','현재재고','요청수량', ...(req.status === 'approved' ? ['승인수량'] : []), '재고상태'].map(h => (
                       <th key={h} className="px-3 py-1.5 text-left text-[#64748B] font-semibold border-b border-[rgba(0,0,0,0.08)]">{h}</th>
                     ))}
                   </tr>
@@ -227,6 +262,13 @@ function RequestCard({
                       <td className="px-3 py-1.5 text-[#1E293B]">{it.item_name}</td>
                       <td className="px-3 py-1.5 text-right font-mono">{it.current_qty}</td>
                       <td className="px-3 py-1.5 text-right font-mono font-bold">{it.requested_qty}</td>
+                      {req.status === 'approved' && (
+                        <td className="px-3 py-1.5 text-right font-mono font-bold">
+                          {it.approved_qty === undefined ? it.requested_qty
+                            : it.approved_qty === 0 ? <span className="text-[#c62828]">제외</span>
+                            : <span className={it.approved_qty !== it.requested_qty ? 'text-[#f57c00]' : 'text-[#2e7d32]'}>{it.approved_qty}</span>}
+                        </td>
+                      )}
                       <td className="px-3 py-1.5">
                         {it.current_qty < it.requested_qty
                           ? <span className="text-amber-500">⚠️ 재고부족</span>
@@ -575,11 +617,14 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
     allocations: Allocation[],
     reply: string,
   ) => {
-    await fetch('/api/material-requests/action', {
+    const r = await fetch('/api/material-requests/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, action: 'approved', replyMessage: reply, allocations }),
     })
+    const d = await r.json().catch(() => ({}))
+    if (d.error) alert(`❌ ${d.error}`)
+    else if (d.warnings?.length) alert(`⚠️ 일부 차감 실패:\n${d.warnings.join('\n')}`)
     fetchData()
   }
 

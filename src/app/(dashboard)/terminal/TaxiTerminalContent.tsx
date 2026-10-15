@@ -303,6 +303,7 @@ function StatusTab({ perms }: { perms: Perms }) {
   const [msg, setMsg] = useState('')
   const [deliverGroup, setDeliverGroup] = useState<DriverGroup | null>(null)
   const [uploadDir, setUploadDir] = useState<'in' | 'out' | null>(null)
+  const [dealerOpen, setDealerOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setMsg('')
@@ -353,6 +354,10 @@ function StatusTab({ perms }: { perms: Perms }) {
             <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white"
                     onClick={() => setUploadDir('out')}>
               <Truck size={14} strokeWidth={2} /> 양품출고
+            </Button>
+            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white"
+                    disabled={!st.drivers.length} onClick={() => setDealerOpen(true)}>
+              <Send size={14} strokeWidth={2} /> 대리점 배송
             </Button>
           </>
         )}
@@ -425,8 +430,13 @@ function StatusTab({ perms }: { perms: Perms }) {
       )}
 
       {deliverGroup && (
-        <DeliveryModal group={deliverGroup} onClose={() => setDeliverGroup(null)}
-          onDone={() => { setDeliverGroup(null); load() }} />
+        <DeliveryModal mode="driver" groups={[deliverGroup]} onClose={() => setDeliverGroup(null)}
+          onDone={(m) => { setDeliverGroup(null); load().then(() => setMsg(m)) }} />
+      )}
+
+      {dealerOpen && (
+        <DeliveryModal mode="dealer" groups={st.drivers} onClose={() => setDealerOpen(false)}
+          onDone={(m) => { setDealerOpen(false); load().then(() => setMsg(m)) }} />
       )}
 
       {storeOpen && (
@@ -656,65 +666,126 @@ function DriverCard({ group, canWrite, onDeliver }: { group: DriverGroup; canWri
   )
 }
 
-// 배송완료 모달
-function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose: () => void; onDone: () => void }) {
-  const [sel, setSel] = useState<Set<string>>(new Set(group.items.map(i => i.trcn_id)))
+// 배송완료 모달 — 목록에서 체크 또는 번호 입력(엑셀/직접)으로 선택 후 대리점에 배송 처리
+//   mode 'driver': 기사 1명 보유분, 전체 기본 선택, 대리점 선택사항
+//   mode 'dealer': 전체 기사 보유분, 특정 대리점 필수 (기사 자동 매칭)
+type HeldItem = { trcn_id: string; device_type: string; driver: string; out_id: string }
+function DeliveryModal({ mode, groups, onClose, onDone }: {
+  mode: 'driver' | 'dealer'; groups: DriverGroup[]; onClose: () => void; onDone: (msg: string) => void
+}) {
+  const dealerMode = mode === 'dealer'
+  const held = useMemo<HeldItem[]>(() => groups.flatMap(g => g.items.map(i => ({ ...i, driver: g.driver }))), [groups])
+  const byId = useMemo(() => new Map(held.map(h => [h.trcn_id, h])), [held])
+  const [sel, setSel] = useState<Set<string>>(() => new Set(dealerMode ? [] : held.map(h => h.trcn_id)))
   const [date, setDate] = useState(kstToday())
   const [dealer, setDealer] = useState('')
+  const [notes, setNotes] = useState('')
+  const [manual, setManual] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [unmatched, setUnmatched] = useState<string[]>([])
+  const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const [q, setQ] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    return s ? group.items.filter(i =>
-      i.trcn_id.toLowerCase().includes(s) || (i.device_type ?? '').toLowerCase().includes(s)) : group.items
-  }, [group.items, q])
+    const t = q.trim().toLowerCase()
+    return t ? held.filter(i =>
+      i.trcn_id.toLowerCase().includes(t) || (i.device_type ?? '').toLowerCase().includes(t) || i.driver.toLowerCase().includes(t)) : held
+  }, [held, q])
   const { sorted, sortKey, sortDir, toggle } = useSort(filtered)
   const visIds = filtered.map(i => i.trcn_id)
   const allVisSel = visIds.length > 0 && visIds.every(id => sel.has(id))
 
+  // 입력된 번호 → 기사 보유분만 체크, 나머지는 미매칭으로 표시
+  function applyIds(ids: string[]) {
+    const ok: string[] = [], bad: string[] = []
+    for (const id of new Set(ids)) (byId.has(id) ? ok : bad).push(id)
+    setSel(prev => new Set([...prev, ...ok]))
+    setUnmatched(bad)
+    setMsg(ok.length ? `${ok.length}건 선택됨${bad.length ? ` · 기사 보유 아님 ${bad.length}건` : ''}` : '기사 보유 중인 단말기가 없습니다.')
+  }
+  function applyManual() { applyIds(manual.split(/[\n,\s]+/).map(normalizeTrcnId).filter(Boolean)); setFileName('') }
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return
+    e.target.value = '' // 같은 파일 재선택 시에도 onChange 발생
+    setFileName(f.name)
+    try {
+      const { ids, detected } = await parseExcelFile(f)
+      if (!detected) { setMsg('단말기ID 컬럼을 찾지 못했습니다.'); return }
+      applyIds(ids)
+    } catch { setMsg('파일 읽기 실패') }
+  }
+
   async function submit() {
-    const rows = group.items.filter(i => sel.has(i.trcn_id))
-      .map(i => ({ trcn_id: i.trcn_id, device_type: i.device_type, driver_name: group.driver }))
+    if (dealerMode && !dealer.trim()) { setMsg('대리점을 입력하세요.'); return }
+    const rows = held.filter(i => sel.has(i.trcn_id))
+      .map(i => ({ trcn_id: i.trcn_id, device_type: i.device_type, driver_name: i.driver }))
     if (!rows.length) { setMsg('선택된 단말기가 없습니다.'); return }
     setBusy(true); setMsg('')
-    const r = await fetch('/api/taxi/deliveries', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delivery_date: date, dealer_name: dealer, rows }),
-    })
-    const d = await r.json()
-    setBusy(false)
-    if (d.error) { setMsg(`❌ ${d.error}`); return }
-    onDone()
+    try {
+      const r = await fetch('/api/taxi/deliveries', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_date: date, dealer_name: dealer, notes, rows }),
+      })
+      const d = await r.json()
+      if (d.error) { setMsg(`❌ ${d.error}`); return }
+      onDone(`✅ ${dealer.trim() || groups[0]?.driver || ''} 배송완료 ${d.inserted}건`)
+    } catch { setMsg('❌ 전송 실패') }
+    finally { setBusy(false) }
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white rounded-lg w-[520px] max-w-full my-8" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-lg w-[600px] max-w-full my-8" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B]">🚚 배송완료 처리 — {group.driver}</div>
+          <div className="text-[13px] font-bold text-[#1E293B] flex items-center gap-1.5">
+            <Send size={15} className="text-[#1565c0]" /> {dealerMode ? '대리점 배송 — 기사 보유분 일괄 처리' : `배송완료 처리 — ${groups[0]?.driver ?? ''}`}
+          </div>
           <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3">
+          <p className="text-[11px] text-[#94A3B8]">
+            {dealerMode ? '기사가 보유 중인 단말기를 특정 대리점으로 배송완료 처리합니다. ' : ''}목록에서 체크하거나, 번호를 엑셀/직접 입력하면 자동으로 선택됩니다.
+          </p>
           <div className="flex flex-wrap gap-2 items-end">
             <div>
               <label className="text-[11px] text-[#64748B] block mb-0.5">배송 날짜</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
             </div>
-            <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] text-[#64748B] block mb-0.5">대리점/인계처 (선택)</label>
+            <div className="flex-1 min-w-[160px]">
+              <label className="text-[11px] text-[#64748B] block mb-0.5">대리점/인계처 {dealerMode ? <span className="text-[#B32646]">*</span> : '(선택)'}</label>
               <Input value={dealer} onChange={e => setDealer(e.target.value)} className="h-8 text-[12px]" placeholder="예: ○○대리점" />
             </div>
           </div>
+          <div className="flex flex-wrap gap-2 items-end">
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
+            <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5" onClick={() => fileRef.current?.click()}>
+              <Upload size={14} /> 엑셀
+            </Button>
+            <span className="text-[11px] text-[#64748B] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
+          </div>
+          <div className="flex gap-2">
+            <textarea value={manual} onChange={e => setManual(e.target.value)} rows={2}
+              className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
+            <Button type="button" variant="outline" className="h-8 text-[12px] self-end" onClick={applyManual}>선택</Button>
+          </div>
+          {unmatched.length > 0 && (
+            <div className="text-[11px] text-[#c62828] bg-[#fef2f2] rounded px-2 py-1.5 max-h-20 overflow-y-auto">
+              기사 보유 아님 ({unmatched.length}): <span className="font-mono">{unmatched.join(', ')}</span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-2">
             <div className="text-[11px] text-[#64748B]">
-              배송 처리할 단말기 ({sel.size}/{group.items.length})
+              선택 ({sel.size}/{held.length})
               {q.trim() && <span className="text-[#B32646] ml-1">· 검색 {filtered.length}건</span>}
+              {sel.size > 0 && <button type="button" className="ml-2 underline text-[#94A3B8]" onClick={() => { setSel(new Set()); setUnmatched([]) }}>선택 해제</button>}
             </div>
             <div className="relative">
-              <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종 검색"
-                className="h-7 w-40 text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종·기사 검색"
+                className="h-7 w-44 text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
               {q && <button type="button" onClick={() => setQ('')}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B] text-[11px]">✕</button>}
             </div>
@@ -734,12 +805,13 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
                 </th>
                 <SortTh label="TRCN_ID" field="trcn_id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+                {dealerMode && <SortTh label="기사" field="driver" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />}
               </tr></thead>
               <tbody>
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={3} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
+                  <tr><td colSpan={4} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
                 ) : sorted.map(it => (
-                  <tr key={it.out_id} className="border-t border-[#F1F5F9]">
+                  <tr key={it.out_id} className={`border-t border-[#F1F5F9] ${sel.has(it.trcn_id) ? 'bg-[#eff6ff]' : ''}`}>
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={sel.has(it.trcn_id)}
                         onChange={() => setSel(prev => { const n = new Set(prev); if (n.has(it.trcn_id)) n.delete(it.trcn_id); else n.add(it.trcn_id); return n })}
@@ -747,15 +819,17 @@ function DeliveryModal({ group, onClose, onDone }: { group: DriverGroup; onClose
                     </td>
                     <td className="px-2 py-1.5 font-mono text-[#475569]">{it.trcn_id}</td>
                     <td className="px-2 py-1.5 text-[#1E293B]">{it.device_type}</td>
+                    {dealerMode && <td className="px-2 py-1.5 text-[#1E293B]">{it.driver}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
+          <Input value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px]" placeholder="비고 (선택)" />
+          {msg && <div className="text-[11px] text-[#475569]">{msg}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={onClose}>취소</Button>
-            <Button type="button" className="h-8 text-[12px]" disabled={busy || !sel.size} onClick={submit}>
+            <Button type="button" className="h-8 text-[12px] bg-[#1565c0] hover:bg-[#0d47a1] text-white" disabled={busy || !sel.size || (dealerMode && !dealer.trim())} onClick={submit}>
               {busy ? '처리 중…' : `배송완료 (${sel.size})`}
             </Button>
           </div>

@@ -666,6 +666,9 @@ function exportMonthly(out: TerminalMovement[], inn: TerminalMovement[], daily: 
 // 메인
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Teams 발송 시 선택하는 배송 방향
+const TEAMS_ROUTES = ['강동센터', '강서센터']
+
 interface Perms {
   userId: string
   center: string
@@ -879,6 +882,7 @@ function TodayTab({ perms }: { perms: Perms }) {
   const [manageDir, setManageDir] = useState<'in' | 'out' | null>(null)
   const [teamsBusy, setTeamsBusy] = useState(false)
   const [teamsMsg, setTeamsMsg] = useState('')
+  const [teamsPick, setTeamsPick] = useState(false) // 방향 선택 중
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -891,16 +895,16 @@ function TodayTab({ perms }: { perms: Perms }) {
 
   useEffect(() => { load() }, [load])
 
-  // 출고 현황을 Teams 그룹채팅으로 전송
-  async function sendTeams() {
-    setTeamsBusy(true); setTeamsMsg('')
+  // 출고 현황을 Teams 그룹채팅으로 전송 (배송 방향 선택 후)
+  async function sendTeams(route: string) {
+    setTeamsPick(false); setTeamsBusy(true); setTeamsMsg('')
     try {
       const r = await fetch('/api/terminal/teams', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date }),
+        body: JSON.stringify({ date, route }),
       })
       const d = await r.json()
-      setTeamsMsg(r.ok ? '📨 Teams 채팅방으로 출고 현황을 전송했습니다.' : (d.error || '전송 실패'))
+      setTeamsMsg(r.ok ? `📨 Teams 채팅방으로 출고 현황을 전송했습니다. (방향: ${route})` : (d.error || '전송 실패'))
     } catch { setTeamsMsg('전송 실패') }
     setTeamsBusy(false)
   }
@@ -937,11 +941,22 @@ function TodayTab({ perms }: { perms: Perms }) {
                       disabled={!out.length} onClick={() => setManageDir('out')} title="출고 업로드 수정/삭제">
                       <Pencil size={12} strokeWidth={1.9} /> 수정
                     </Button>
-                    <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
-                      disabled={teamsBusy || !out.length} onClick={sendTeams}
-                      title="Teams 채팅방으로 출고 현황 전송">
-                      <Send size={12} strokeWidth={1.9} /> {teamsBusy ? '전송 중…' : 'Teams'}
-                    </Button>
+                    {teamsPick ? (
+                      <span className="flex items-center gap-1 text-[11px]">
+                        <span className="text-[#64748B]">방향:</span>
+                        {TEAMS_ROUTES.map(rt => (
+                          <Button key={rt} type="button" className="h-7 text-[11px] bg-[#B32646] hover:bg-[#9a1f3c] text-white"
+                            onClick={() => sendTeams(rt)}>{rt}</Button>
+                        ))}
+                        <Button type="button" variant="outline" className="h-7 text-[11px]" onClick={() => setTeamsPick(false)}>취소</Button>
+                      </span>
+                    ) : (
+                      <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
+                        disabled={teamsBusy || !out.length} onClick={() => setTeamsPick(true)}
+                        title="방향 선택 후 Teams 채팅방으로 출고 현황 전송">
+                        <Send size={12} strokeWidth={1.9} /> {teamsBusy ? '전송 중…' : 'Teams'}
+                      </Button>
+                    )}
                     <GuestCallout side="left" label="출고 추가·수정 / 현장센터 팀즈 발송" />
                   </div>
                 ) : undefined}

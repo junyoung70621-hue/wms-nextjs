@@ -134,7 +134,7 @@ export async function POST(request: Request) {
     warehouse_id: warehouseId,
     location, rack_no: rackNo, shelf, box_no: boxNo,
     trcn_id: e.trcn_id, device_type: e.device_type,
-    source: body.items ? 'taxi' : 'manual',
+    source: ['taxi', 'manual'].includes(body.source) ? body.source : (body.items ? 'taxi' : 'manual'),
     created_by: session.user!.id,
   }))
 
@@ -155,19 +155,23 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, stored: rows.length, rack_no: rackNo, box_no: boxNo })
 }
 
-// IH 삭제 — body: { id }
+// IH 삭제 — body: { id } 또는 { ids: string[] } (선택/전체 삭제)
+// 삭제된 행(trcn_id/device_type/source)을 돌려줘 클라이언트가 되돌리기(재등록)할 수 있게 함
 export async function DELETE(request: Request) {
   const session = await getSession()
   if (!session.user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
   if (!canWrite(session.user)) return NextResponse.json({ error: '권한 없음' }, { status: 403 })
 
   const body = await request.json()
-  if (!body.id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+  const ids: string[] = Array.isArray(body.ids) ? body.ids.filter(Boolean) : (body.id ? [body.id] : [])
+  if (!ids.length) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
 
-  // 삭제 전 박스 파악 → 삭제 후 수량 -1
-  const { data: row } = await supabase.from(TABLE).select('warehouse_id').eq('id', body.id).single()
-  const { error } = await supabase.from(TABLE).delete().eq('id', body.id)
+  // 삭제와 동시에 삭제된 행 반환 → 박스별 수량 차감 + 되돌리기용 좌표 제공
+  const { data: rows, error } = await supabase.from(TABLE).delete().in('id', ids)
+    .select('id, warehouse_id, trcn_id, device_type, source, location, rack_no, shelf, box_no')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (row?.warehouse_id) await adjustBoxQuantity(row.warehouse_id, -1)
-  return NextResponse.json({ ok: true })
+  const deltas = new Map<number, number>()
+  for (const r of rows ?? []) if (r.warehouse_id) deltas.set(r.warehouse_id, (deltas.get(r.warehouse_id) ?? 0) - 1)
+  for (const [id, d] of deltas) await adjustBoxQuantity(id, d)
+  return NextResponse.json({ ok: true, deleted: rows ?? [] })
 }

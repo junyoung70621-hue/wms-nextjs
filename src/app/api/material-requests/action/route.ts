@@ -23,6 +23,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '허용되지 않는 action' }, { status: 400 })
   }
 
+  // 승인 배분 사전 검증 (상태 변경 전에 — 실패 시 요청이 '승인'으로 굳지 않도록)
+  type Alloc = { item_name: string; warehouse_id: number; quantity: number }
+  let givenAllocs: Alloc[] | null = null
+  if (action === 'approved' && Array.isArray(allocations)) {
+    givenAllocs = (allocations as Alloc[])
+      .filter(a => a.warehouse_id && Number(a.quantity) > 0)
+      .map(a => ({ ...a, quantity: Math.floor(Number(a.quantity)) }))
+    if (!givenAllocs.length) return NextResponse.json({ error: '승인할 품목이 없습니다.' }, { status: 400 })
+    const { data: cur } = await supabase.from('material_requests').select('items').eq('id', id).single()
+    const reqQty = new Map<string, number>((cur?.items ?? []).map((it: Record<string, unknown>) =>
+      [String(it['item_name']), parseInt(String(it['requested_qty'])) || 0]))
+    const sum = new Map<string, number>()
+    for (const a of givenAllocs) sum.set(a.item_name, (sum.get(a.item_name) ?? 0) + a.quantity)
+    for (const [name, q] of sum) {
+      if (!reqQty.has(name)) return NextResponse.json({ error: `요청에 없는 품목: ${name}` }, { status: 400 })
+      if (q > reqQty.get(name)!) return NextResponse.json({ error: `${name} 승인수량(${q})이 요청수량(${reqQty.get(name)})을 초과합니다.` }, { status: 400 })
+    }
+  }
+
   // 조건부 전환: 대기/보류 상태에서만 처리 가능 → 이중 승인(이중 차감) 차단
   const { data: updatedRows, error } = await supabase.from('material_requests').update({
     status:       action,
@@ -36,6 +55,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '이미 처리된 요청입니다.' }, { status: 409 })
   }
 
+  const warnings: string[] = []
+
   // 승인 시 재고 차감
   if (action === 'approved') {
     const req = updatedRows[0]
@@ -46,10 +67,9 @@ export async function POST(request: Request) {
       const from_center = req.from_center
 
       // 차감 배분: allocations(박스별 수량) 있으면 그대로, 없으면 자동(재고 많은 박스부터 그리디 분할)
-      type Alloc = { item_name: string; warehouse_id: number; quantity: number }
       let allocs: Alloc[] = []
-      if (Array.isArray(allocations) && allocations.length) {
-        allocs = (allocations as Alloc[]).filter(a => a.warehouse_id && a.quantity > 0)
+      if (givenAllocs) {
+        allocs = givenAllocs
       } else {
         for (const item of items) {
           let need = parseInt(item.requested_qty) || 0
@@ -68,6 +88,8 @@ export async function POST(request: Request) {
 
       // 박스별 차감 + 이력 (여러 박스에서 나눠 차감, 자재센터 박스만 허용)
       const deductedByItem = new Map<string, number>()
+      const intendedByItem = new Map<string, number>() // 승인자가 지정한 수량 (차감 실패와 구분)
+      for (const a of allocs) intendedByItem.set(a.item_name, (intendedByItem.get(a.item_name) ?? 0) + a.quantity)
       for (const a of allocs) {
         const { data: src } = await supabase
           .from('warehouse').select('location').eq('id', a.warehouse_id).single()
@@ -83,6 +105,17 @@ export async function POST(request: Request) {
           snapshot_qty_before: r.before, snapshot_qty_after: r.after,
         })
         deductedByItem.set(a.item_name, (deductedByItem.get(a.item_name) ?? 0) + a.quantity)
+      }
+
+      // 승인수량 기록 = 승인자가 지정한 수량 (0 = 제외). 차감 실패분은 별도 경고로 반환
+      await supabase.from('material_requests').update({
+        items: items.map((it: Record<string, unknown>) => ({
+          ...it, approved_qty: intendedByItem.get(String(it['item_name'])) ?? 0,
+        })),
+      }).eq('id', id)
+      for (const [name, want] of intendedByItem) {
+        const got = deductedByItem.get(name) ?? 0
+        if (got < want) warnings.push(`${name}: 승인 ${want} 중 ${got}만 차감됨 (재고 변동/박스 오류)`)
       }
 
       // 요청 센터 재고 증가 (item_name 별 차감 합계, 행 없으면 신규 등록)
@@ -149,8 +182,17 @@ export async function POST(request: Request) {
             on_hold:  { label: '보류', color: MAIL_COLOR.pending },
           }
           const st = STATUS[action] ?? { label: action, color: MAIL_COLOR.text }
-          const itemRows: Cell[][] = (req.items ?? []).map((it: Record<string, unknown>, i: number) =>
-            [String(i + 1), String(it['item_name'] ?? ''), { text: String(it['requested_qty'] ?? ''), right: true }])
+          const itemRows: Cell[][] = (req.items ?? []).map((it: Record<string, unknown>, i: number) => {
+            const row: Cell[] = [String(i + 1), String(it['item_name'] ?? ''), { text: String(it['requested_qty'] ?? ''), right: true }]
+            if (action === 'approved') {
+              const a = Number(it['approved_qty'] ?? it['requested_qty'])
+              row.push(a === 0
+                ? { text: '제외', color: MAIL_COLOR.danger, bold: true, right: true }
+                : { text: String(a), color: a !== Number(it['requested_qty']) ? MAIL_COLOR.pending : MAIL_COLOR.success, bold: true, right: true })
+            }
+            return row
+          })
+          const itemHead = action === 'approved' ? ['No', '자재명', '요청수량', '승인수량'] : ['No', '자재명', '요청수량']
 
           await sendMail(
             reqUser.email,
@@ -165,7 +207,7 @@ export async function POST(request: Request) {
                   ['처리결과', { text: st.label, color: st.color, bold: true }],
                 ])}
                 <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">요청 품목</p>
-                ${infoTable(['No', '자재명', '요청수량'], itemRows)}
+                ${infoTable(itemHead, itemRows)}
                 ${replyMessage ? noteBanner(replyMessage) : ''}`,
             }),
           )
@@ -174,5 +216,5 @@ export async function POST(request: Request) {
     } catch { /* 메일 실패 무시 */ }
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, warnings })
 }
