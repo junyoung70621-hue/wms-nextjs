@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import type { SessionUser } from '@/lib/session'
 import GuestCallout from '@/components/auth/GuestCallout'
 import { CENTERS } from '@/constants/centers'
+import HistoryStatsPanel from '@/components/HistoryStatsPanel'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 type HistoryRow = {
@@ -57,6 +58,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
   const [filterCenter, setFilterCenter] = useState('전체')
   const [dateFrom,     setDateFrom]     = useState('')
   const [dateTo,       setDateTo]       = useState('')
+  const [showStats,    setShowStats]    = useState(false)
 
   const isAdminOrMaterials = user.role === 'admin' || user.role === 'materials'
   const userCenter = user.assigned_center ?? user.center
@@ -239,7 +241,14 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         >
           ⬇️ CSV
         </Button>
-        <GuestCallout side="left" label="유형·검색어·기간 필터 → 목록 CSV 다운로드" />
+        <Button
+          variant={showStats ? 'default' : 'outline'}
+          onClick={() => setShowStats(s => !s)}
+          className={`h-8 text-[12px] ${showStats ? 'bg-[#B32646] hover:bg-[#9a1f3c] text-white' : ''}`}
+        >
+          📊 통계
+        </Button>
+        <GuestCallout side="left" label="유형·검색어·기간 필터 → 목록 CSV / 통계 Excel 다운로드" />
       </div>
       </div>
 
@@ -247,6 +256,14 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">
           {error}
         </p>
+      )}
+
+      {/* 시각화 통계 (주/월/분기/연) */}
+      {showStats && (
+        <HistoryStatsPanel filters={{
+          action: filterAction, search: filterSearch, dateFrom, dateTo,
+          center: isAdminOrMaterials ? filterCenter : userCenter,
+        }} />
       )}
 
       {/* 요약 통계 */}

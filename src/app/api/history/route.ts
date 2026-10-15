@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const actionType = searchParams.get('action')
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '200'), 1000)
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '200'), 5000) // 5000: 통계 패널용
 
   const dateFrom = searchParams.get('date_from') // YYYY-MM-DD
   const dateTo   = searchParams.get('date_to')   // YYYY-MM-DD
