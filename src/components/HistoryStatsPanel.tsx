@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   computeStats, exportStatsExcel, bucketLabel,
   PERIOD_LABEL, TYPES, TYPE_LABEL, TYPE_COLOR,
-  type HistoryRow, type Period, type Type,
+  type HistoryRow, type Period, type Type, type ItemAgg,
 } from '@/lib/historyStats'
 
 type Filters = {
@@ -21,6 +21,7 @@ const INK = '#1E293B', MUTED = '#94A3B8', GRID = '#E2E8F0'
 // 입출고 이력 통계 패널 — 기간별 추이 / 자재별 TOP / 센터 간 이동 / 자재×기간 표 + Excel
 export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
   const [period, setPeriod] = useState<Period>('month')
+  const [cat, setCat] = useState('전체') // 대분류 필터 (버스/택시 …)
   const [rows, setRows] = useState<HistoryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
@@ -43,9 +44,17 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
     return () => { alive = false }
   }, [filters.action, from, to])
 
-  // 센터·검색은 목록과 동일하게 클라이언트 필터
+  // 데이터에 존재하는 대분류 목록 (버스/택시 우선, 나머지 가나다)
+  const catList = useMemo(() => {
+    const set = new Set(rows.map(h => h.warehouse?.category_large).filter(Boolean) as string[])
+    const pri = ['버스', '택시']
+    return ['전체', ...pri.filter(c => set.has(c)), ...[...set].filter(c => !pri.includes(c)).sort((a, b) => a.localeCompare(b, 'ko'))]
+  }, [rows])
+
+  // 센터·검색은 목록과 동일하게 클라이언트 필터 + 대분류
   const filtered = useMemo(() => {
     let r = rows
+    if (cat !== '전체') r = r.filter(h => h.warehouse?.category_large === cat)
     if (filters.center !== '전체') {
       r = r.filter(h => h.from_center === filters.center || h.to_center === filters.center || h.warehouse?.location === filters.center)
     }
@@ -55,21 +64,28 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
         (h.users?.name ?? '').toLowerCase().includes(q) || (h.reason ?? '').toLowerCase().includes(q))
     }
     return r
-  }, [rows, filters.center, filters.search])
+  }, [rows, filters.center, filters.search, cat])
 
   const st = useMemo(() => computeStats(filtered, period), [filtered, period])
 
   async function download() {
     setExporting(true)
-    try { await exportStatsExcel(st, period, `${from}_${to}`) } finally { setExporting(false) }
+    try { await exportStatsExcel(st, period, `${from}_${to}`, cat === '전체' ? '' : cat) } finally { setExporting(false) }
   }
 
   return (
     <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[13px] font-bold text-[#1E293B]">📊 이동·사용 통계</span>
-        <span className="text-[11px] text-[#94A3B8]">{from} ~ {to} · {filtered.length.toLocaleString()}건{rows.length >= 5000 && ' (최대 5,000건까지 집계)'}</span>
+        <span className="text-[11px] text-[#94A3B8]">{from} ~ {to}{cat !== '전체' && ` · ${cat}`} · {filtered.length.toLocaleString()}건{rows.length >= 5000 && ' (최대 5,000건까지 집계)'}</span>
         <div className="ml-auto flex items-center gap-1">
+          {catList.map(c => (
+            <button key={c} type="button" onClick={() => setCat(c)}
+              className={`h-7 px-2.5 text-[11px] rounded border ${cat === c ? 'bg-[#1E293B] border-[#1E293B] text-white' : 'border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]'}`}>
+              {c}
+            </button>
+          ))}
+          <span className="w-px h-5 bg-[#E2E8F0] mx-1" />
           {(Object.keys(PERIOD_LABEL) as Period[]).map(p => (
             <button key={p} type="button" onClick={() => setPeriod(p)}
               className={`h-7 px-2.5 text-[11px] rounded border ${period === p ? 'bg-[#B32646] border-[#B32646] text-white' : 'border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]'}`}>
@@ -98,14 +114,14 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
             <section>
               <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">많이 움직인 자재 TOP 15 <span className="text-[#94A3B8] font-normal">(출고·사용 + 이동)</span></h4>
               <Legend only={['out', 'transfer']} />
-              <ItemBars st={st} />
+              <ItemBars list={st.items} />
             </section>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-4">
             <section className="lg:col-span-2">
               <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">자재 × {PERIOD_LABEL[period]} <span className="text-[#94A3B8] font-normal">(출고·사용 + 이동 수량, 상위 30)</span></h4>
-              <PivotTable st={st} period={period} />
+              <PivotTable list={st.items} keys={st.periods.map(p => p.key)} period={period} label="자재명" />
             </section>
             <section>
               <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">센터 간 이동</h4>
@@ -186,8 +202,8 @@ function PeriodBars({ st, period }: { st: ReturnType<typeof computeStats>; perio
 }
 
 // 자재별 가로 누적 막대 (출고·사용 + 이동)
-function ItemBars({ st }: { st: ReturnType<typeof computeStats> }) {
-  const items = st.items.filter(i => i.total > 0).slice(0, 15)
+function ItemBars({ list }: { list: ItemAgg[] }) {
+  const items = list.filter(i => i.total > 0).slice(0, 15)
   if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-6 text-center">움직인 자재 없음</div>
   const rowH = 16, W = 560, labelW = 170, valW = 44, padY = 4
   const H = items.length * rowH + padY * 2
@@ -217,16 +233,15 @@ function ItemBars({ st }: { st: ReturnType<typeof computeStats> }) {
   )
 }
 
-function PivotTable({ st, period }: { st: ReturnType<typeof computeStats>; period: Period }) {
-  const items = st.items.filter(i => i.total > 0).slice(0, 30)
-  const keys = st.periods.map(p => p.key)
+function PivotTable({ list, keys, period, label }: { list: ItemAgg[]; keys: string[]; period: Period; label: string }) {
+  const items = list.filter(i => i.total > 0).slice(0, 30)
   if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-6 text-center">데이터 없음</div>
   return (
     <div className="overflow-auto max-h-80 rounded border border-[#E2E8F0]">
       <table className="text-[11px] border-collapse min-w-full">
         <thead className="sticky top-0 bg-[#F8F9FA]">
           <tr>
-            <th className="px-2 py-1.5 text-left font-semibold text-[#64748B] border-b sticky left-0 bg-[#F8F9FA]">자재명</th>
+            <th className="px-2 py-1.5 text-left font-semibold text-[#64748B] border-b sticky left-0 bg-[#F8F9FA]">{label}</th>
             <th className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b">합계</th>
             {keys.map(k => <th key={k} className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b whitespace-nowrap">{bucketLabel(k, period)}</th>)}
           </tr>

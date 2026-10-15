@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
 
-type ReqItem = { item_name: string; current_qty: number; requested_qty: number; approved_qty?: number }
+type ReqItem = { item_name: string; current_qty: number; requested_qty: number; approved_qty?: number; erp_code?: string | null }
 type Request = {
   id: number
   status: string
@@ -251,7 +251,7 @@ function RequestCard({
               <table className="w-full text-[12px]">
                 <thead className="bg-[#F8F9FA]">
                   <tr>
-                    {['자재명','현재재고','요청수량', ...(req.status === 'approved' ? ['승인수량'] : []), '재고상태'].map(h => (
+                    {['자재명','ERP','현재재고','요청수량', ...(req.status === 'approved' ? ['승인수량'] : []), '재고상태'].map(h => (
                       <th key={h} className="px-3 py-1.5 text-left text-[#64748B] font-semibold border-b border-[rgba(0,0,0,0.08)]">{h}</th>
                     ))}
                   </tr>
@@ -260,6 +260,7 @@ function RequestCard({
                   {req.items.map((it, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-3 py-1.5 text-[#1E293B]">{it.item_name}</td>
+                      <td className="px-3 py-1.5">{it.erp_code === undefined ? <span className="text-[#94A3B8] text-[11px]">-</span> : <ErpBadge code={it.erp_code} />}</td>
                       <td className="px-3 py-1.5 text-right font-mono">{it.current_qty}</td>
                       <td className="px-3 py-1.5 text-right font-mono font-bold">{it.requested_qty}</td>
                       {req.status === 'approved' && (
@@ -376,7 +377,14 @@ function RequestCard({
 }
 
 // ── 새 자재요청 폼 ────────────────────────────────────────────────────────────
-type WarehouseItem = { id: number; item_name: string; quantity: number; category_large: string | null; category_mid: string | null }
+type WarehouseItem = { id: number; item_name: string; quantity: number; category_large: string | null; category_mid: string | null; erp_code: string | null }
+
+// ERP 등록 여부 뱃지 (자재센터 기준)
+function ErpBadge({ code }: { code: string | null | undefined }) {
+  return code
+    ? <span className="inline-block px-1.5 py-0.5 rounded bg-[#ecfdf5] text-[#047857] text-[10px] font-mono whitespace-nowrap" title="ERP 등록">{code}</span>
+    : <span className="inline-block px-1.5 py-0.5 rounded bg-[#fef2f2] text-[#c62828] text-[10px] font-semibold whitespace-nowrap" title="ERP 미등록 (자재센터 기준)">ERP 미등록</span>
+}
 
 // 이 센터들은 자재요청 시 '버스 > 설치자재'만 보이고 요청 가능
 const BUS_INSTALL_ONLY = new Set(['강북센터', '강서센터', '강동센터', '강남센터', '대전센터', '고속/시외'])
@@ -408,17 +416,23 @@ function NewRequestForm({
     if (onlyBusInstall) {
       base = base.filter(i => i.category_large === '버스' && i.category_mid === '설치자재')
     }
-    const m = new Map<string, number>()
-    for (const i of base) m.set(i.item_name, (m.get(i.item_name) ?? 0) + (i.quantity ?? 0))
+    // ERP 등록 여부는 자재센터 박스 기준 (타센터는 코드 누락이 많음)
+    const m = new Map<string, { total: number; erp: string | null }>()
+    for (const i of base) {
+      const cur = m.get(i.item_name) ?? { total: 0, erp: null }
+      cur.total += i.quantity ?? 0
+      if (!cur.erp && i.erp_code?.trim()) cur.erp = i.erp_code.trim()
+      m.set(i.item_name, cur)
+    }
     return [...m.entries()]
-      .map(([item_name, total]) => ({ item_name, total }))
+      .map(([item_name, v]) => ({ item_name, total: v.total, erp_code: v.erp }))
       .sort((a, b) => a.item_name.localeCompare(b.item_name, 'ko'))
   }, [warehouseItems, onlyBusInstall])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return aggregated
     const q = search.toLowerCase()
-    return aggregated.filter(i => i.item_name.toLowerCase().includes(q))
+    return aggregated.filter(i => i.item_name.toLowerCase().includes(q) || (i.erp_code ?? '').toLowerCase().includes(q))
   }, [aggregated, search])
 
   const selectedCount = Object.values(selected).filter(q => q > 0).length
@@ -437,8 +451,8 @@ function NewRequestForm({
       const items = Object.entries(selected)
         .filter(([, q]) => q > 0)
         .map(([item_name, qty]) => {
-          const total = aggregated.find(a => a.item_name === item_name)?.total ?? 0
-          return { item_name, current_qty: total, requested_qty: qty }
+          const agg = aggregated.find(a => a.item_name === item_name)
+          return { item_name, current_qty: agg?.total ?? 0, requested_qty: qty, erp_code: agg?.erp_code ?? null }
         })
       const res = await fetch('/api/material-requests', {
         method: 'POST',
@@ -501,18 +515,20 @@ function NewRequestForm({
               <thead className="bg-[#F8F9FA] sticky top-0">
                 <tr>
                   <th className="px-3 py-2 text-left text-[#64748B] font-medium">품명</th>
+                  <th className="px-3 py-2 text-left text-[#64748B] font-medium w-40">ERP</th>
                   <th className="px-3 py-2 text-right text-[#64748B] font-medium w-20">재고</th>
                   <th className="px-3 py-2 text-center text-[#64748B] font-medium w-28">요청 수량</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={3} className="px-3 py-4 text-center text-[#94A3B8]">검색 결과 없음</td></tr>
+                  <tr><td colSpan={4} className="px-3 py-4 text-center text-[#94A3B8]">검색 결과 없음</td></tr>
                 ) : filtered.map((item, i) => {
                   const qty = selected[item.item_name] ?? 0
                   return (
                     <tr key={item.item_name} className={qty > 0 ? 'bg-[rgba(179, 38, 70,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
                       <td className="px-3 py-1.5 text-[#1E293B]">{item.item_name}</td>
+                      <td className="px-3 py-1.5"><ErpBadge code={item.erp_code} /></td>
                       <td className={`px-3 py-1.5 text-right font-mono ${item.total === 0 ? 'text-red-400' : 'text-[#475569]'}`}>
                         {item.total.toLocaleString()}
                       </td>
@@ -542,9 +558,12 @@ function NewRequestForm({
           <div className="text-[11px] font-bold text-[#B32646] mb-2">선택된 자재 ({selectedCount}종)</div>
           <div className="space-y-1">
             {Object.entries(selected).filter(([, q]) => q > 0).map(([name, qty]) => (
-              <div key={name} className="flex items-center justify-between text-[12px]">
-                <span className="text-[#1E293B]">{name}</span>
-                <span className="text-[#B32646] font-bold">{qty}개 요청</span>
+              <div key={name} className="flex items-center justify-between gap-2 text-[12px]">
+                <span className="text-[#1E293B] truncate">{name}</span>
+                <span className="flex items-center gap-2 flex-shrink-0">
+                  <ErpBadge code={aggregated.find(a => a.item_name === name)?.erp_code ?? null} />
+                  <span className="text-[#B32646] font-bold">{qty}개 요청</span>
+                </span>
               </div>
             ))}
           </div>

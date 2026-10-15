@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     .select(
       'id, action_type, quantity, reason, from_center, to_center, ' +
       'snapshot_qty_before, snapshot_qty_after, acted_at, ' +
-      'warehouse(item_name, location), users(name)'
+      'warehouse(item_name, location, category_large), users(name)'
     )
     .order('acted_at', { ascending: false })
     .limit(limit)

@@ -11,7 +11,7 @@ export type HistoryRow = {
   snapshot_qty_before: number | null
   snapshot_qty_after: number | null
   acted_at: string
-  warehouse: { item_name: string; location: string } | null
+  warehouse: { item_name: string; location: string; category_large?: string | null } | null
   users: { name: string } | null
 }
 
@@ -56,6 +56,13 @@ export function computeStats(rows: HistoryRow[], p: Period): Stats {
   const pm = new Map<string, PeriodAgg>()
   const im = new Map<string, ItemAgg>()
   const fm = new Map<string, FlowAgg>()
+  const bump = (m: Map<string, ItemAgg>, name: string, t: Type, k: string, q: number) => {
+    let a = m.get(name)
+    if (!a) { a = { item: name, total: 0, qty: zero(), byPeriod: {} }; m.set(name, a) }
+    a.qty[t] += q
+    // "움직인 양" = 출고·사용 + 이동 (입고는 유입이라 별도 열)
+    if (t !== 'in') { a.total += q; a.byPeriod[k] = (a.byPeriod[k] ?? 0) + q }
+  }
   for (const r of rows) {
     if (!(TYPES as readonly string[]).includes(r.action_type)) continue
     const t = r.action_type as Type
@@ -66,12 +73,7 @@ export function computeStats(rows: HistoryRow[], p: Period): Stats {
     if (!pa) { pa = { key: k, qty: zero(), cnt: zero() }; pm.set(k, pa) }
     pa.qty[t] += q; pa.cnt[t] += 1
 
-    const name = r.warehouse?.item_name ?? '(삭제된 자재)'
-    let ia = im.get(name)
-    if (!ia) { ia = { item: name, total: 0, qty: zero(), byPeriod: {} }; im.set(name, ia) }
-    ia.qty[t] += q
-    // 자재별 "움직인 양" = 출고·사용 + 이동 (입고는 유입이라 별도 열)
-    if (t !== 'in') { ia.total += q; ia.byPeriod[k] = (ia.byPeriod[k] ?? 0) + q }
+    bump(im, r.warehouse?.item_name ?? '(삭제된 자재)', t, k, q)
 
     if (t === 'transfer' && r.from_center && r.to_center) {
       const fk = `${r.from_center}→${r.to_center}`
@@ -103,7 +105,7 @@ function kstDateTime(ts: string) {
   try { return kst(ts).toISOString().slice(0, 16).replace('T', ' ') } catch { return ts }
 }
 
-export async function exportStatsExcel(st: Stats, p: Period, rangeLabel: string) {
+export async function exportStatsExcel(st: Stats, p: Period, rangeLabel: string, catLabel = '') {
   const wb = new ExcelJS.Workbook()
   const pl = PERIOD_LABEL[p]
 
@@ -123,16 +125,18 @@ export async function exportStatsExcel(st: Stats, p: Period, rangeLabel: string)
     st.periods.reduce((s, r) => s + r.qty.transfer, 0), st.periods.reduce((s, r) => s + r.cnt.transfer, 0)])
   tot.font = { name: FONT, bold: true }
 
-  // 2. 자재별 × 기간 (출고·사용 + 이동 수량)
-  const ws2 = wb.addWorksheet(`자재별 ${pl}별`)
+  // 2. 자재별 / 대분류별 × 기간 (출고·사용 + 이동 수량)
   const keys = st.periods.map(r => r.key)
-  header(ws2, [
-    { h: '자재명', w: 32 }, { h: '입고', w: 9 }, { h: '출고·사용', w: 10 }, { h: '이동', w: 9 }, { h: '움직인 합계', w: 12 },
-    ...keys.map(k => ({ h: k, w: 11 })),
-  ])
-  for (const it of st.items) {
-    ws2.addRow([it.item, it.qty.in, it.qty.out, it.qty.transfer, it.total, ...keys.map(k => it.byPeriod[k] ?? 0)])
+  const pivotSheet = (title: string, label: string, list: ItemAgg[]) => {
+    const ws = wb.addWorksheet(title)
+    header(ws, [
+      { h: label, w: 32 }, { h: '입고', w: 9 }, { h: '출고·사용', w: 10 }, { h: '이동', w: 9 }, { h: '움직인 합계', w: 12 },
+      ...keys.map(k => ({ h: k, w: 11 })),
+    ])
+    for (const it of list) ws.addRow([it.item, it.qty.in, it.qty.out, it.qty.transfer, it.total, ...keys.map(k => it.byPeriod[k] ?? 0)])
+    return ws
   }
+  const ws2 = pivotSheet(`자재별 ${pl}별`, '자재명', st.items)
 
   // 3. 센터 간 이동
   const ws3 = wb.addWorksheet('센터 간 이동')
@@ -161,7 +165,7 @@ export async function exportStatsExcel(st: Stats, p: Period, rangeLabel: string)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `입출고통계_${pl}별_${rangeLabel}.xlsx`
+  a.download = `입출고통계${catLabel ? `_${catLabel}` : ''}_${pl}별_${rangeLabel}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
 }

@@ -75,6 +75,7 @@ export async function POST(request: Request) {
     const itemRows: Cell[][] = (items as Record<string, unknown>[]).map((it, i) => [
       String(i + 1),
       String(it['item_name'] ?? ''),
+      it['erp_code'] ? String(it['erp_code']) : { text: '미등록', color: '#c62828', bold: true },
       { text: String(it['current_qty'] ?? ''), right: true },
       { text: String(it['requested_qty'] ?? ''), right: true },
     ])
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
               ...(notes?.trim() ? [['요청메모', notes.trim()] as Cell[]] : []),
             ])}
             <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">요청 품목</p>
-            ${infoTable(['No', '자재명', '현재재고', '요청수량'], itemRows)}`,
+            ${infoTable(['No', '자재명', 'ERP코드', '현재재고', '요청수량'], itemRows)}`,
         }),
       )
     }
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
           bodyHtml: `
             <p>요청하신 자재 건이 접수되었습니다. 관리자 검토 후 처리 결과를 안내드립니다.</p>
             <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">요청 품목</p>
-            ${infoTable(['No', '자재명', '현재재고', '요청수량'], itemRows)}`,
+            ${infoTable(['No', '자재명', 'ERP코드', '현재재고', '요청수량'], itemRows)}`,
         }),
       )
     }
