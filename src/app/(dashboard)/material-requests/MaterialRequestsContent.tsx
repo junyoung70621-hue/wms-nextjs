@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { SessionUser } from '@/lib/session'
+import { BUS_CENTERS } from '@/constants/centers'
 
 type ReqItem = { item_name: string; current_qty: number; requested_qty: number; approved_qty?: number; erp_code?: string | null }
 type Request = {
@@ -387,7 +388,7 @@ function ErpBadge({ code }: { code: string | null | undefined }) {
 }
 
 // 이 센터들은 자재요청 시 '버스 > 설치자재'만 보이고 요청 가능
-const BUS_INSTALL_ONLY = new Set(['강북센터', '강서센터', '강동센터', '강남센터', '대전센터', '고속/시외'])
+const BUS_INSTALL_ONLY = new Set([...BUS_CENTERS, '대전센터', '고속/시외'])
 
 function NewRequestForm({
   user, onSubmitted,

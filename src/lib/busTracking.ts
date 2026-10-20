@@ -1,6 +1,7 @@
 import { classifyTerminal as classifyTerminalCore } from './terminal'
+import { BUS_CENTERS } from '@/constants/centers'
 
-export const TRACKING_CENTERS = ['강서센터', '강북센터', '강동센터', '강남센터']
+export const TRACKING_CENTERS = BUS_CENTERS
 
 export const STATUS_LABEL: Record<string, string> = {
   unassigned:       '미배정(센터보관)',

@@ -9,7 +9,7 @@ import {
   MessageSquare, CircleUser, type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NO_WAREHOUSE } from '@/constants/centers'
+import { NO_WAREHOUSE, BUS_CENTERS } from '@/constants/centers'
 import type { SessionUser } from '@/lib/session'
 
 type Counts = { mat_pending: number; pur_pending: number; unread_notices: number }
@@ -63,7 +63,7 @@ function getMenuSections(user: SessionUser | null): Section[] {
   const isGuest = role === 'guest'
 
   const showBusTracking =
-    isAdmin || ['강남센터', '강서센터', '강북센터', '강동센터', '자재센터'].includes(center)
+    isAdmin || [...BUS_CENTERS, '자재센터'].includes(center)
 
   const sections: Section[] = []
 

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
 import { GUEST_VIEWER } from '@/lib/guestViewer'
 import GuestCallout from '@/components/auth/GuestCallout'
-import { getViewableCenters, CENTERS } from '@/constants/centers'
+import { getViewableCenters, CENTERS, NO_WAREHOUSE, BUS_CENTERS } from '@/constants/centers'
 import TerminalBoxSection from '@/components/TerminalBoxSection'
 import MaterialRequestsContent from '../material-requests/MaterialRequestsContent'
 import UsageContent from '../usage/UsageContent'
@@ -173,9 +173,9 @@ function ItemDetailModal({
   const canTransfer = ['admin', 'manager', 'user'].includes(user.role) ||
                       (user.role === 'materials' && center === '자재센터')
 
-  const REGIONAL = new Set(['강서센터','강북센터','강동센터','강남센터'])
-  const SPECIAL  = new Set(['택시지원파트','리페어팀','AFC지원파트','고속/시외','대전센터','토스','외부창고','에이텍본사','티머니(버스)','티머니(택시)'])
-  const allCenters = ['자재센터','강서센터','강북센터','강동센터','강남센터','택시지원파트','리페어팀','AFC지원파트','고속/시외','대전센터','토스','외부창고','에이텍본사','티머니(버스)','티머니(택시)']
+  const REGIONAL = new Set(BUS_CENTERS)
+  const allCenters: string[] = CENTERS.filter(c => !NO_WAREHOUSE.has(c))
+  const SPECIAL  = new Set(allCenters.filter(c => c !== '자재센터' && !REGIONAL.has(c)))
 
   const destinations = useMemo(() => {
     if (center === '자재센터') return allCenters.filter(c => c !== '자재센터')
@@ -406,11 +406,8 @@ function ItemDetailModal({
 }
 
 // ── 이동 신청 도착 센터 규칙 ──────────────────────────────────────────────────
-const TR_REGIONAL = new Set(['강서센터', '강북센터', '강동센터', '강남센터'])
-const TR_ALL_CENTERS = [
-  '자재센터', '강서센터', '강북센터', '강동센터', '강남센터', '택시지원파트', '리페어팀',
-  'AFC지원파트', '고속/시외', '대전센터', '토스', '외부창고', '에이텍본사', '티머니(버스)', '티머니(택시)',
-]
+const TR_REGIONAL = new Set(BUS_CENTERS)
+const TR_ALL_CENTERS: string[] = CENTERS.filter(c => !NO_WAREHOUSE.has(c))
 const TR_SPECIAL = new Set(TR_ALL_CENTERS.filter(c => c !== '자재센터' && !TR_REGIONAL.has(c)))
 
 // 자재 클릭 팝업: 위치별(박스별) 수량 · ERP코드 · 박스 상세로 이동

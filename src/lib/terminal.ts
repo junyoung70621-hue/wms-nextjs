@@ -1,3 +1,4 @@
+import { BUS_CENTERS } from '@/constants/centers'
 // 버스단말기 현황 — 분류 로직 / 피벗 / 상수
 // wms_v2 pages/14_terminal_dashboard.py 포팅
 
@@ -91,10 +92,10 @@ export const ROW_ORDER = [
   '한강버스통합', '한강버스표출', '한강버스승하차',
 ]
 export const CTR_SHORT: Record<string, string> = {
-  강남센터: '강남', 강동센터: '강동', 강북센터: '강북', 강서센터: '강서',
+  강남센터: '강남', 강동센터: '강동', 강북센터: '강북', 강서센터: '강서', 인천센터: '인천',
   택시지원파트: '택시', 리페어팀: '리페어',
 }
-export const COL_ORDER = ['강남', '강동', '강북', '강서', '택시', '리페어']
+export const COL_ORDER = ['강남', '강동', '강북', '강서', '인천', '택시', '리페어']
 
 // 인수인계증 Excel 행 순서
 export const XLSX_ROW_ORDER: [string, string][] = [
@@ -105,8 +106,8 @@ export const XLSX_ROW_ORDER: [string, string][] = [
   ['한강버스', '통합단말기'], ['한강버스', '표출기'], ['한강버스', '승하차'],
 ]
 
-// 출고 시 Teams 알림 대상 4개 센터
-export const TEAMS_NOTIFY_CENTERS = ['강남센터', '강동센터', '강북센터', '강서센터']
+// 출고 시 Teams 알림 대상 버스 센터
+export const TEAMS_NOTIFY_CENTERS = BUS_CENTERS
 
 // ── 피벗: 단말기종류 × 유형 ────────────────────────────────────────────────────
 export interface DevicePivot {

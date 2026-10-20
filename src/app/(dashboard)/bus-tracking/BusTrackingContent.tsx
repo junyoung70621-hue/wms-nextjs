@@ -943,7 +943,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
   const [msg,          setMsg]       = useState('')
   const [subTab,       setSubTab]    = useState<'request'|'status'>('request')
 
-  const REGIONAL = ['강서센터', '강북센터', '강동센터', '강남센터']
+  const REGIONAL = TRACKING_CENTERS
   const isRegional = canManage || REGIONAL.includes(user.assigned_center ?? user.center)
   const srcCenter = canManage ? selCenter : (user.assigned_center ?? user.center)
 
@@ -1016,7 +1016,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
     fetchData()
   }
 
-  if (!isRegional) return <p className="text-[12px] text-[#94A3B8] py-4">이 탭은 강서·강북·강동·강남 센터에서만 사용할 수 있습니다.</p>
+  if (!isRegional) return <p className="text-[12px] text-[#94A3B8] py-4">이 탭은 버스 센터({TRACKING_CENTERS.map(c => c.replace('센터', '')).join('·')})에서만 사용할 수 있습니다.</p>
 
   const STATUS_KO: Record<string, string> = { pending: '대기중', approved: '승인', rejected: '거절' }
   const pendingIn = requests.filter(r => r.to_center === (canManage ? selCenter : srcCenter) && r.status === 'pending')
