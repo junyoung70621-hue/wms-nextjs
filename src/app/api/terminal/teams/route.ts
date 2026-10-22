@@ -17,7 +17,7 @@ function dateLabel(iso: string): string {
 }
 
 // 센터별 출고 현황 Adaptive Card (wms_v2 _build_teams_card 포팅)
-function buildTeamsCard(pivot: CenterPivot, date: string, uploadedCount: number, route: string | null): unknown {
+function buildTeamsCard(pivot: CenterPivot, date: string, uploadedCount: number, route: string | null, viaIncheon: boolean): unknown {
   const cell = (
     text: string | number,
     opts: { bold?: boolean; align?: string; color?: string; style?: string } = {},
@@ -54,12 +54,16 @@ function buildTeamsCard(pivot: CenterPivot, date: string, uploadedCount: number,
     version: '1.5',
     $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
     body: [
-      { type: 'TextBlock', text: route ? `📤 센터별 출고 현황 · ${route} 방향` : '📤 센터별 출고 현황', size: 'Large', weight: 'Bolder', color: 'Accent' },
+      { type: 'TextBlock', text: route ? `📤 센터별 출고 현황 · ${route} 방향${viaIncheon ? ' (인천센터 경유)' : ''}` : '📤 센터별 출고 현황', size: 'Large', weight: 'Bolder', color: 'Accent' },
       {
         type: 'TextBlock',
-        text: `${dateLabel(date)}  ·  ✅ ${uploadedCount}개 센터 업로드 완료${route ? `  ·  🧭 방향: ${route}` : ''}`,
+        text: `${dateLabel(date)}  ·  ✅ ${uploadedCount}개 센터 업로드 완료${route ? `  ·  🧭 방향: ${route}` : ''}${viaIncheon ? '  ·  🚚 인천센터 경유' : ''}`,
         size: 'Small', color: 'Good', spacing: 'Small',
       },
+      ...(viaIncheon ? [{
+        type: 'TextBlock', text: '⚠️ 인천센터를 경유하여 배송됩니다.',
+        size: 'Small', weight: 'Bolder', color: 'Warning', spacing: 'Small',
+      }] : []),
       {
         type: 'Table',
         firstRowAsHeaders: true,
@@ -87,6 +91,7 @@ export async function POST(request: Request) {
   const body = await request.json()
   const date: string = body.date
   const route: string | null = String(body.route ?? '').trim() || null
+  const viaIncheon = body.via_incheon === true
   if (!date) return NextResponse.json({ error: '날짜 누락' }, { status: 400 })
 
   const { data, error } = await supabase
@@ -105,7 +110,7 @@ export async function POST(request: Request) {
   const uploadedCenters = new Set(rows.map(r => r.to_center))
   const uploadedCount = TEAMS_NOTIFY_CENTERS.filter(c => uploadedCenters.has(c)).length
 
-  const card = buildTeamsCard(pivot, date, uploadedCount, route)
+  const card = buildTeamsCard(pivot, date, uploadedCount, route, viaIncheon)
 
   try {
     const res = await fetch(webhookUrl, {

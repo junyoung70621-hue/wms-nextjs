@@ -883,6 +883,7 @@ function TodayTab({ perms }: { perms: Perms }) {
   const [teamsBusy, setTeamsBusy] = useState(false)
   const [teamsMsg, setTeamsMsg] = useState('')
   const [teamsPick, setTeamsPick] = useState(false) // 방향 선택 중
+  const [viaIncheon, setViaIncheon] = useState(false) // 인천센터 경유
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -901,10 +902,10 @@ function TodayTab({ perms }: { perms: Perms }) {
     try {
       const r = await fetch('/api/terminal/teams', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, route }),
+        body: JSON.stringify({ date, route, via_incheon: viaIncheon }),
       })
       const d = await r.json()
-      setTeamsMsg(r.ok ? `📨 Teams 채팅방으로 출고 현황을 전송했습니다. (방향: ${route})` : (d.error || '전송 실패'))
+      setTeamsMsg(r.ok ? `📨 Teams 채팅방으로 출고 현황을 전송했습니다. (방향: ${route}${viaIncheon ? ' · 인천센터 경유' : ''})` : (d.error || '전송 실패'))
     } catch { setTeamsMsg('전송 실패') }
     setTeamsBusy(false)
   }
@@ -943,6 +944,10 @@ function TodayTab({ perms }: { perms: Perms }) {
                     </Button>
                     {teamsPick ? (
                       <span className="flex items-center gap-1 text-[11px]">
+                        <span className="flex items-center gap-1 mr-1">
+                          <Checkbox checked={viaIncheon} onCheckedChange={v => setViaIncheon(!!v)} id="teams-via-incheon" />
+                          <label htmlFor="teams-via-incheon" className="text-[#475569] cursor-pointer">인천센터 경유</label>
+                        </span>
                         <span className="text-[#64748B]">방향:</span>
                         {TEAMS_ROUTES.map(rt => (
                           <Button key={rt} type="button" className="h-7 text-[11px] bg-[#B32646] hover:bg-[#9a1f3c] text-white"
