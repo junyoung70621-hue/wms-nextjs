@@ -49,6 +49,9 @@ export function classifyTerminal(raw: unknown): { device: string; sub: string } 
 
   // 표출기·통합단말기 계열 (9자리)
   if (n === 9) {
+    if (digits.startsWith('1780')) return { device: 'B820', sub: '통합단말기' }
+    if (digits.startsWith('1781')) return { device: 'B820', sub: '표출기' }
+    if (digits.startsWith('1715')) return { device: 'B820', sub: '승하차' }
     if (digits.startsWith('5600')) return { device: 'B800', sub: '표출기' }
     if (digits.startsWith('5500')) return { device: 'B800', sub: '통합단말기' }
     if (digits.startsWith('457'))  return { device: '한강버스', sub: '표출기' }
@@ -75,16 +78,17 @@ export function classifyTerminal(raw: unknown): { device: string; sub: string } 
 }
 
 // ── 정렬 상수 ─────────────────────────────────────────────────────────────────
-export const DEVICE_ORDER = ['B800', 'B700', 'B710', 'B620', '한강버스', '미분류']
+export const DEVICE_ORDER = ['B820', 'B800', 'B700', 'B710', 'B620', '한강버스', '미분류']
 export const SUB_ORDER = ['표출기', '통합단말기', '승하차', '운전자', '모뎀', '알 수 없음']
 
 const DEVICE_SHORT: Record<string, string> = {
-  B800: 'B800', B700: 'B700', B710: 'B710', B620: 'B620', 한강버스: '한강버스', 미분류: '기타',
+  B820: 'B820', B800: 'B800', B700: 'B700', B710: 'B710', B620: 'B620', 한강버스: '한강버스', 미분류: '기타',
 }
 const SUB_SHORT: Record<string, string> = {
   통합단말기: '통합', 표출기: '표출', 승하차: '승하차', 운전자: '운전자', 모뎀: '모뎀', '알 수 없음': '기타',
 }
 export const ROW_ORDER = [
+  'B820통합', 'B820표출', 'B820승하차',
   'B800통합', 'B800표출', 'B800승하차', 'B800모뎀',
   'B700통합', 'B700표출', 'B700승하차', 'B700모뎀',
   'B710통합', 'B710표출', 'B710승하차', 'B710모뎀',
@@ -99,6 +103,7 @@ export const COL_ORDER = ['강남', '강동', '강북', '강서', '인천', '택
 
 // 인수인계증 Excel 행 순서
 export const XLSX_ROW_ORDER: [string, string][] = [
+  ['B820', '표출기'], ['B820', '통합단말기'], ['B820', '승하차'],
   ['B800', '표출기'], ['B800', '통합단말기'], ['B800', '승하차'], ['B800', '모뎀'],
   ['B700', '표출기'], ['B700', '통합단말기'], ['B700', '모뎀'],
   ['B710', '표출기'], ['B710', '통합단말기'], ['B710', '승하차'], ['B710', '모뎀'],

@@ -1281,7 +1281,7 @@ function CertTab({ perms }: { perms: Perms }) {
   )
 }
 
-// ── 탭5: 관리 (모뎀 재분류) ───────────────────────────────────────────────────
+// ── 탭5: 관리 (모뎀·미분류 재분류) ───────────────────────────────────────────────────
 interface ReclassChange { id: string; trcn_id: string; old_device: string; old_sub: string; new_device: string; new_sub: string }
 function AdminTab() {
   const [changes, setChanges] = useState<ReclassChange[] | null>(null)
@@ -1309,7 +1309,7 @@ function AdminTab() {
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
-        <div className="text-[12px] text-[#64748B]">「모뎀」으로 저장된 단말기를 현재 분류 규칙으로 재분류합니다.</div>
+        <div className="text-[12px] text-[#64748B]">「모뎀」·「미분류」로 저장된 단말기를 현재 분류 규칙으로 재분류합니다. (B820 등 신규 기종 반영)</div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={busy} onClick={preview}>미리보기</Button>
           {changes && changes.length > 0 && (

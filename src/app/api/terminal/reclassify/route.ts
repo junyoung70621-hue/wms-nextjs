@@ -3,7 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { classifyTerminal, TERMINAL_TABLE } from '@/lib/terminal'
 
-// 모뎀 재분류 도구 (admin 전용)
+// 모뎀·미분류 재분류 도구 (admin 전용)
 // GET: 현재 '모뎀' 레코드를 재분류하여 달라지는 항목 미리보기
 // POST: { changes: [{id, device_type, sub_type}] } 일괄 적용
 
@@ -15,7 +15,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from(TERMINAL_TABLE)
     .select('id, trcn_id, device_type, sub_type')
-    .eq('sub_type', '모뎀')
+    .or('sub_type.eq.모뎀,device_type.eq.미분류,device_type.is.null')
     .limit(10000)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

@@ -421,7 +421,7 @@ function EditModal({
       .then(r => r.json()).then(d => setUsers(d.data ?? []))
   }, [center])
 
-  const DEVICE_OPTS = ['', 'B800', 'B700', 'B710', 'B620', '한강버스', '미분류']
+  const DEVICE_OPTS = ['', 'B820', 'B800', 'B700', 'B710', 'B620', '한강버스', '미분류']
   const SUB_OPTS    = ['', '표출기', '통합단말기', '승하차', '운전자', '모뎀', '알 수 없음']
   const STATUS_OPTS = Object.keys(STATUS_LABEL)
 
