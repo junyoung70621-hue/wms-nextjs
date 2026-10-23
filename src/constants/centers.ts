@@ -9,6 +9,9 @@ export const CENTERS = [
 /** 버스 센터: 버스 단말현황·Teams 알림·센터 간 이동·버스설치자재 요청 대상 */
 export const BUS_CENTERS = ['강서센터', '강북센터', '강동센터', '강남센터', '인천센터']
 
+/** 택시단말기 현황 비노출 센터 (버스 센터 + 대전센터). 관리자는 예외 */
+export const NO_TAXI_TERMINAL = new Set([...BUS_CENTERS, '대전센터'])
+
 export const NO_WAREHOUSE = new Set(['고객지원사업부'])
 export const EXTERNAL = new Set(['에이텍본사', '티머니(버스)', '티머니(택시)', '외부창고'])
 

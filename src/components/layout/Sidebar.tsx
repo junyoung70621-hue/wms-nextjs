@@ -9,7 +9,7 @@ import {
   MessageSquare, CircleUser, type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NO_WAREHOUSE, BUS_CENTERS } from '@/constants/centers'
+import { NO_WAREHOUSE, BUS_CENTERS, NO_TAXI_TERMINAL } from '@/constants/centers'
 import type { SessionUser } from '@/lib/session'
 
 type Counts = { mat_pending: number; pur_pending: number; unread_notices: number }
@@ -72,11 +72,10 @@ function getMenuSections(user: SessionUser | null): Section[] {
     items: [{ href: '/dashboard', label: '자재현황(전체)', icon: LayoutGrid }],
   })
 
-  const assetItems: Item[] = [
-    { href: '/terminal/bus', label: '버스단말기 현황', icon: Bus },
-    { href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront },
-    { href: '/warehouse', label: '재고 현황', icon: Boxes },
-  ]
+  const assetItems: Item[] = [{ href: '/terminal/bus', label: '버스단말기 현황', icon: Bus }]
+  if (isAdmin || !NO_TAXI_TERMINAL.has(center))
+    assetItems.push({ href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront })
+  assetItems.push({ href: '/warehouse', label: '재고 현황', icon: Boxes })
   if (showBusTracking)
     assetItems.push({ href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 })
   assetItems.push({ href: '/history', label: '입출고 이력', icon: History })
