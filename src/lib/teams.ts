@@ -67,6 +67,7 @@ export function buildRequestCard(o: {
 }
 
 // 실패해도 요청 처리는 막지 않는다(로그만). 반환값으로 성공 여부만 알림.
+// 페이로드는 Teams Workflows 웹훅 표준 형식(type=message, attachments[]) — 2026-10-26 실발송 검증
 export async function sendTeamsCard(card: Card): Promise<boolean> {
   const url = process.env.TEAMS_REQUEST_WEBHOOK_URL
   if (!url) { console.warn('[teams] TEAMS_REQUEST_WEBHOOK_URL 미설정 — 알림 생략'); return false }
@@ -74,7 +75,10 @@ export async function sendTeamsCard(card: Card): Promise<boolean> {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ card }),
+      body: JSON.stringify({
+        type: 'message',
+        attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null, content: card }],
+      }),
     })
     if (!res.ok) console.warn('[teams] 전송 실패', res.status, await res.text().catch(() => ''))
     return res.ok
