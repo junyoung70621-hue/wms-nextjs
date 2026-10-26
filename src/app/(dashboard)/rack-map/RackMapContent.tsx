@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
@@ -227,10 +227,17 @@ function terminalsForBox(boxItems: Item[], terminals: BoxTerminal[]): BoxTermina
 type BoxGroup = { boxNo: string | null; items: Item[] }
 
 // 약도에서 렉 클릭 → 해당 rack_no 의 선반·박스 상세 (선반 reveal 애니메이션 + 박스번호)
-function RackDetailModal({ rackNo, label, items, terminals, onBoxClick, onClose }: {
-  rackNo: string; label: string; items: Item[]; terminals: BoxTerminal[]
+type RackFocus = { shelf: string; boxNo: string | null; itemName: string }
+
+function RackDetailModal({ rackNo, label, items, terminals, focus, onBoxClick, onClose }: {
+  rackNo: string; label: string; items: Item[]; terminals: BoxTerminal[]; focus?: RackFocus
   onBoxClick: (b: { shelf: string; boxNo: string | null; items: Item[] }) => void; onClose: () => void
 }) {
+  // 검색에서 열린 경우: 해당 선반·박스 강조 + 스크롤
+  const focusRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => { focusRef.current?.scrollIntoView({ block: 'center' }) }, [focus])
+  const isFocusBox = (shelf: string, boxNo: string | null) =>
+    !!focus && focus.shelf === shelf && (focus.boxNo ?? '') === (boxNo ?? '')
   const rackItems = items.filter(i => i.rack_no === rackNo)
   const byShelf: Record<string, Item[]> = {}
   for (const it of rackItems) {
@@ -260,6 +267,11 @@ function RackDetailModal({ rackNo, label, items, terminals, onBoxClick, onClose 
           <div className="flex items-center gap-2">
             <span className="text-[14px] font-bold text-[#B32646]">📍 {label}</span>
             <span className="text-[11px] text-[#94A3B8]">{rackItems.length}개 품목</span>
+            {focus && (
+              <span className="text-[11px] px-2 py-0.5 rounded bg-[#FBE9EE] text-[#B32646] truncate max-w-[300px]">
+                🔍 {focus.itemName} → 선반 {focus.shelf} · 박스 {focus.boxNo ?? '미지정'}
+              </span>
+            )}
           </div>
           <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">×</button>
         </div>
@@ -269,7 +281,7 @@ function RackDetailModal({ rackNo, label, items, terminals, onBoxClick, onClose 
           ) : shelves.map(([shelfName, boxes], si) => (
             <div
               key={shelfName}
-              className="shelf-reveal mb-2.5 last:mb-0 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] overflow-hidden"
+              className={`shelf-reveal mb-2.5 last:mb-0 rounded-lg border bg-[#F8FAFC] overflow-hidden ${focus?.shelf === shelfName ? 'border-[#B32646]' : 'border-[#E2E8F0]'}`}
               style={{ animationDelay: `${si * 70}ms` }}
             >
               {/* 선반 헤더 (렉 가로 칸처럼) */}
@@ -285,8 +297,10 @@ function RackDetailModal({ rackNo, label, items, terminals, onBoxClick, onClose 
                   return (
                     <button
                       key={box.boxNo ?? `none-${bi}`}
+                      ref={isFocusBox(shelfName, box.boxNo) ? focusRef : undefined}
                       onClick={() => onBoxClick({ shelf: shelfName, boxNo: box.boxNo, items: box.items })}
-                      className="text-left px-2.5 py-2 rounded-lg border border-[#E2E8F0] bg-white hover:border-[#B32646] hover:bg-[#FBE9EE]/40 hover:-translate-y-[1px] transition-all"
+                      className={`text-left px-2.5 py-2 rounded-lg border bg-white hover:border-[#B32646] hover:bg-[#FBE9EE]/40 hover:-translate-y-[1px] transition-all ${
+                        isFocusBox(shelfName, box.boxNo) ? 'border-[#B32646] bg-[#FBE9EE] ring-2 ring-[#B32646]/40' : 'border-[#E2E8F0]'}`}
                     >
                       <div className="flex items-center gap-1 text-[12px] font-bold text-[#1E293B] truncate leading-tight">
                         <span>📦</span>
@@ -387,9 +401,12 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
   const [error,    setError]    = useState('')
   const [search,   setSearch]   = useState('')
   const [selected, setSelected] = useState<Item | null>(null)
-  const [selectedRack, setSelectedRack] = useState<{ rackNo: string; label: string } | null>(null)
+  const [selectedRack, setSelectedRack] = useState<{ rackNo: string; label: string; focus?: RackFocus } | null>(null)
   const [selectedBox, setSelectedBox] = useState<{ rackNo: string; shelf: string; boxNo: string | null; items: Item[] } | null>(null)
   const [focused, setFocused] = useState(false)
+  // 검색 결과 hover → 지도에서 해당 렉 깜빡임 / 클릭 → 대상 고정(렉 클릭 시 선반·박스 강조 팝업)
+  const [hoverRack, setHoverRack] = useState<string | null>(null)
+  const [target, setTarget] = useState<{ rackNo: string; focus: RackFocus } | null>(null)
 
   const userCenter = user ? (user.assigned_center ?? user.center) : '자재센터'
 
@@ -506,6 +523,10 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
     () => new Set(matches.map(m => m.rack_no!).filter(Boolean)),
     [matches],
   )
+  const blinkRacks = useMemo(() => {
+    const r = focused && hoverRack ? hoverRack : target?.rackNo
+    return r ? new Set([r]) : undefined
+  }, [focused, hoverRack, target])
 
   return (
     <div className="space-y-4">
@@ -529,7 +550,7 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
             <Input
               placeholder="자재명·IH 검색 → 랙·선반·박스 위치"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setTarget(null) }}
               onFocus={() => setFocused(true)}
               onBlur={() => setTimeout(() => setFocused(false), 150)}
               className="h-8 text-[12px] w-72"
@@ -541,13 +562,18 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
                 ) : (
                   <>
                     <div className="px-3 py-1.5 text-[10px] text-[#94A3B8] border-b border-[#f1f5f9] sticky top-0 bg-white">
-                      {matches.length}개 위치 · 클릭하면 해당 렉이 열립니다
+                      {matches.length}개 위치 · 마우스를 올리면 지도에서 깜빡입니다 · 클릭 후 지도의 렉을 누르면 상세
                     </div>
                     {matches.slice(0, 50).map(m => (
                       <button
                         key={m.id}
                         type="button"
-                        onMouseDown={() => { setSelectedRack({ rackNo: m.rack_no!, label: `랙${m.rack_no}` }); setFocused(false) }}
+                        onMouseEnter={() => setHoverRack(m.rack_no!)}
+                        onMouseLeave={() => setHoverRack(null)}
+                        onMouseDown={() => {
+                          setTarget({ rackNo: m.rack_no!, focus: { shelf: m.shelf ?? '미지정', boxNo: m.box_no, itemName: m.item_name } })
+                          setHoverRack(null); setFocused(false)
+                        }}
                         className="w-full text-left px-3 py-2 hover:bg-[#f1f5f9] border-b border-[#f1f5f9] last:border-0"
                       >
                         <div className="text-[12px] font-medium text-[#1E293B] truncate">
@@ -581,7 +607,9 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
         <GuestCallout label="자재명·IH 검색 → 랙·선반·박스 위치 표시" />
         <span className="text-[11px] text-[#94A3B8] ml-auto">
           {isHub
-            ? (search.trim() ? `${matches.length}개 위치 매칭` : `${Object.keys(rackCounts).length}개 렉`)
+            ? target
+              ? <span className="text-[#B32646] font-semibold">📍 {target.focus.itemName} → 랙 {target.rackNo} · 선반 {target.focus.shelf} · 박스 {target.focus.boxNo ?? '미지정'} — 깜빡이는 렉을 클릭하세요</span>
+              : (search.trim() ? `${matches.length}개 위치 매칭` : `${Object.keys(rackCounts).length}개 렉`)
             : `${filtered.length}개 품목 · ${racks.length}개 랙`}
         </span>
       </div>
@@ -595,7 +623,9 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
         <WarehouseMap
           counts={rackCounts}
           highlight={highlightRacks}
-          onRackClick={(rackNo, label) => setSelectedRack({ rackNo, label })}
+          blink={blinkRacks}
+          onRackClick={(rackNo, label) =>
+            setSelectedRack({ rackNo, label, focus: target?.rackNo === rackNo ? target.focus : undefined })}
         />
       ) : racks.length === 0 && noRack.length === 0 ? (
         <div className="text-[12px] text-[#94A3B8] py-8 text-center">
@@ -667,6 +697,7 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
           label={selectedRack.label}
           items={items}
           terminals={terminals}
+          focus={selectedRack.focus}
           onBoxClick={b => setSelectedBox({ rackNo: selectedRack.rackNo, ...b })}
           onClose={() => setSelectedRack(null)}
         />

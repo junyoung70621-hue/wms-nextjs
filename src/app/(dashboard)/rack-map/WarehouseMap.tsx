@@ -90,10 +90,11 @@ function parseRack(label: string): { rackNo: string; group: number } | null {
 }
 
 export default function WarehouseMap({
-  counts, highlight, onRackClick,
+  counts, highlight, blink, onRackClick,
 }: {
   counts: Record<string, number>           // rack_no -> 품목 수
   highlight?: Set<string>                   // 검색 매칭된 rack_no (강조)
+  blink?: Set<string>                       // 깜빡임 (드롭다운 hover/선택 → 위치 안내)
   onRackClick: (rackNo: string, label: string) => void
 }) {
   const [tilt, setTilt] = useState(false)
@@ -142,7 +143,8 @@ export default function WarehouseMap({
               const cnt = counts[rack.rackNo] ?? 0
               return (
                 <RackCell key={i} label={cell.label} rackNo={rack.rackNo}
-                  pal={pal} count={cnt} tilt={tilt} hi={!!highlight?.has(rack.rackNo)}
+                  pal={pal} count={cnt} tilt={tilt} hi={!!highlight?.has(rack.rackNo) || !!blink?.has(rack.rackNo)}
+                  blink={!!blink?.has(rack.rackNo)}
                   onClick={() => onRackClick(rack.rackNo, cell.label)} style={style} />
               )
             })}
@@ -165,8 +167,8 @@ export default function WarehouseMap({
   )
 }
 
-function RackCell({ label, pal, count, tilt, hi, onClick, style }: {
-  label: string; rackNo: string; pal: Palette; count: number; tilt: boolean; hi: boolean
+function RackCell({ label, pal, count, tilt, hi, blink, onClick, style }: {
+  label: string; rackNo: string; pal: Palette; count: number; tilt: boolean; hi: boolean; blink?: boolean
   onClick: () => void; style: React.CSSProperties
 }) {
   const has = count > 0
@@ -175,7 +177,7 @@ function RackCell({ label, pal, count, tilt, hi, onClick, style }: {
       type="button"
       onClick={onClick}
       title={`${label} · ${count}개 품목`}
-      className={`group relative rounded-[3px] text-center transition-all duration-150 hover:-translate-y-[2px] hover:z-10 focus:outline-none ${hi ? 'z-20 -translate-y-[2px]' : ''}`}
+      className={`group relative rounded-[3px] text-center transition-all duration-150 hover:-translate-y-[2px] hover:z-10 focus:outline-none ${hi ? 'z-20 -translate-y-[2px]' : ''} ${blink ? 'rack-blink' : ''}`}
       style={{
         ...style,
         background: has ? `linear-gradient(160deg, ${pal.top}, ${pal.base})` : 'linear-gradient(160deg,#fff,#eef2f7)',

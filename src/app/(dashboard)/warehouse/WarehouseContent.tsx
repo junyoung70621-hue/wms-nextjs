@@ -715,8 +715,9 @@ function InventoryTab({ user, center, onCenterChange }: {
     return 'text-[#1E293B]'
   }
 
-  const actItems = useMemo(() => data.filter(r => selected.has(r.id)), [data, selected])
   const qtyOf = (id: number) => stockQties[id] ?? 1
+  // 수량 0 = 이 박스에서는 빼지 않음 (같은 자재가 여러 박스에 있을 때) → 처리 대상에서 제외
+  const actItems = useMemo(() => data.filter(r => selected.has(r.id) && (stockQties[r.id] ?? 1) > 0), [data, selected, stockQties])
 
   function openAction(mode: 'in'|'out'|'use'|'transfer') {
     setActionMode(mode); setStockMsg(''); setStockReason(''); setActDest(''); setStockQties({})
@@ -727,7 +728,8 @@ function InventoryTab({ user, center, onCenterChange }: {
 
   async function handleAction() {
     if (!actionMode || !selected.size) return
-    const ids = Array.from(selected)
+    const ids = actItems.map(r => r.id)
+    if (!ids.length) return
     setStockSaving(true); setStockMsg('')
     try {
       // ── 입고 / 출고 (자재센터·관리자) ──
@@ -868,7 +870,7 @@ function InventoryTab({ user, center, onCenterChange }: {
         }[actionMode]
         const needReason = actionMode !== 'transfer'
         const dests = transferDestinations(center)
-        const disabled = stockSaving || (needReason ? !stockReason.trim() : !actDest)
+        const disabled = stockSaving || !actItems.length || (needReason ? !stockReason.trim() : !actDest)
         return (
           <div className="border rounded-lg p-4 bg-[#FFF8F0] space-y-3">
             <div className="flex items-center justify-between">
@@ -894,15 +896,16 @@ function InventoryTab({ user, center, onCenterChange }: {
             )}
 
             <div className="space-y-2 max-h-40 overflow-y-auto">
-              {actItems.map(r => (
-                <div key={r.id} className="flex items-center gap-2">
+              {data.filter(r => selected.has(r.id)).map(r => (
+                <div key={r.id} className={`flex items-center gap-2 ${qtyOf(r.id) === 0 ? 'opacity-50' : ''}`}>
                   <span className="text-[12px] flex-1 truncate">
                     {r.item_name}
                     {isHub && <span className="text-[#94A3B8] font-mono text-[10px] ml-1.5">{boxLoc(r)}</span>}
                   </span>
                   <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
-                  <input type="number" min={1} value={stockQties[r.id] ?? 1}
-                    onChange={e => setStockQties(prev => ({ ...prev, [r.id]: parseInt(e.target.value) || 1 }))}
+                  <input type="number" min={0} value={stockQties[r.id] ?? 1}
+                    onChange={e => setStockQties(prev => ({ ...prev, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    title="0 입력 시 이 박스는 처리하지 않음"
                     className="w-20 border rounded px-2 py-0.5 text-[12px] text-right focus:outline-none bg-white" />
                 </div>
               ))}

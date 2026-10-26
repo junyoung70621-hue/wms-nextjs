@@ -167,6 +167,26 @@
   animation: modal-pop 0.2s ease-out backwards;
 }
 
+/* 약도 렉 깜빡임 — 검색 결과 hover/선택 시 위치 안내 */
+@keyframes rack-blink {
+  0%, 100% {
+    outline: 3px solid #B32646; outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(179,38,70,.45), 0 0 18px 6px rgba(179,38,70,.7);
+    transform: translateY(-3px) scale(1.12);
+    filter: brightness(1.25);
+  }
+  50% {
+    outline: 3px solid transparent; outline-offset: 3px;
+    box-shadow: 0 0 0 0 rgba(179,38,70,0);
+    transform: translateY(-3px) scale(1);
+    filter: brightness(1);
+  }
+}
+.rack-blink {
+  animation: rack-blink 0.65s ease-in-out infinite;
+  z-index: 30;
+}
+
 /* 둘러보기(게스트) 모드 — 데이터 글자만 블러 처리
    테이블 셀 전체 + data-guest-blur 로 표시한 값 요소만 가림 (라벨·헤더·버튼은 그대로) */
 .guest-veil td,
