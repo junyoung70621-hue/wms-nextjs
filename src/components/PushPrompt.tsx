@@ -60,11 +60,11 @@ export default function PushPrompt() {
 
   if (!show) return null
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#f3c6d1] bg-[#FEF3F6] px-3 py-2 text-[12px] text-[#7a2738]">
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#f3c6d1] bg-[#FCEEF3] px-3 py-2 text-[12px] text-[#7a2738]">
       <span className="font-semibold">🔔 푸시 알림을 켜면 새 요청·승인·출고 알림을 받을 수 있어요.</span>
       <div className="ml-auto flex gap-1.5">
         <button onClick={enable} disabled={busy}
-          className="h-7 px-3 rounded-md bg-[#B32646] text-white text-[12px] font-semibold disabled:opacity-60">
+          className="h-7 px-3 rounded-md bg-[#D60051] text-white text-[12px] font-semibold disabled:opacity-60">
           {busy ? '설정 중…' : '알림 켜기'}
         </button>
         <button onClick={() => { sessionStorage.setItem('push-prompt-dismissed', '1'); setShow(false) }}

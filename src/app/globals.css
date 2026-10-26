@@ -49,39 +49,45 @@
 }
 
 :root {
-  /* A-Core Enterprise — deep red 브랜드, 블루틴트 surface */
-  --background: #f8f9ff;
-  --foreground: #0b1c30;
+  /* ATEC 포털 톤 — 레드 포인트, 잉크 블랙, 웜 그레이 라인, 작은 라운드 */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-sans);
+  --background: #f6f6f7;
+  --foreground: #111111;
   --card: #ffffff;
-  --card-foreground: #0b1c30;
+  --card-foreground: #111111;
   --popover: #ffffff;
-  --popover-foreground: #0b1c30;
-  --primary: #b32646;
+  --popover-foreground: #111111;
+  --primary: #d60051;
   --primary-foreground: #ffffff;
-  --secondary: #eff4ff;
-  --secondary-foreground: #1e293b;
-  --muted: #eff4ff;
-  --muted-foreground: #64748b;
-  --accent: #e5eeff;
-  --accent-foreground: #1e293b;
-  --destructive: #ba1a1a;
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: #b32646;
-  --chart-1: #b32646;
-  --chart-2: #3b82f6;
-  --chart-3: #004496;
-  --chart-4: #f59e0b;
-  --chart-5: #16a34a;
-  --radius: 0.5rem;
-  --sidebar: #eff4ff;
-  --sidebar-foreground: #0b1c30;
-  --sidebar-primary: #b32646;
+  --secondary: #f6f6f7;
+  --secondary-foreground: #111111;
+  --muted: #f6f6f7;
+  --muted-foreground: #5a666f;
+  --accent: #fceef3;
+  --accent-foreground: #111111;
+  --destructive: #d60051;
+  --border: #e3e1de;
+  --input: #cfccc8;
+  --ring: #d60051;
+  --chart-1: #d60051;
+  --chart-2: #2f3941;
+  --chart-3: #8a949c;
+  --chart-4: #96620a;
+  --chart-5: #0c7a57;
+  --radius: 0.25rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #d60051;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5eeff;
-  --sidebar-accent-foreground: #1e293b;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #b32646;
+  --sidebar-accent: #fceef3;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #e3e1de;
+  --sidebar-ring: #d60051;
+}
+
+body {
+  letter-spacing: -0.01em;
 }
 
 .dark {
@@ -170,14 +176,14 @@
 /* 약도 렉 깜빡임 — 검색 결과 hover/선택 시 위치 안내 */
 @keyframes rack-blink {
   0%, 100% {
-    outline: 3px solid #B32646; outline-offset: 3px;
-    box-shadow: 0 0 0 6px rgba(179,38,70,.45), 0 0 18px 6px rgba(179,38,70,.7);
+    outline: 3px solid #D60051; outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(214,0,81,.45), 0 0 18px 6px rgba(214,0,81,.7);
     transform: translateY(-3px) scale(1.12);
     filter: brightness(1.25);
   }
   50% {
     outline: 3px solid transparent; outline-offset: 3px;
-    box-shadow: 0 0 0 0 rgba(179,38,70,0);
+    box-shadow: 0 0 0 0 rgba(214,0,81,0);
     transform: translateY(-3px) scale(1);
     filter: brightness(1);
   }

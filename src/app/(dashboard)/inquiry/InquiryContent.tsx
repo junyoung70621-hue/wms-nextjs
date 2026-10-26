@@ -59,12 +59,12 @@ function InquiryCard({
         className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-[11px] font-bold flex-shrink-0 ${isPending ? 'text-[#B32646]' : 'text-[#0284C7]'}`}>
+          <span className={`text-[11px] font-bold flex-shrink-0 ${isPending ? 'text-[#D60051]' : 'text-[#2F3941]'}`}>
             {isPending ? '⏳ 미답변' : '✅ 답변완료'}
           </span>
-          <span className="text-[13px] font-medium text-[#1E293B] truncate">{inq.title}</span>
+          <span className="text-[13px] font-medium text-[#111111] truncate">{inq.title}</span>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-3 text-[11px] text-[#94A3B8]">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3 text-[11px] text-[#8A949C]">
           {isAdmin && <span>{inq.requester_name} ({inq.from_center})</span>}
           <span>{inq.created_at.slice(0, 10)}</span>
           <span>{open ? '▲' : '▼'}</span>
@@ -74,17 +74,17 @@ function InquiryCard({
       {open && (
         <div className="px-4 pb-4 bg-white border-t border-[rgba(0,0,0,0.06)] space-y-3">
           {/* 문의 내용 */}
-          <div className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#B32646] text-[13px] text-[#1E293B] whitespace-pre-wrap">
+          <div className="mt-3 p-4 bg-[#F6F6F7] rounded border-l-[3px] border-l-[#D60051] text-[13px] text-[#111111] whitespace-pre-wrap">
             {inq.content}
           </div>
 
           {/* 기존 답변 */}
           {inq.reply && (
             <div>
-              <p className="text-[11px] font-semibold text-[#0284C7] mb-1">
+              <p className="text-[11px] font-semibold text-[#2F3941] mb-1">
                 💬 답변 — {inq.answered_by_name} | {tsKst(inq.answered_at ?? '')}
               </p>
-              <div className="p-4 bg-[#F0F9FF] rounded border-l-[3px] border-l-[#0284C7] text-[13px] text-[#1E293B] whitespace-pre-wrap">
+              <div className="p-4 bg-[#F6F6F7] rounded border-l-[3px] border-l-[#2F3941] text-[13px] text-[#111111] whitespace-pre-wrap">
                 {inq.reply}
               </div>
             </div>
@@ -102,13 +102,13 @@ function InquiryCard({
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
                     rows={4}
-                    className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
+                    className="w-full border rounded px-3 py-2 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#D60051] resize-none"
                     placeholder="답변 내용을 입력하세요."
                   />
                   {replyErr && <p className="text-sm text-red-600">{replyErr}</p>}
                   <div className="flex gap-2">
                     <Button onClick={handleReply} disabled={replyLoad}
-                      className="bg-[#B32646] hover:bg-[#B0003D] text-white" size="sm">
+                      className="bg-[#D60051] hover:bg-[#A3003D] text-white" size="sm">
                       {replyLoad ? '등록 중...' : '답변 등록'}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setReplyOpen(false)}>취소</Button>
@@ -180,9 +180,8 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
   if (isAdmin) {
     return (
       <div className="space-y-4 max-w-3xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[#1E293B]">💬 전체 문의 목록</h2>
-          <Button variant="outline" onClick={fetchData} disabled={loading}>🔄 새로고침</Button>
+        <div className="flex items-center justify-end">
+          <Button variant="outline" onClick={fetchData} disabled={loading}>새로고침</Button>
         </div>
 
         <Tabs defaultValue="pending">
@@ -191,7 +190,7 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="all">전체 ({data.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="pending" className="mt-3">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-2">
             {data.filter(i => i.status === 'pending').length === 0
               ? <p className="text-gray-400 text-sm text-center py-8">미답변 문의가 없습니다.</p>
               : data.filter(i => i.status === 'pending').map(inq => (
@@ -200,7 +199,7 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
             </div>
           </TabsContent>
           <TabsContent value="all" className="mt-3">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-2">
             {data.length === 0
               ? <p className="text-gray-400 text-sm text-center py-8">문의 내역이 없습니다.</p>
               : data.map(inq => (
@@ -216,12 +215,10 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
   // 일반 사용자 뷰
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-[#1E293B]">💬 문의하기</h2>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 문의 작성 */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-          <h3 className="font-semibold text-[#1E293B]">문의 작성</h3>
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
+          <h3 className="font-semibold text-[#111111]">문의 작성</h3>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1">
               <Label>제목</Label>
@@ -233,13 +230,13 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 rows={6}
-                className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
+                className="w-full border rounded px-3 py-2 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#D60051] resize-none"
                 placeholder="문의 내용을 상세히 입력해주세요."
               />
             </div>
             {submitErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{submitErr}</p>}
             {submitMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{submitMsg}</p>}
-            <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={submitLoad}>
+            <Button type="submit" className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white" disabled={submitLoad}>
               {submitLoad ? '제출 중...' : '📨 제출'}
             </Button>
             <GuestCallout label="관리자에게 문의 접수 · 답변 메일 수신" />
@@ -247,8 +244,8 @@ export default function InquiryContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {/* 내 문의 내역 */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-          <h3 className="font-semibold text-[#1E293B]">내 문의 내역</h3>
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
+          <h3 className="font-semibold text-[#111111]">내 문의 내역</h3>
           {loading ? (
             <p className="text-gray-400 text-sm">로딩 중...</p>
           ) : data.length === 0 ? (

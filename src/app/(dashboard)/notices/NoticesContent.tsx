@@ -150,17 +150,9 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="space-y-4 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#1E293B]">
-          📢 공지사항
-          {unreadCount > 0 && (
-            <span className="ml-2 text-sm bg-[#B32646] text-white rounded-full px-2 py-0.5">
-              {unreadCount}
-            </span>
-          )}
-        </h2>
+      <div className="flex items-center justify-end">
         {isAdmin && (
-          <Button onClick={openCreateForm} className="bg-[#B32646] hover:bg-[#B0003D] text-white">
+          <Button onClick={openCreateForm} className="bg-[#D60051] hover:bg-[#A3003D] text-white">
             ✏️ 공지 작성
           </Button>
         )}
@@ -168,8 +160,8 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
 
       {/* 관리자 작성/수정 폼 */}
       {isAdmin && showForm && (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-          <h3 className="font-semibold text-[#1E293B]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
+          <h3 className="font-semibold text-[#111111]">
             {editTarget ? '공지 수정' : '새 공지 작성'}
           </h3>
           <div className="space-y-1">
@@ -182,7 +174,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
               value={formContent}
               onChange={e => setFormContent(e.target.value)}
               rows={5}
-              className="w-full border rounded px-3 py-2 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646] resize-none"
+              className="w-full border rounded px-3 py-2 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#D60051] resize-none"
               placeholder="공지 내용을 입력하세요."
             />
           </div>
@@ -192,8 +184,8 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
             {formAttachments.length > 0 && (
               <div className="space-y-1">
                 {formAttachments.map((att, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[13px] bg-[#F8F9FA] rounded px-3 py-1.5">
-                    <span className="truncate text-[#1E293B] flex-1">📎 {att.name}</span>
+                  <div key={i} className="flex items-center gap-2 text-[13px] bg-[#F6F6F7] rounded px-3 py-1.5">
+                    <span className="truncate text-[#111111] flex-1">📎 {att.name}</span>
                     <button type="button" onClick={() => removeAttachment(i)}
                       className="text-red-500 hover:text-red-600 text-xs flex-shrink-0">삭제</button>
                   </div>
@@ -206,7 +198,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
               onClick={() => fileInputRef.current?.click()}>
               📎 파일 추가
             </Button>
-            <p className="text-[11px] text-[#94A3B8]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB</p>
+            <p className="text-[11px] text-[#8A949C]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB</p>
           </div>
 
           {editTarget && (
@@ -219,7 +211,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
           {formError && <p className="text-sm text-red-600">{formError}</p>}
           <div className="flex gap-2">
             <Button onClick={handleFormSave} disabled={formLoading}
-              className="bg-[#B32646] hover:bg-[#B0003D] text-white">
+              className="bg-[#D60051] hover:bg-[#A3003D] text-white">
               {formLoading ? '저장 중...' : '💾 저장'}
             </Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
@@ -236,7 +228,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
           등록된 공지사항이 없습니다.
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
           <div className="space-y-2">
           {notices.map(n => {
             const isRead   = readIds.has(n.id)
@@ -252,12 +244,12 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                   className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    {!isRead && <span className="w-2 h-2 rounded-full bg-[#B32646] flex-shrink-0" />}
-                    <span data-guest-blur className={`text-[13px] font-medium truncate ${inactive ? 'text-gray-400' : 'text-[#1E293B]'}`}>
+                    {!isRead && <span className="w-2 h-2 rounded-full bg-[#D60051] flex-shrink-0" />}
+                    <span data-guest-blur className={`text-[13px] font-medium truncate ${inactive ? 'text-gray-400' : 'text-[#111111]'}`}>
                       {n.title}{inactive && <span className="ml-1 text-[11px] text-gray-400">[비활성]</span>}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0 ml-3 text-[11px] text-[#94A3B8]">
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-3 text-[11px] text-[#8A949C]">
                     <span>{author}</span>
                     <span>{tsKst(n.created_at)}</span>
                     <span>{isOpen ? '▲' : '▼'}</span>
@@ -269,7 +261,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                   <div className="px-4 pb-4 bg-white border-t border-[rgba(0,0,0,0.06)]">
                     <div
                       data-guest-blur
-                      className="mt-3 p-4 bg-[#F8F9FA] rounded border-l-[3px] border-l-[#B32646] text-[13px] text-[#1E293B] whitespace-pre-wrap"
+                      className="mt-3 p-4 bg-[#F6F6F7] rounded border-l-[3px] border-l-[#D60051] text-[13px] text-[#111111] whitespace-pre-wrap"
                     >
                       {n.content}
                     </div>
@@ -277,7 +269,7 @@ export default function NoticesContent({ isAdmin }: { isAdmin: boolean }) {
                     {/* 첨부파일 */}
                     {n.attachments?.length > 0 && (
                       <div className="mt-3 space-y-1">
-                        <p className="text-[12px] font-semibold text-[#64748B]">📎 첨부파일</p>
+                        <p className="text-[12px] font-semibold text-[#5A666F]">📎 첨부파일</p>
                         {n.attachments.map((att, i) => (
                           <a key={i} href={att.url} target="_blank" rel="noopener noreferrer"
                             className="block text-[12px] text-blue-600 hover:underline">

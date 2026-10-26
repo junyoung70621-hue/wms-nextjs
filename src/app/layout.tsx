@@ -1,16 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Hanken_Grotesk, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const hankenGrotesk = Hanken_Grotesk({
-  variable: "--font-heading",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -29,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#B32646",
+  themeColor: "#D60051",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -43,8 +33,15 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${inter.variable} ${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Pretendard — ATEC 포털 공통 서체 */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

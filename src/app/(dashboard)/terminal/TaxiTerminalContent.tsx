@@ -72,8 +72,8 @@ function DeviceChips({ items }: { items: { device_type: string }[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {counts.map(c => (
-        <span key={c.device} className="px-2 py-0.5 rounded bg-[#F1F5F9] text-[11px] text-[#475569]">
-          {c.device} <b data-guest-blur className="text-[#B32646]">{c.count}</b>
+        <span key={c.device} className="px-2 py-0.5 rounded bg-[#F1F1F0] text-[11px] text-[#2F3941]">
+          {c.device} <b data-guest-blur className="text-[#D60051]">{c.count}</b>
         </span>
       ))}
     </div>
@@ -126,49 +126,49 @@ function MonthlyTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap items-center gap-2">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 flex flex-wrap items-center gap-2">
         <input type="month" value={ym} onChange={e => setYm(e.target.value)}
-          className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
         <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
-        <span className="text-[11px] text-[#94A3B8] ml-auto">{ym} · 총 {rows.length}건</span>
+        <span className="text-[11px] text-[#8A949C] ml-auto">{ym} · 총 {rows.length}건</span>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <MetricCard icon={Truck} label="📤 출고 합계" value={out.length} color="#16a34a" />
+            <MetricCard icon={Truck} label="📤 출고 합계" value={out.length} color="#0C7A57" />
             <MetricCard icon={PackageX} label="📥 입고 합계" value={inn.length}
-              sub={terminated ? `해지 ${terminated}` : undefined} color="#B32646" />
-            <MetricCard icon={PackageCheck} label="순증감 (출−입)" value={out.length - inn.length} color="#1565c0" />
+              sub={terminated ? `해지 ${terminated}` : undefined} color="#D60051" />
+            <MetricCard icon={PackageCheck} label="순증감 (출−입)" value={out.length - inn.length} color="#2F3941" />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-              <div className="text-[13px] font-bold text-[#1E293B] mb-2">기종별 출·입고</div>
-              <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+              <div className="text-[13px] font-bold text-[#111111] mb-2">기종별 출·입고</div>
+              <div className="overflow-x-auto rounded border border-[#E3E1DE]">
                 <table className="w-full text-[11px]">
-                  <thead className="bg-[#F8F9FA] text-[#64748B]"><tr>
+                  <thead className="bg-[#F6F6F7] text-[#5A666F]"><tr>
                     <th className="px-2 py-1.5 text-left font-semibold">기종</th>
                     <th className="px-2 py-1.5 text-right font-semibold">출고</th>
                     <th className="px-2 py-1.5 text-right font-semibold">입고</th>
                   </tr></thead>
                   <tbody>
                     {devicePivot.length === 0 ? (
-                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#8A949C]">데이터 없음</td></tr>
                     ) : (<>
                       {devicePivot.map(r => (
-                        <tr key={r.device} className="border-t border-[#F1F5F9]">
-                          <td className="px-2 py-1.5 text-[#1E293B]">{r.device}</td>
-                          <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{r.out || ''}</td>
-                          <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{r.in || ''}</td>
+                        <tr key={r.device} className="border-t border-[#F1F1F0]">
+                          <td className="px-2 py-1.5 text-[#111111]">{r.device}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-[#0C7A57]">{r.out || ''}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-[#D60051]">{r.in || ''}</td>
                         </tr>
                       ))}
-                      <tr className="border-t border-[#E2E8F0] bg-[#F8F9FA] font-bold">
+                      <tr className="border-t border-[#E3E1DE] bg-[#F6F6F7] font-bold">
                         <td className="px-2 py-1.5">합계</td>
-                        <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{out.length}</td>
-                        <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{inn.length}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#0C7A57]">{out.length}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#D60051]">{inn.length}</td>
                       </tr>
                     </>)}
                   </tbody>
@@ -176,23 +176,23 @@ function MonthlyTab() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-              <div className="text-[13px] font-bold text-[#1E293B] mb-2">일자별 출·입고</div>
-              <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-80">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+              <div className="text-[13px] font-bold text-[#111111] mb-2">일자별 출·입고</div>
+              <div className="overflow-x-auto rounded border border-[#E3E1DE] max-h-80">
                 <table className="w-full text-[11px]">
-                  <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
+                  <thead className="sticky top-0 bg-[#F6F6F7] text-[#5A666F]"><tr>
                     <th className="px-2 py-1.5 text-left font-semibold">날짜</th>
                     <th className="px-2 py-1.5 text-right font-semibold">출고</th>
                     <th className="px-2 py-1.5 text-right font-semibold">입고</th>
                   </tr></thead>
                   <tbody>
                     {dailyPivot.length === 0 ? (
-                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                      <tr><td colSpan={3} className="px-2 py-6 text-center text-[#8A949C]">데이터 없음</td></tr>
                     ) : dailyPivot.map(r => (
-                      <tr key={r.date} className="border-t border-[#F1F5F9]">
-                        <td className="px-2 py-1.5 text-[#475569]">{r.date}</td>
-                        <td className="px-2 py-1.5 text-right font-mono text-[#16a34a]">{r.out || ''}</td>
-                        <td className="px-2 py-1.5 text-right font-mono text-[#B32646]">{r.in || ''}</td>
+                      <tr key={r.date} className="border-t border-[#F1F1F0]">
+                        <td className="px-2 py-1.5 text-[#2F3941]">{r.date}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#0C7A57]">{r.out || ''}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-[#D60051]">{r.in || ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -218,10 +218,10 @@ export default function TaxiTerminalContent({ user }: { user: SessionUser }) {
     <div className="space-y-4">
       <Tabs defaultValue="status">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="status" className="text-[12px]">📊 현황</TabsTrigger>
-          <TabsTrigger value="monthly" className="text-[12px]">📅 월간 현황</TabsTrigger>
-          <TabsTrigger value="history" className="text-[12px]">📋 이력 조회</TabsTrigger>
-          <TabsTrigger value="delivery" className="text-[12px]">🚚 배송 이력</TabsTrigger>
+          <TabsTrigger value="status" className="text-[12px]">현황</TabsTrigger>
+          <TabsTrigger value="monthly" className="text-[12px]">월간 현황</TabsTrigger>
+          <TabsTrigger value="history" className="text-[12px]">이력 조회</TabsTrigger>
+          <TabsTrigger value="delivery" className="text-[12px]">배송 이력</TabsTrigger>
         </TabsList>
 
         <TabsContent value="status" className="mt-4"><StatusTab perms={perms} /></TabsContent>
@@ -238,17 +238,17 @@ function MetricCard({ icon: Icon, label, value, sub, color }: {
   icon: typeof Wrench; label: string; value: number; sub?: string; color: string
 }) {
   return (
-    <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex items-center gap-3">
+    <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 flex items-center gap-3">
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
            style={{ background: color + '18' }}>
         <Icon size={18} strokeWidth={2} style={{ color }} />
       </div>
       <div className="min-w-0">
-        <div className="text-[11px] text-[#64748B] truncate">{label}</div>
+        <div className="text-[11px] text-[#5A666F] truncate">{label}</div>
         <div className="flex items-baseline gap-1">
           <span data-guest-blur className="text-[22px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
-          <span className="text-[11px] text-[#94A3B8]">대</span>
-          {sub && <span className="text-[10px] text-[#94A3B8] ml-1">{sub}</span>}
+          <span className="text-[11px] text-[#8A949C]">대</span>
+          {sub && <span className="text-[10px] text-[#8A949C] ml-1">{sub}</span>}
         </div>
       </div>
     </div>
@@ -284,10 +284,10 @@ function SortTh({ label, field, sortKey, sortDir, onSort, className }: {
 }) {
   const active = sortKey === field
   return (
-    <th className={`${className ?? 'px-2 py-1.5 text-left font-semibold'} cursor-pointer select-none hover:text-[#1E293B]`}
+    <th className={`${className ?? 'px-2 py-1.5 text-left font-semibold'} cursor-pointer select-none hover:text-[#111111]`}
         onClick={() => onSort(field)} title="클릭하여 정렬">
       <span className="inline-flex items-center gap-0.5">{label}
-        <span className="text-[8px] text-[#94A3B8]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
+        <span className="text-[8px] text-[#8A949C]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
       </span>
     </th>
   )
@@ -329,33 +329,33 @@ function StatusTab({ perms }: { perms: Perms }) {
     if (!d.error) load()
   }
 
-  if (loading) return <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
-  if (!st) return <div className="text-[12px] text-[#c62828] py-8 text-center">{msg || '데이터를 불러오지 못했습니다.'}</div>
+  if (loading) return <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
+  if (!st) return <div className="text-[12px] text-[#D60051] py-8 text-center">{msg || '데이터를 불러오지 못했습니다.'}</div>
 
   const m = st.metrics
   return (
     <div className="space-y-4">
       {/* 메트릭 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard icon={Wrench} label="🔧 수리중" value={m.repairing} color="#f59e0b" />
-        <MetricCard icon={PackageCheck} label="📦 자재센터 보관(출고대기)" value={m.stored} color="#1565c0" />
-        <MetricCard icon={Truck} label="📤 양품출고 합계" value={m.outTotal} color="#16a34a" />
+        <MetricCard icon={Wrench} label="🔧 수리중" value={m.repairing} color="#96620A" />
+        <MetricCard icon={PackageCheck} label="📦 자재센터 보관(출고대기)" value={m.stored} color="#2F3941" />
+        <MetricCard icon={Truck} label="📤 양품출고 합계" value={m.outTotal} color="#0C7A57" />
         <MetricCard icon={PackageX} label="📥 불량입고 합계" value={m.inTotal}
-          sub={m.terminated ? `해지 ${m.terminated}` : undefined} color="#B32646" />
+          sub={m.terminated ? `해지 ${m.terminated}` : undefined} color="#D60051" />
       </div>
 
       <div className="flex items-center gap-2">
         {perms.canWrite && (
           <>
-            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#B32646] hover:bg-[#9a1f3c] text-white"
+            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#D60051] hover:bg-[#A3003D] text-white"
                     onClick={() => setUploadDir('in')}>
               <PackageX size={14} strokeWidth={2} /> 불량입고
             </Button>
-            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white"
+            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#0C7A57] hover:bg-[#15803d] text-white"
                     onClick={() => setUploadDir('out')}>
               <Truck size={14} strokeWidth={2} /> 양품출고
             </Button>
-            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white"
+            <Button type="button" className="h-8 text-[12px] gap-1.5 bg-[#2F3941] hover:bg-[#1C2126] text-white"
                     disabled={!st.drivers.length} onClick={() => setDealerOpen(true)}>
               <Send size={14} strokeWidth={2} /> 대리점 배송
             </Button>
@@ -363,15 +363,15 @@ function StatusTab({ perms }: { perms: Perms }) {
         )}
         <Button type="button" variant="outline" className="h-8 text-[12px] ml-auto" onClick={load}>새로고침</Button>
       </div>
-      {msg && <div className="text-[12px] text-[#475569]">{msg}</div>}
+      {msg && <div className="text-[12px] text-[#2F3941]">{msg}</div>}
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* 자재센터 측 */}
         <div className="space-y-4">
           {/* 수리중 */}
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[13px] font-bold text-[#1E293B]">🔧 수리중 <span className="text-[#94A3B8] font-normal">({st.repairing.length})</span></div>
+              <div className="text-[13px] font-bold text-[#111111]">🔧 수리중 <span className="text-[#8A949C] font-normal">({st.repairing.length})</span></div>
               {perms.canWrite && st.repairing.length > 0 && (
                 <Button type="button" className="h-7 text-[11px]" disabled={busy || !repairSel.size}
                         onClick={markRepairDone}>
@@ -388,9 +388,9 @@ function StatusTab({ perms }: { perms: Perms }) {
           </div>
 
           {/* 자재센터 보관 */}
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[13px] font-bold text-[#1E293B]">📦 자재센터 보관 (출고 대기) <span className="text-[#94A3B8] font-normal">({st.stored.length})</span></div>
+              <div className="text-[13px] font-bold text-[#111111]">📦 자재센터 보관 (출고 대기) <span className="text-[#8A949C] font-normal">({st.stored.length})</span></div>
               {perms.canWrite && st.stored.length > 0 && (
                 <Button type="button" variant="outline" className="h-7 text-[11px] gap-1"
                         disabled={!storeSel.size} onClick={() => setStoreOpen(true)}>
@@ -405,19 +405,19 @@ function StatusTab({ perms }: { perms: Perms }) {
               })}
               onToggleAll={ids => setStoreSel(prev => prev.size === ids.length ? new Set() : new Set(ids))} />
             {perms.canWrite && st.stored.length > 0 && (
-              <div className="text-[11px] text-[#94A3B8]">※ 체크 후 「자재창고 보관」으로 랙·박스를 지정하면 자재창고 지도 해당 박스에 들어갑니다. 출고는 「양품출고」에서 진행하세요.</div>
+              <div className="text-[11px] text-[#8A949C]">※ 체크 후 「자재창고 보관」으로 랙·박스를 지정하면 자재창고 지도 해당 박스에 들어갑니다. 출고는 「양품출고」에서 진행하세요.</div>
             )}
           </div>
         </div>
 
         {/* 기사 보유 재고 */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-          <div className="text-[13px] font-bold text-[#1E293B]">🚗 물류기사 재고현황
-            <span className="text-[#94A3B8] font-normal"> ({st.drivers.reduce((a, g) => a + g.count, 0)})</span>
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
+          <div className="text-[13px] font-bold text-[#111111]">🚗 물류기사 재고현황
+            <span className="text-[#8A949C] font-normal"> ({st.drivers.reduce((a, g) => a + g.count, 0)})</span>
             <GuestCallout side="left" label="기사별 보유 현황 · 배송완료 처리" />
           </div>
           {st.drivers.length === 0 ? (
-            <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">기사 보유 재고 없음</div>
+            <div className="text-[11px] text-[#8A949C] py-3 text-center bg-[#F6F6F7] rounded">기사 보유 재고 없음</div>
           ) : st.drivers.map(g => (
             <DriverCard key={g.driver} group={g} canWrite={perms.canWrite}
               onDeliver={() => setDeliverGroup(g)} />
@@ -483,48 +483,48 @@ function StoreModal({ items, onClose, onDone }: {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white rounded-lg w-[440px] max-w-full my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B] flex items-center gap-1.5">
-            <PackageCheck size={15} className="text-[#1565c0]" /> 자재창고 보관 — {items.length}개
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111] flex items-center gap-1.5">
+            <PackageCheck size={15} className="text-[#2F3941]" /> 자재창고 보관 — {items.length}개
           </div>
-          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#5A666F] hover:bg-[#F1F1F0]"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3">
-          <p className="text-[11px] text-[#94A3B8]">선택한 단말기를 자재창고의 특정 랙·박스에 지정합니다. (자재창고 지도 해당 박스에 표시됨)</p>
+          <p className="text-[11px] text-[#8A949C]">선택한 단말기를 자재창고의 특정 랙·박스에 지정합니다. (자재창고 지도 해당 박스에 표시됨)</p>
           <div className="flex flex-wrap gap-2">
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-0.5">랙 번호 <span className="text-[#B32646]">*</span></label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">랙 번호 <span className="text-[#D60051]">*</span></label>
               <input value={rackNo} onChange={e => setRackNo(e.target.value)} placeholder="예: 10-1"
-                className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white w-28" />
+                className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white w-28" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-0.5">선반</label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">선반</label>
               <input value={shelf} onChange={e => setShelf(e.target.value)} placeholder="예: 3"
-                className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white w-20" />
+                className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white w-20" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-0.5">박스 번호 <span className="text-[#B32646]">*</span></label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">박스 번호 <span className="text-[#D60051]">*</span></label>
               <input value={boxNo} onChange={e => setBoxNo(e.target.value)} placeholder="예: 9"
-                className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white w-24" />
+                className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white w-24" />
             </div>
           </div>
-          <div className="max-h-44 overflow-y-auto rounded border border-[#E2E8F0]">
+          <div className="max-h-44 overflow-y-auto rounded border border-[#E3E1DE]">
             <table className="w-full text-[11px]">
-              <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
+              <thead className="sticky top-0 bg-[#F6F6F7] text-[#5A666F]"><tr>
                 <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
                 <th className="px-2 py-1.5 text-left font-semibold">기종</th>
               </tr></thead>
               <tbody>
                 {items.map(it => (
-                  <tr key={it.trcn_id} className="border-t border-[#F1F5F9]">
-                    <td className="px-2 py-1 font-mono text-[#475569]">{it.trcn_id}</td>
-                    <td className="px-2 py-1 text-[#1E293B]">{it.device_type}</td>
+                  <tr key={it.trcn_id} className="border-t border-[#F1F1F0]">
+                    <td className="px-2 py-1 font-mono text-[#2F3941]">{it.trcn_id}</td>
+                    <td className="px-2 py-1 text-[#111111]">{it.device_type}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
+          {msg && <div className="text-[11px] text-[#D60051]">{msg}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={onClose}>취소</Button>
             <Button type="button" className="h-8 text-[12px]" disabled={busy || !items.length} onClick={submit}>
@@ -545,14 +545,14 @@ function UploadModal({ direction, onClose, onSaved }: {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white rounded-lg w-[560px] max-w-full my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B] flex items-center gap-1.5">
-            {isIn ? <><PackageX size={15} className="text-[#B32646]" /> 불량입고</> : <><Truck size={15} className="text-[#16a34a]" /> 양품출고</>}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111] flex items-center gap-1.5">
+            {isIn ? <><PackageX size={15} className="text-[#D60051]" /> 불량입고</> : <><Truck size={15} className="text-[#0C7A57]" /> 양품출고</>}
           </div>
-          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#5A666F] hover:bg-[#F1F1F0]"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-2">
-          <p className="text-[11px] text-[#94A3B8]">
+          <p className="text-[11px] text-[#8A949C]">
             {isIn ? '현장에서 회수한 불량 단말기를 자재센터로 입고합니다. 행별로 해지 여부를 체크하세요.'
                   : '수리완료된 양품을 담당기사에게 출고합니다.'}
           </p>
@@ -578,20 +578,20 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
       i.trcn_id.toLowerCase().includes(s) || (i.device_type ?? '').toLowerCase().includes(s)) : items
   }, [items, q])
   const { sorted, sortKey, sortDir, toggle } = useSort(filtered)
-  if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">없음</div>
+  if (!items.length) return <div className="text-[11px] text-[#8A949C] py-3 text-center bg-[#F6F6F7] rounded">없음</div>
   const ids = filtered.map(i => i.id)
   const colSpan = selectable ? 5 : 4
   return (
     <div className="space-y-1.5">
       <div className="relative">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종 검색"
-          className="h-7 w-full text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
+          className="h-7 w-full text-[11px] border border-[#E3E1DE] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#D60051]" />
         {q && <button type="button" onClick={() => setQ('')}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B] text-[11px]">✕</button>}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#8A949C] hover:text-[#111111] text-[11px]">✕</button>}
       </div>
-      <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-72">
+      <div className="overflow-x-auto rounded border border-[#E3E1DE] max-h-72">
         <table className="w-full text-[11px]">
-          <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]">
+          <thead className="sticky top-0 bg-[#F6F6F7] text-[#5A666F]">
             <tr>
               {selectable && (
                 <th className="px-2 py-1.5 w-8">
@@ -608,20 +608,20 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
           </thead>
           <tbody>
             {sorted.length === 0 ? (
-              <tr><td colSpan={colSpan} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
+              <tr><td colSpan={colSpan} className="px-2 py-3 text-center text-[11px] text-[#8A949C]">검색 결과 없음</td></tr>
             ) : sorted.map(it => (
-              <tr key={it.id} className="border-t border-[#F1F5F9]">
+              <tr key={it.id} className="border-t border-[#F1F1F0]">
                 {selectable && (
                   <td className="px-2 py-1.5 text-center">
                     <input type="checkbox" checked={!!selected?.has(it.id)}
                       onChange={() => onToggle?.(it.id)} className="cursor-pointer" />
                   </td>
                 )}
-                <td className="px-2 py-1.5 font-mono text-[#475569]">{it.trcn_id}</td>
-                <td className="px-2 py-1.5 text-[#1E293B]">{it.device_type}</td>
-                <td className="px-2 py-1.5 text-[#94A3B8]">{it.upload_date}</td>
+                <td className="px-2 py-1.5 font-mono text-[#2F3941]">{it.trcn_id}</td>
+                <td className="px-2 py-1.5 text-[#111111]">{it.device_type}</td>
+                <td className="px-2 py-1.5 text-[#8A949C]">{it.upload_date}</td>
                 <td className="px-2 py-1.5 text-center">
-                  {it.is_terminated && <span className="text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-0.5">해지</span>}
+                  {it.is_terminated && <span className="text-[10px] font-bold text-white bg-[#D60051] rounded px-1.5 py-0.5">해지</span>}
                 </td>
               </tr>
             ))}
@@ -635,13 +635,13 @@ function ItemTable({ items, selectable, selected, onToggle, onToggleAll }: {
 function DriverCard({ group, canWrite, onDeliver }: { group: DriverGroup; canWrite: boolean; onDeliver: () => void }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border border-[#E2E8F0] rounded-lg overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 bg-[#f8f9ff]">
+    <div className="border border-[#E3E1DE] rounded-lg overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#F6F6F7]">
         <button type="button" onClick={() => setOpen(o => !o)}
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1E293B] hover:text-[#B32646]">
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-[#111111] hover:text-[#D60051]">
           {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span data-guest-blur>{group.driver}</span>
-          <span data-guest-blur className="text-[#B32646] font-bold">{group.count}</span>
+          <span data-guest-blur className="text-[#D60051] font-bold">{group.count}</span>
         </button>
         <div className="ml-auto flex items-center gap-2">
           <DeviceChips items={group.items} />
@@ -655,9 +655,9 @@ function DriverCard({ group, canWrite, onDeliver }: { group: DriverGroup; canWri
       {open && (
         <div className="px-3 py-2 flex flex-wrap gap-1.5">
           {group.items.map(it => (
-            <span key={it.out_id} data-guest-blur className="px-2 py-0.5 rounded bg-white border border-[#E2E8F0] text-[10px] text-[#475569]">
+            <span key={it.out_id} data-guest-blur className="px-2 py-0.5 rounded bg-white border border-[#E3E1DE] text-[10px] text-[#2F3941]">
               <span className="font-mono">{it.trcn_id}</span>
-              <span className="text-[#94A3B8] ml-1">{it.device_type}</span>
+              <span className="text-[#8A949C] ml-1">{it.device_type}</span>
             </span>
           ))}
         </div>
@@ -738,24 +738,24 @@ function DeliveryModal({ mode, groups, onClose, onDone }: {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white rounded-lg w-[600px] max-w-full my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B] flex items-center gap-1.5">
-            <Send size={15} className="text-[#1565c0]" /> {dealerMode ? '대리점 배송 — 기사 보유분 일괄 처리' : `배송완료 처리 — ${groups[0]?.driver ?? ''}`}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111] flex items-center gap-1.5">
+            <Send size={15} className="text-[#2F3941]" /> {dealerMode ? '대리점 배송 — 기사 보유분 일괄 처리' : `배송완료 처리 — ${groups[0]?.driver ?? ''}`}
           </div>
-          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#5A666F] hover:bg-[#F1F1F0]"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3">
-          <p className="text-[11px] text-[#94A3B8]">
+          <p className="text-[11px] text-[#8A949C]">
             {dealerMode ? '기사가 보유 중인 단말기를 특정 대리점으로 배송완료 처리합니다. ' : ''}목록에서 체크하거나, 번호를 엑셀/직접 입력하면 자동으로 선택됩니다.
           </p>
           <div className="flex flex-wrap gap-2 items-end">
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-0.5">배송 날짜</label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">배송 날짜</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+                className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
             </div>
             <div className="flex-1 min-w-[160px]">
-              <label className="text-[11px] text-[#64748B] block mb-0.5">대리점/인계처 {dealerMode ? <span className="text-[#B32646]">*</span> : '(선택)'}</label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">대리점/인계처 {dealerMode ? <span className="text-[#D60051]">*</span> : '(선택)'}</label>
               <Input value={dealer} onChange={e => setDealer(e.target.value)} className="h-8 text-[12px]" placeholder="예: ○○대리점" />
             </div>
           </div>
@@ -764,35 +764,35 @@ function DeliveryModal({ mode, groups, onClose, onDone }: {
             <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5" onClick={() => fileRef.current?.click()}>
               <Upload size={14} /> 엑셀
             </Button>
-            <span className="text-[11px] text-[#64748B] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
+            <span className="text-[11px] text-[#5A666F] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
           </div>
           <div className="flex gap-2">
             <textarea value={manual} onChange={e => setManual(e.target.value)} rows={2}
-              className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
+              className="flex-1 text-[12px] border border-[#E3E1DE] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
             <Button type="button" variant="outline" className="h-8 text-[12px] self-end" onClick={applyManual}>선택</Button>
           </div>
           {unmatched.length > 0 && (
-            <div className="text-[11px] text-[#c62828] bg-[#fef2f2] rounded px-2 py-1.5 max-h-20 overflow-y-auto">
+            <div className="text-[11px] text-[#D60051] bg-[#FCEEF3] rounded px-2 py-1.5 max-h-20 overflow-y-auto">
               기사 보유 아님 ({unmatched.length}): <span className="font-mono">{unmatched.join(', ')}</span>
             </div>
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[11px] text-[#64748B]">
+            <div className="text-[11px] text-[#5A666F]">
               선택 ({sel.size}/{held.length})
-              {q.trim() && <span className="text-[#B32646] ml-1">· 검색 {filtered.length}건</span>}
-              {sel.size > 0 && <button type="button" className="ml-2 underline text-[#94A3B8]" onClick={() => { setSel(new Set()); setUnmatched([]) }}>선택 해제</button>}
+              {q.trim() && <span className="text-[#D60051] ml-1">· 검색 {filtered.length}건</span>}
+              {sel.size > 0 && <button type="button" className="ml-2 underline text-[#8A949C]" onClick={() => { setSel(new Set()); setUnmatched([]) }}>선택 해제</button>}
             </div>
             <div className="relative">
               <input value={q} onChange={e => setQ(e.target.value)} placeholder="IH·기종·기사 검색"
-                className="h-7 w-44 text-[11px] border border-[#E2E8F0] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#B32646]" />
+                className="h-7 w-44 text-[11px] border border-[#E3E1DE] rounded pl-2 pr-6 bg-white focus:outline-none focus:border-[#D60051]" />
               {q && <button type="button" onClick={() => setQ('')}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E293B] text-[11px]">✕</button>}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#8A949C] hover:text-[#111111] text-[11px]">✕</button>}
             </div>
           </div>
-          <div className="max-h-60 overflow-y-auto rounded border border-[#E2E8F0]">
+          <div className="max-h-60 overflow-y-auto rounded border border-[#E3E1DE]">
             <table className="w-full text-[11px]">
-              <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
+              <thead className="sticky top-0 bg-[#F6F6F7] text-[#5A666F]"><tr>
                 <th className="px-2 py-1.5 w-8">
                   <input type="checkbox" checked={allVisSel}
                     onChange={() => setSel(prev => {
@@ -809,27 +809,27 @@ function DeliveryModal({ mode, groups, onClose, onDone }: {
               </tr></thead>
               <tbody>
                 {sorted.length === 0 ? (
-                  <tr><td colSpan={4} className="px-2 py-3 text-center text-[11px] text-[#94A3B8]">검색 결과 없음</td></tr>
+                  <tr><td colSpan={4} className="px-2 py-3 text-center text-[11px] text-[#8A949C]">검색 결과 없음</td></tr>
                 ) : sorted.map(it => (
-                  <tr key={it.out_id} className={`border-t border-[#F1F5F9] ${sel.has(it.trcn_id) ? 'bg-[#eff6ff]' : ''}`}>
+                  <tr key={it.out_id} className={`border-t border-[#F1F1F0] ${sel.has(it.trcn_id) ? 'bg-[#F6F6F7]' : ''}`}>
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={sel.has(it.trcn_id)}
                         onChange={() => setSel(prev => { const n = new Set(prev); if (n.has(it.trcn_id)) n.delete(it.trcn_id); else n.add(it.trcn_id); return n })}
                         className="cursor-pointer" />
                     </td>
-                    <td className="px-2 py-1.5 font-mono text-[#475569]">{it.trcn_id}</td>
-                    <td className="px-2 py-1.5 text-[#1E293B]">{it.device_type}</td>
-                    {dealerMode && <td className="px-2 py-1.5 text-[#1E293B]">{it.driver}</td>}
+                    <td className="px-2 py-1.5 font-mono text-[#2F3941]">{it.trcn_id}</td>
+                    <td className="px-2 py-1.5 text-[#111111]">{it.device_type}</td>
+                    {dealerMode && <td className="px-2 py-1.5 text-[#111111]">{it.driver}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <Input value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px]" placeholder="비고 (선택)" />
-          {msg && <div className="text-[11px] text-[#475569]">{msg}</div>}
+          {msg && <div className="text-[11px] text-[#2F3941]">{msg}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={onClose}>취소</Button>
-            <Button type="button" className="h-8 text-[12px] bg-[#1565c0] hover:bg-[#0d47a1] text-white" disabled={busy || !sel.size || (dealerMode && !dealer.trim())} onClick={submit}>
+            <Button type="button" className="h-8 text-[12px] bg-[#2F3941] hover:bg-[#1C2126] text-white" disabled={busy || !sel.size || (dealerMode && !dealer.trim())} onClick={submit}>
               {busy ? '처리 중…' : `배송완료 (${sel.size})`}
             </Button>
           </div>
@@ -912,36 +912,36 @@ function InboundPanel({ onSaved }: { onSaved: () => void }) {
 
   const termCount = rows.filter(r => r.terminated).length
   return (
-    <div className="space-y-3 p-3 bg-[#FAFAFA] rounded-lg border border-[#E2E8F0]">
+    <div className="space-y-3 p-3 bg-[#F6F6F7] rounded-lg border border-[#E3E1DE]">
       <div className="flex flex-wrap gap-2 items-end">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">입고 날짜</label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">입고 날짜</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
+            className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white" />
         </div>
         <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
         <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5" onClick={() => fileRef.current?.click()}>
           <Upload size={14} /> 엑셀
         </Button>
-        <span className="text-[11px] text-[#64748B] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
+        <span className="text-[11px] text-[#5A666F] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
       </div>
       <div className="flex gap-2">
         <textarea value={manual} onChange={e => setManual(e.target.value)} rows={2}
-          className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
+          className="flex-1 text-[12px] border border-[#E3E1DE] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
         <Button type="button" variant="outline" className="h-8 text-[12px] self-end" onClick={applyManual}>적용</Button>
       </div>
 
       {rows.length > 0 && (
         <>
           <div className="text-[11px] flex flex-wrap gap-3">
-            <span className="text-[#16a34a]">유효 <b>{rows.length - invalid}</b></span>
-            {invalid > 0 && <span className="text-[#c62828]">미분류 <b>{invalid}</b></span>}
-            <span className="text-[#94A3B8]">전체 {rows.length}</span>
-            <span className="text-[#c62828] ml-auto">해지 {termCount}</span>
+            <span className="text-[#0C7A57]">유효 <b>{rows.length - invalid}</b></span>
+            {invalid > 0 && <span className="text-[#D60051]">미분류 <b>{invalid}</b></span>}
+            <span className="text-[#8A949C]">전체 {rows.length}</span>
+            <span className="text-[#D60051] ml-auto">해지 {termCount}</span>
           </div>
-          <div className="max-h-52 overflow-y-auto rounded border border-[#E2E8F0]">
+          <div className="max-h-52 overflow-y-auto rounded border border-[#E3E1DE]">
             <table className="w-full text-[11px]">
-              <thead className="sticky top-0 bg-[#F8F9FA] text-[#64748B]"><tr>
+              <thead className="sticky top-0 bg-[#F6F6F7] text-[#5A666F]"><tr>
                 <SortTh label="TRCN_ID" field="id" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="기종" field="device" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="해지" field="terminated" sortKey={sortKey} sortDir={sortDir} onSort={toggle}
@@ -949,9 +949,9 @@ function InboundPanel({ onSaved }: { onSaved: () => void }) {
               </tr></thead>
               <tbody>
                 {sortedRows.map((c, i) => (
-                  <tr key={`${c.id}-${i}`} className="border-t border-[#F1F5F9]">
-                    <td className="px-2 py-1 font-mono text-[#475569]">{c.id}</td>
-                    <td className={`px-2 py-1 ${c.device === '미분류' ? 'text-[#c62828]' : 'text-[#1E293B]'}`}>{c.device}</td>
+                  <tr key={`${c.id}-${i}`} className="border-t border-[#F1F1F0]">
+                    <td className="px-2 py-1 font-mono text-[#2F3941]">{c.id}</td>
+                    <td className={`px-2 py-1 ${c.device === '미분류' ? 'text-[#D60051]' : 'text-[#111111]'}`}>{c.device}</td>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={c.terminated} className="cursor-pointer"
                         onChange={() => setRows(prev => prev.map(r => r.id === c.id ? { ...r, terminated: !r.terminated } : r))} />
@@ -969,12 +969,12 @@ function InboundPanel({ onSaved }: { onSaved: () => void }) {
       {dups !== null && dups.length > 0 && (
         <div className="flex items-center gap-2 text-[11px]">
           <Checkbox checked={force} onCheckedChange={v => setForce(!!v)} id="force-in" />
-          <label htmlFor="force-in" className="text-[#c62828]">중복 {dups.length}건 무시하고 강제 저장</label>
+          <label htmlFor="force-in" className="text-[#D60051]">중복 {dups.length}건 무시하고 강제 저장</label>
         </div>
       )}
       <div className="flex items-center gap-2">
         <Button type="button" className="h-8 text-[12px]" disabled={busy || !rows.length} onClick={save}>{busy ? '저장 중…' : '입고 저장'}</Button>
-        {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+        {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
       </div>
     </div>
   )
@@ -1045,15 +1045,15 @@ function OutboundPanel({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <div className="space-y-3 p-3 bg-[#FAFAFA] rounded-lg border border-[#E2E8F0]">
+    <div className="space-y-3 p-3 bg-[#F6F6F7] rounded-lg border border-[#E3E1DE]">
       <div className="flex flex-wrap gap-2 items-end">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">출고 날짜</label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">출고 날짜</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
+            className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">담당기사 <span className="text-[#B32646]">*</span></label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">담당기사 <span className="text-[#D60051]">*</span></label>
           <Select value={driver} onValueChange={v => v !== null && setDriver(v)}>
             <SelectTrigger className="h-8 text-[12px] w-32 bg-white"><SelectValue placeholder="기사 선택" /></SelectTrigger>
             <SelectContent>{DRIVER_OPTIONS.map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}</SelectContent>
@@ -1065,19 +1065,19 @@ function OutboundPanel({ onSaved }: { onSaved: () => void }) {
         <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5" onClick={() => fileRef.current?.click()}>
           <Upload size={14} /> 엑셀
         </Button>
-        <span className="text-[11px] text-[#64748B] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
+        <span className="text-[11px] text-[#5A666F] truncate max-w-[140px] self-center">{fileName || '파일 없음'}</span>
       </div>
       <div className="flex gap-2">
         <textarea value={manual} onChange={e => setManual(e.target.value)} rows={2}
-          className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
+          className="flex-1 text-[12px] border border-[#E3E1DE] rounded px-2 py-1 bg-white" placeholder="직접 입력 (줄바꿈/쉼표): 182100001, ..." />
         <Button type="button" variant="outline" className="h-8 text-[12px] self-end" onClick={applyManual}>적용</Button>
       </div>
 
       {ids.length > 0 && (
         <div className="text-[11px] flex flex-wrap gap-3">
-          <span className="text-[#16a34a]">유효 <b>{ids.length - invalid}</b></span>
-          {invalid > 0 && <span className="text-[#c62828]">미분류 <b>{invalid}</b></span>}
-          <span className="text-[#94A3B8]">전체 {ids.length}</span>
+          <span className="text-[#0C7A57]">유효 <b>{ids.length - invalid}</b></span>
+          {invalid > 0 && <span className="text-[#D60051]">미분류 <b>{invalid}</b></span>}
+          <span className="text-[#8A949C]">전체 {ids.length}</span>
         </div>
       )}
 
@@ -1086,12 +1086,12 @@ function OutboundPanel({ onSaved }: { onSaved: () => void }) {
       {dups !== null && dups.length > 0 && (
         <div className="flex items-center gap-2 text-[11px]">
           <Checkbox checked={force} onCheckedChange={v => setForce(!!v)} id="force-out" />
-          <label htmlFor="force-out" className="text-[#c62828]">중복 {dups.length}건 무시하고 강제 저장</label>
+          <label htmlFor="force-out" className="text-[#D60051]">중복 {dups.length}건 무시하고 강제 저장</label>
         </div>
       )}
       <div className="flex items-center gap-2">
         <Button type="button" className="h-8 text-[12px]" disabled={busy || !ids.length || !driver} onClick={save}>{busy ? '저장 중…' : '출고 저장'}</Button>
-        {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+        {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
       </div>
     </div>
   )
@@ -1146,11 +1146,11 @@ function HistoryTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-          <span className="text-[#94A3B8]">~</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
+          <span className="text-[#8A949C]">~</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
           <Select value={dir} onValueChange={v => v !== null && setDir(v)}>
             <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
             <SelectContent>{['전체', '출고', '입고'].map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}</SelectContent>
@@ -1158,17 +1158,17 @@ function HistoryTab({ perms }: { perms: Perms }) {
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
           <Input placeholder="검색 (ID/기종/기사)" value={search} onChange={e => setSearch(e.target.value)} className="h-8 text-[12px] w-44" />
           <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={!filtered.length} onClick={() => exportMovements(filtered, from, to)}>엑셀</Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">{filtered.length}건</span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">{filtered.length}건</span>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-          <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+          <div className="overflow-x-auto rounded border border-[#E3E1DE]">
             <table className="w-full text-[11px]">
-              <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
+              <thead><tr className="bg-[#F6F6F7] text-[#5A666F]">
                 <SortTh label="날짜" field="upload_date" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="방향" field="direction" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                 <SortTh label="기종" field="device_type" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
@@ -1180,27 +1180,27 @@ function HistoryTab({ perms }: { perms: Perms }) {
               </tr></thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={perms.canWrite ? 8 : 7} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                  <tr><td colSpan={perms.canWrite ? 8 : 7} className="px-2 py-6 text-center text-[#8A949C]">데이터 없음</td></tr>
                 ) : sorted.slice(0, 1500).map(r => (
-                  <tr key={r.id} className="border-t border-[#F1F5F9]">
-                    <td className="px-2 py-1.5 text-[#475569]">{r.upload_date}</td>
-                    <td className={`px-2 py-1.5 ${r.direction === 'out' ? 'text-[#16a34a]' : 'text-[#B32646]'}`}>{r.direction === 'out' ? '출고' : '입고'}</td>
-                    <td className="px-2 py-1.5 text-[#1E293B]">{r.device_type}</td>
-                    <td className="px-2 py-1.5 font-mono text-[#475569]">{r.trcn_id}</td>
-                    <td className="px-2 py-1.5 text-[#64748B]">{r.driver_name ?? '-'}</td>
-                    <td className="px-2 py-1.5 text-center">{r.is_terminated && <span className="text-[10px] font-bold text-[#c62828]">해지</span>}</td>
-                    <td className="px-2 py-1.5 text-center">{r.is_repair_done && <span className="text-[10px] font-bold text-[#1565c0]">완료</span>}</td>
+                  <tr key={r.id} className="border-t border-[#F1F1F0]">
+                    <td className="px-2 py-1.5 text-[#2F3941]">{r.upload_date}</td>
+                    <td className={`px-2 py-1.5 ${r.direction === 'out' ? 'text-[#0C7A57]' : 'text-[#D60051]'}`}>{r.direction === 'out' ? '출고' : '입고'}</td>
+                    <td className="px-2 py-1.5 text-[#111111]">{r.device_type}</td>
+                    <td className="px-2 py-1.5 font-mono text-[#2F3941]">{r.trcn_id}</td>
+                    <td className="px-2 py-1.5 text-[#5A666F]">{r.driver_name ?? '-'}</td>
+                    <td className="px-2 py-1.5 text-center">{r.is_terminated && <span className="text-[10px] font-bold text-[#D60051]">해지</span>}</td>
+                    <td className="px-2 py-1.5 text-center">{r.is_repair_done && <span className="text-[10px] font-bold text-[#2F3941]">완료</span>}</td>
                     {perms.canWrite && (
                       <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                        <button type="button" title="수정" disabled={busy} onClick={() => setEdit(r)} className="p-0.5 rounded text-[#3B82F6] hover:bg-[#eff6ff]"><Pencil size={12} /></button>
-                        <button type="button" title="삭제" disabled={busy} onClick={() => delOne(r.id)} className="px-1 rounded text-[#c62828] hover:bg-[#fef2f2] text-[13px] leading-none">×</button>
+                        <button type="button" title="수정" disabled={busy} onClick={() => setEdit(r)} className="p-0.5 rounded text-[#2F3941] hover:bg-[#F6F6F7]"><Pencil size={12} /></button>
+                        <button type="button" title="삭제" disabled={busy} onClick={() => delOne(r.id)} className="px-1 rounded text-[#D60051] hover:bg-[#FCEEF3] text-[13px] leading-none">×</button>
                       </td>
                     )}
                   </tr>
                 ))}
               </tbody>
             </table>
-            {filtered.length > 1500 && <div className="text-[10px] text-[#94A3B8] p-2 text-center">상위 1500건만 표시 (엑셀로 전체 내보내기)</div>}
+            {filtered.length > 1500 && <div className="text-[10px] text-[#8A949C] p-2 text-center">상위 1500건만 표시 (엑셀로 전체 내보내기)</div>}
           </div>
         </div>
       )}
@@ -1231,14 +1231,14 @@ function EditModal({ rec, onClose, onSaved }: { rec: TaxiMovement; onClose: () =
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-lg p-4 w-[340px] space-y-3" onClick={e => e.stopPropagation()}>
-        <div className="text-[13px] font-bold text-[#1E293B]">레코드 수정 ({rec.direction === 'out' ? '출고' : '입고'})</div>
+        <div className="text-[13px] font-bold text-[#111111]">레코드 수정 ({rec.direction === 'out' ? '출고' : '입고'})</div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">TRCN_ID</label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">TRCN_ID</label>
           <Input value={trcn} onChange={e => setTrcn(e.target.value)} className="h-8 text-[12px]" />
         </div>
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-[11px] text-[#64748B] block mb-0.5">기종</label>
+            <label className="text-[11px] text-[#5A666F] block mb-0.5">기종</label>
             <Select value={device} onValueChange={v => v !== null && setDevice(v)}>
               <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
               <SelectContent>{TAXI_DEVICE_ORDER.filter(d => d !== '미분류').map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}</SelectContent>
@@ -1246,7 +1246,7 @@ function EditModal({ rec, onClose, onSaved }: { rec: TaxiMovement; onClose: () =
           </div>
           {rec.direction === 'out' && (
             <div className="flex-1">
-              <label className="text-[11px] text-[#64748B] block mb-0.5">담당기사</label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">담당기사</label>
               <Input value={driver} onChange={e => setDriver(e.target.value)} className="h-8 text-[12px]" />
             </div>
           )}
@@ -1302,24 +1302,24 @@ function DeliveryTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-          <span className="text-[#94A3B8]">~</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
+          <span className="text-[#8A949C]">~</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
           <Input placeholder="검색 (ID/기종/기사/대리점)" value={search} onChange={e => setSearch(e.target.value)} className="h-8 text-[12px] w-52" />
-          <span className="text-[11px] text-[#94A3B8] ml-auto">{filtered.length}건</span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">{filtered.length}건</span>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-          <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+          <div className="overflow-x-auto rounded border border-[#E3E1DE]">
             <table className="w-full text-[11px]">
-              <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
+              <thead><tr className="bg-[#F6F6F7] text-[#5A666F]">
                 <th className="px-2 py-1.5 text-left font-semibold">배송일</th>
                 <th className="px-2 py-1.5 text-left font-semibold">기종</th>
                 <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
@@ -1329,18 +1329,18 @@ function DeliveryTab({ perms }: { perms: Perms }) {
               </tr></thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={perms.canWrite ? 6 : 5} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                  <tr><td colSpan={perms.canWrite ? 6 : 5} className="px-2 py-6 text-center text-[#8A949C]">데이터 없음</td></tr>
                 ) : filtered.slice(0, 1500).map(r => (
-                  <tr key={r.id} className="border-t border-[#F1F5F9]">
-                    <td className="px-2 py-1.5 text-[#475569]">{r.delivery_date}</td>
-                    <td className="px-2 py-1.5 text-[#1E293B]">{r.device_type}</td>
-                    <td className="px-2 py-1.5 font-mono text-[#475569]">{r.trcn_id}</td>
-                    <td className="px-2 py-1.5 text-[#64748B]">{r.driver_name}</td>
-                    <td className="px-2 py-1.5 text-[#94A3B8]">{r.dealer_name ?? '-'}</td>
+                  <tr key={r.id} className="border-t border-[#F1F1F0]">
+                    <td className="px-2 py-1.5 text-[#2F3941]">{r.delivery_date}</td>
+                    <td className="px-2 py-1.5 text-[#111111]">{r.device_type}</td>
+                    <td className="px-2 py-1.5 font-mono text-[#2F3941]">{r.trcn_id}</td>
+                    <td className="px-2 py-1.5 text-[#5A666F]">{r.driver_name}</td>
+                    <td className="px-2 py-1.5 text-[#8A949C]">{r.dealer_name ?? '-'}</td>
                     {perms.canWrite && (
                       <td className="px-2 py-1.5 text-center">
                         <button type="button" title="배송 취소" disabled={busy} onClick={() => cancel(r.id)}
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[#c62828] hover:bg-[#fef2f2] text-[10px]">
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[#D60051] hover:bg-[#FCEEF3] text-[10px]">
                           <Ban size={11} /> 취소
                         </button>
                       </td>
@@ -1349,7 +1349,7 @@ function DeliveryTab({ perms }: { perms: Perms }) {
                 ))}
               </tbody>
             </table>
-            {filtered.length > 1500 && <div className="text-[10px] text-[#94A3B8] p-2 text-center">상위 1500건만 표시</div>}
+            {filtered.length > 1500 && <div className="text-[10px] text-[#8A949C] p-2 text-center">상위 1500건만 표시</div>}
           </div>
         </div>
       )}

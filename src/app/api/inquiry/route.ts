@@ -58,7 +58,7 @@ export async function POST(request: Request) {
               ['등록자', { text: `<b>${who}</b>` }],
               ['제목', title.trim()],
             ])}
-            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">문의 내용</p>
+            <p style="margin:8px 0 0; font-weight:700; color:#111111;">문의 내용</p>
             ${textBlock(content.trim())}`,
         }),
       )

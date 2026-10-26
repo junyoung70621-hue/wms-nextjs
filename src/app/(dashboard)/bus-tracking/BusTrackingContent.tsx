@@ -25,7 +25,7 @@ type CenterUser = { id: string; name: string; username: string; role: string }
 function Badge({ text, color }: { text: string; color?: string }) {
   return (
     <span className="inline-block text-[10px] font-bold rounded px-1.5 py-0.5"
-      style={{ background: color ? `${color}20` : '#f1f5f9', color: color ?? '#64748B' }}>
+      style={{ background: color ? `${color}20` : '#F1F1F0', color: color ?? '#5A666F' }}>
       {text}
     </span>
   )
@@ -33,9 +33,9 @@ function Badge({ text, color }: { text: string; color?: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    holding: '#2e7d32', defective: '#c62828',
-    center_defective: '#b45309', unassigned: '#64748B',
-    exchanged: '#1565c0', returned: '#475569',
+    holding: '#0C7A57', defective: '#D60051',
+    center_defective: '#96620A', unassigned: '#5A666F',
+    exchanged: '#2F3941', returned: '#2F3941',
   }
   return <Badge text={STATUS_LABEL[status] ?? status} color={colors[status]} />
 }
@@ -69,10 +69,10 @@ function SortTh({ label, field, sortKey, sortDir, onSort, className }: {
 }) {
   const active = sortKey === field
   return (
-    <th className={`${className ?? 'px-3 py-2 text-left font-medium text-[#64748B]'} cursor-pointer select-none hover:text-[#1E293B]`}
+    <th className={`${className ?? 'px-3 py-2 text-left font-medium text-[#5A666F]'} cursor-pointer select-none hover:text-[#111111]`}
         onClick={() => onSort(field)} title="클릭하여 정렬">
       <span className="inline-flex items-center gap-0.5">{label}
-        <span className="text-[8px] text-[#94A3B8]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
+        <span className="text-[8px] text-[#8A949C]">{active ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
       </span>
     </th>
   )
@@ -80,7 +80,7 @@ function SortTh({ label, field, sortKey, sortDir, onSort, className }: {
 
 function DeviceSummary({ rows }: { rows: Assignment[] }) {
   const active = rows.filter(r => ['holding', 'defective'].includes(r.status))
-  if (!active.length) return <p className="text-[12px] text-[#94A3B8]">단말기 없음</p>
+  if (!active.length) return <p className="text-[12px] text-[#8A949C]">단말기 없음</p>
   const counts: Record<string, number> = {}
   for (const r of active) {
     const key = `${r.device_type ?? '미분류'} ${r.sub_type ?? ''}`.trim()
@@ -91,13 +91,13 @@ function DeviceSummary({ rows }: { rows: Assignment[] }) {
     <div className="space-y-1">
       {Object.entries(counts).sort(([a],[b])=>a.localeCompare(b,'ko')).map(([k,v]) => (
         <div key={k} className="flex justify-between text-[12px]">
-          <span className="text-[#475569]">{k}</span>
-          <span data-guest-blur className="font-bold text-[#1E293B]">{v}</span>
+          <span className="text-[#2F3941]">{k}</span>
+          <span data-guest-blur className="font-bold text-[#111111]">{v}</span>
         </div>
       ))}
       <div className="flex justify-between text-[12px] border-t border-[rgba(0,0,0,0.08)] pt-1 mt-1">
-        <span className="font-bold text-[#64748B]">합계</span>
-        <span data-guest-blur className="font-bold text-[#B32646]">{total}대</span>
+        <span className="font-bold text-[#5A666F]">합계</span>
+        <span data-guest-blur className="font-bold text-[#D60051]">{total}대</span>
       </div>
     </div>
   )
@@ -110,8 +110,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[15px] font-bold text-[#1E293B]">{title}</h3>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg">✕</button>
+          <h3 className="text-[15px] font-bold text-[#111111]">{title}</h3>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg">✕</button>
         </div>
         {children}
       </div>
@@ -173,7 +173,7 @@ function AssignModal({
     <Modal title="➕ 새 배정" onClose={onClose}>
       {canPickEmp && (
         <div className="mb-3">
-          <label className="text-[11px] text-[#64748B] block mb-1">배정 직원</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">배정 직원</label>
           <Select value={targetId} onValueChange={v => {
             if (!v) return
             const u = users.find(u => u.id === v)
@@ -186,38 +186,38 @@ function AssignModal({
           </Select>
         </div>
       )}
-      {!canPickEmp && <p className="text-[12px] text-[#64748B] mb-3">배정 직원: <strong>{userName}</strong></p>}
+      {!canPickEmp && <p className="text-[12px] text-[#5A666F] mb-3">배정 직원: <strong>{userName}</strong></p>}
 
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-[11px] text-[#64748B]">배정 가능 단말기 {available.length}건</label>
-          <button onClick={toggleAll} className="text-[11px] text-[#B32646] underline">
+          <label className="text-[11px] text-[#5A666F]">배정 가능 단말기 {available.length}건</label>
+          <button onClick={toggleAll} className="text-[11px] text-[#D60051] underline">
             {selected.size === available.length ? '전체 해제' : '전체 선택'}
           </button>
         </div>
-        {loading ? <p className="text-[12px] text-[#94A3B8]">로딩 중...</p> : available.length === 0
-          ? <p className="text-[12px] text-[#94A3B8]">배정 가능한 단말기가 없습니다.</p>
+        {loading ? <p className="text-[12px] text-[#8A949C]">로딩 중...</p> : available.length === 0
+          ? <p className="text-[12px] text-[#8A949C]">배정 가능한 단말기가 없습니다.</p>
           : (
             <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA] sticky top-0">
+                <thead className="bg-[#F6F6F7] sticky top-0">
                   <tr>
                     <th className="px-2 py-1.5 text-center w-8">✓</th>
-                    <th className="px-2 py-1.5 text-left font-medium text-[#64748B]">IH</th>
-                    <th className="px-2 py-1.5 text-left font-medium text-[#64748B]">기종</th>
-                    <th className="px-2 py-1.5 text-left font-medium text-[#64748B]">출고일</th>
+                    <th className="px-2 py-1.5 text-left font-medium text-[#5A666F]">IH</th>
+                    <th className="px-2 py-1.5 text-left font-medium text-[#5A666F]">기종</th>
+                    <th className="px-2 py-1.5 text-left font-medium text-[#5A666F]">출고일</th>
                   </tr>
                 </thead>
                 <tbody>
                   {available.map((t, i) => (
                     <tr key={t.ih_code} onClick={() => toggle(t.ih_code)}
-                      className={`cursor-pointer ${selected.has(t.ih_code) ? 'bg-[rgba(179, 38, 70,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                      className={`cursor-pointer ${selected.has(t.ih_code) ? 'bg-[rgba(214,0,81,0.06)]' : i%2===0?'bg-white':'bg-[#F6F6F7]'}`}>
                       <td className="px-2 py-1 text-center">
-                        <input type="checkbox" readOnly checked={selected.has(t.ih_code)} className="accent-[#B32646]" />
+                        <input type="checkbox" readOnly checked={selected.has(t.ih_code)} className="accent-[#D60051]" />
                       </td>
-                      <td className="px-2 py-1 font-mono text-[#1E293B]">{t.ih_code}</td>
-                      <td className="px-2 py-1 text-[#475569]">{`${t.device_type} ${t.sub_type}`.trim() || '-'}</td>
-                      <td className="px-2 py-1 text-[#94A3B8]">{t.upload_date?.slice(0,10) ?? '-'}</td>
+                      <td className="px-2 py-1 font-mono text-[#111111]">{t.ih_code}</td>
+                      <td className="px-2 py-1 text-[#2F3941]">{`${t.device_type} ${t.sub_type}`.trim() || '-'}</td>
+                      <td className="px-2 py-1 text-[#8A949C]">{t.upload_date?.slice(0,10) ?? '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -229,7 +229,7 @@ function AssignModal({
       {msg && <p className="text-[12px] text-red-500 mb-2">{msg}</p>}
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || !selected.size}
-          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {saving ? '저장 중...' : `✅ ${targetName || '?'}에게 ${selected.size}건 배정`}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -282,21 +282,21 @@ function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => v
 
   return (
     <Modal title="🔄 불량 교체" onClose={onClose}>
-      <p className="text-[12px] text-[#64748B] mb-1">{sameIh ? '단말기 IH' : '설치할 단말기 IH'}: <strong className="font-mono">{rec.ih_code}</strong></p>
-      {expDtype && <p className="text-[12px] text-[#64748B] mb-3">기종: <strong>{expDtype} {expStype}</strong></p>}
+      <p className="text-[12px] text-[#5A666F] mb-1">{sameIh ? '단말기 IH' : '설치할 단말기 IH'}: <strong className="font-mono">{rec.ih_code}</strong></p>
+      {expDtype && <p className="text-[12px] text-[#5A666F] mb-3">기종: <strong>{expDtype} {expStype}</strong></p>}
       {canSameIh && (
-        <label className="flex items-center gap-2 text-[12px] text-[#475569] mb-3">
-          <input type="checkbox" checked={sameIh} onChange={e => { setSameIh(e.target.checked); setMsg('') }} className="accent-[#B32646]" />
-          <span>양품불량 — 들고나간 단말기가 불량 <span className="text-[#94A3B8]">(IH 동일 · 양품→불량)</span></span>
+        <label className="flex items-center gap-2 text-[12px] text-[#2F3941] mb-3">
+          <input type="checkbox" checked={sameIh} onChange={e => { setSameIh(e.target.checked); setMsg('') }} className="accent-[#D60051]" />
+          <span>양품불량 — 들고나간 단말기가 불량 <span className="text-[#8A949C]">(IH 동일 · 양품→불량)</span></span>
         </label>
       )}
       {sameIh ? (
-        <p className="text-[12px] text-[#64748B] mb-3 bg-[#FAFAFA] border border-[#E2E8F0] rounded p-2">
-          동일 IH <strong className="font-mono">{rec.ih_code}</strong> 를 <strong className="text-[#B32646]">불량 보유중</strong>으로 변경합니다. (직원 보유 유지)
+        <p className="text-[12px] text-[#5A666F] mb-3 bg-[#F6F6F7] border border-[#E3E1DE] rounded p-2">
+          동일 IH <strong className="font-mono">{rec.ih_code}</strong> 를 <strong className="text-[#D60051]">불량 보유중</strong>으로 변경합니다. (직원 보유 유지)
         </p>
       ) : (
         <div className="mb-3">
-          <label className="text-[11px] text-[#64748B] block mb-1">수거한 불량 IH 번호</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">수거한 불량 IH 번호</label>
           <Input value={defIh} onChange={e => { setDefIh(e.target.value); checkType(e.target.value) }}
             placeholder="예: 100456" className="h-8 text-[12px]" />
           {defIh && typeOk && <p className="text-[11px] text-green-600 mt-1">기종 일치 ✅</p>}
@@ -306,7 +306,7 @@ function SwapModal({ rec, onClose, onDone }: { rec: Assignment; onClose: () => v
       {sameIh && msg && <p className="text-[11px] text-red-500 mb-2">{msg}</p>}
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || (sameIh ? false : (!typeOk || defIh.trim() === rec.ih_code))}
-          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {saving ? '처리 중...' : sameIh ? '불량 처리' : '교체 확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -344,7 +344,7 @@ function TransferModal({
 
   return (
     <Modal title="👤 직원 이동" onClose={onClose}>
-      <p className="text-[12px] text-[#64748B] mb-3">선택 {ids.length}건을 이동합니다.</p>
+      <p className="text-[12px] text-[#5A666F] mb-3">선택 {ids.length}건을 이동합니다.</p>
       <Select value={targetId} onValueChange={v => {
         if (!v) return
         const u = users.find(u => u.id === v)
@@ -357,7 +357,7 @@ function TransferModal({
       </Select>
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving || !targetName}
-          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {saving ? '처리 중...' : '이동 확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -391,10 +391,10 @@ function ConfirmModal({
   }
   return (
     <Modal title={title} onClose={onClose}>
-      <p className="text-[12px] text-[#475569] mb-4">{desc}</p>
+      <p className="text-[12px] text-[#2F3941] mb-4">{desc}</p>
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving}
-          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {saving ? '처리 중...' : '확정'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -443,19 +443,19 @@ function EditModal({
     <Modal title="✏️ 레코드 수정" onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">IH 번호</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">IH 번호</label>
           <Input value={ih} onChange={e => setIh(e.target.value)} className="h-8 text-[12px]" />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] text-[#64748B] block mb-1">기종</label>
+            <label className="text-[11px] text-[#5A666F] block mb-1">기종</label>
             <Select value={dtype} onValueChange={v => v !== null && setDtype(v)}>
               <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
               <SelectContent>{DEVICE_OPTS.map(o => <SelectItem key={o} value={o} className="text-[12px]">{o || '(없음)'}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-[11px] text-[#64748B] block mb-1">유형</label>
+            <label className="text-[11px] text-[#5A666F] block mb-1">유형</label>
             <Select value={stype} onValueChange={v => v !== null && setStype(v)}>
               <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
               <SelectContent>{SUB_OPTS.map(o => <SelectItem key={o} value={o} className="text-[12px]">{o || '(없음)'}</SelectItem>)}</SelectContent>
@@ -463,7 +463,7 @@ function EditModal({
           </div>
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">배정 직원</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">배정 직원</label>
           <Select value={empId || '__none__'} onValueChange={v => {
             if (!v) return
             if (v === '__none__') { setEmpId(''); setEmpName('(미배정)'); return }
@@ -478,7 +478,7 @@ function EditModal({
           </Select>
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">상태</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">상태</label>
           <Select value={status} onValueChange={v => v !== null && setStatus(v)}>
             <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
             <SelectContent>{STATUS_OPTS.map(o => <SelectItem key={o} value={o} className="text-[12px]">{STATUS_LABEL[o]}</SelectItem>)}</SelectContent>
@@ -487,7 +487,7 @@ function EditModal({
       </div>
       <div className="flex gap-2 mt-4">
         <Button onClick={handleSave} disabled={saving || !ih.trim()}
-          className="flex-1 bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="flex-1 bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {saving ? '저장 중...' : '저장'}
         </Button>
         <Button variant="outline" onClick={onClose} className="text-[12px] h-8">취소</Button>
@@ -555,10 +555,10 @@ function TabAssignments({
   return (
     <div className="space-y-3">
       {/* 상단 버튼 + 직원 선택 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap items-center gap-2">
           {(canWrite || isBrowse) && (
-            <Button onClick={() => setModal('assign')} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+            <Button onClick={() => setModal('assign')} className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
               ➕ 새 배정
             </Button>
           )}
@@ -578,8 +578,8 @@ function TabAssignments({
 
       {/* 선택 액션 버튼 */}
       {selIds.length > 0 && (
-        <div className="flex flex-wrap gap-2 bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-2">
-          <span className="text-[12px] font-bold text-[#B32646] self-center">{selIds.length}건 선택</span>
+        <div className="flex flex-wrap gap-2 bg-[rgba(214,0,81,0.04)] border border-[rgba(214,0,81,0.15)] rounded-lg p-2">
+          <span className="text-[12px] font-bold text-[#D60051] self-center">{selIds.length}건 선택</span>
           <Button variant="outline" onClick={() => setModal('swap')} disabled={!swapOk} className="text-[12px] h-7">🔄 불량 교체</Button>
           <Button variant="outline" onClick={() => setModal('transfer')} className="text-[12px] h-7">👤 직원 이동</Button>
           <Button variant="outline" onClick={() => setModal('return')} className="text-[12px] h-7">↩️ 반납</Button>
@@ -593,38 +593,38 @@ function TabAssignments({
       {/* 2단 레이아웃 */}
       <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
         <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg p-3">
-          <p className="text-[11px] font-bold text-[#64748B] mb-2">기종별 수량</p>
+          <p className="text-[11px] font-bold text-[#5A666F] mb-2">기종별 수량</p>
           <DeviceSummary rows={visibleRows} />
         </div>
         <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-x-auto">
-          {loading ? <p className="text-[12px] text-[#94A3B8] p-4 text-center">로딩 중...</p> : (
+          {loading ? <p className="text-[12px] text-[#8A949C] p-4 text-center">로딩 중...</p> : (
             <table className="w-full text-[12px] min-w-[560px]">
-              <thead className="bg-[#F8F9FA]">
+              <thead className="bg-[#F6F6F7]">
                 <tr>
                   <th className="px-2 py-2 w-8 text-center">
-                    <input type="checkbox" onChange={toggleAll} checked={selected.size === visibleRows.length && visibleRows.length > 0} className="accent-[#B32646]" />
+                    <input type="checkbox" onChange={toggleAll} checked={selected.size === visibleRows.length && visibleRows.length > 0} className="accent-[#D60051]" />
                   </th>
-                  <th className="px-3 py-2 text-left font-medium text-[#64748B]">IH</th>
-                  <th className="px-3 py-2 text-left font-medium text-[#64748B]">기종</th>
-                  <th className="px-3 py-2 text-left font-medium text-[#64748B]">직원</th>
-                  <th className="px-3 py-2 text-left font-medium text-[#64748B]">상태</th>
-                  <th className="px-3 py-2 text-left font-medium text-[#64748B]">배정일시</th>
+                  <th className="px-3 py-2 text-left font-medium text-[#5A666F]">IH</th>
+                  <th className="px-3 py-2 text-left font-medium text-[#5A666F]">기종</th>
+                  <th className="px-3 py-2 text-left font-medium text-[#5A666F]">직원</th>
+                  <th className="px-3 py-2 text-left font-medium text-[#5A666F]">상태</th>
+                  <th className="px-3 py-2 text-left font-medium text-[#5A666F]">배정일시</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleRows.length === 0
-                  ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#94A3B8]">보유 단말기 없음</td></tr>
+                  ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#8A949C]">보유 단말기 없음</td></tr>
                   : visibleRows.map((r, i) => (
                     <tr key={r.id} onClick={() => toggleRow(r.id)}
-                      className={`cursor-pointer ${selected.has(r.id) ? 'bg-[rgba(179, 38, 70,0.06)]' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                      className={`cursor-pointer ${selected.has(r.id) ? 'bg-[rgba(214,0,81,0.06)]' : i%2===0?'bg-white':'bg-[#F6F6F7]'}`}>
                       <td className="px-2 py-1.5 text-center">
-                        <input type="checkbox" readOnly checked={selected.has(r.id)} className="accent-[#B32646]" />
+                        <input type="checkbox" readOnly checked={selected.has(r.id)} className="accent-[#D60051]" />
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[#1E293B]">{r.ih_code}</td>
-                      <td className="px-3 py-1.5 text-[#475569]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
-                      <td className="px-3 py-1.5 text-[#1E293B]">{r.employee_name}</td>
+                      <td className="px-3 py-1.5 font-mono text-[#111111]">{r.ih_code}</td>
+                      <td className="px-3 py-1.5 text-[#2F3941]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
+                      <td className="px-3 py-1.5 text-[#111111]">{r.employee_name}</td>
                       <td className="px-3 py-1.5"><StatusBadge status={r.status} /></td>
-                      <td className="px-3 py-1.5 text-[#94A3B8]">{tsKst(r.assigned_at)}</td>
+                      <td className="px-3 py-1.5 text-[#8A949C]">{tsKst(r.assigned_at)}</td>
                     </tr>
                   ))
                 }
@@ -723,7 +723,7 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
   }, [activeRows, available, selCenter, ihSearch])
   const { sorted: centerSorted, sortKey, sortDir, toggle } = useSort(centerRows, 'employee_name', 'asc')
 
-  if (loading) return <p className="text-[12px] text-[#94A3B8] py-4">로딩 중...</p>
+  if (loading) return <p className="text-[12px] text-[#8A949C] py-4">로딩 중...</p>
 
   const empNames = Object.keys(pivot.map).filter(k => k !== '센터 창고').sort()
   const allEmps = [...empNames, ...(pivot.map['센터 창고'] ? ['센터 창고'] : []), '합계']
@@ -731,21 +731,21 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-[13px] font-bold text-[#1E293B]">직원별 기종별 수량</h3>
-        <Button variant="outline" onClick={fetchData} className="text-[12px] h-8">🔄 새로고침</Button>
+        <h3 className="text-[13px] font-bold text-[#111111]">직원별 기종별 수량</h3>
+        <Button variant="outline" onClick={fetchData} className="text-[12px] h-8">새로고침</Button>
       </div>
 
       {/* 피벗 테이블 */}
       {pivot.allKeys.length > 0 && (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 overflow-x-auto">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 overflow-x-auto">
           <table className="text-[11px] border-collapse w-auto">
             <thead>
-              <tr className="bg-[#F8F9FA]">
-                <th className="border border-[rgba(0,0,0,0.1)] px-3 py-1.5 text-left font-bold text-[#64748B] whitespace-nowrap">직원명</th>
+              <tr className="bg-[#F6F6F7]">
+                <th className="border border-[rgba(0,0,0,0.1)] px-3 py-1.5 text-left font-bold text-[#5A666F] whitespace-nowrap">직원명</th>
                 {pivot.allKeys.map(k => (
-                  <th key={k} className="border border-[rgba(0,0,0,0.1)] px-2 py-1.5 font-medium text-[#64748B] whitespace-nowrap">{k}</th>
+                  <th key={k} className="border border-[rgba(0,0,0,0.1)] px-2 py-1.5 font-medium text-[#5A666F] whitespace-nowrap">{k}</th>
                 ))}
-                <th className="border border-[rgba(0,0,0,0.1)] px-2 py-1.5 font-bold text-[#64748B] bg-[#FFF2CC]">합계</th>
+                <th className="border border-[rgba(0,0,0,0.1)] px-2 py-1.5 font-bold text-[#5A666F] bg-[#FFF2CC]">합계</th>
               </tr>
             </thead>
             <tbody>
@@ -766,11 +766,11 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
                 const row = pivot.map[emp] ?? {}
                 const total = Object.values(row).reduce((s, v) => s + v, 0)
                 return (
-                  <tr key={emp} className={emp === '센터 창고' ? 'bg-[#F0F9FF]' : ''}>
+                  <tr key={emp} className={emp === '센터 창고' ? 'bg-[#F6F6F7]' : ''}>
                     <td className="border border-[rgba(0,0,0,0.1)] px-3 py-1 whitespace-nowrap font-medium">{emp}</td>
                     {pivot.allKeys.map(k => (
                       <td key={k} className="border border-[rgba(0,0,0,0.1)] px-2 py-1 text-center">
-                        {row[k] ? <span className="font-bold">{row[k]}</span> : <span className="text-[#CBD5E1]">-</span>}
+                        {row[k] ? <span className="font-bold">{row[k]}</span> : <span className="text-[#D9D9D9]">-</span>}
                       </td>
                     ))}
                     <td className="border border-[rgba(0,0,0,0.1)] px-2 py-1 text-center font-bold bg-[#FFF2CC]">{total}</td>
@@ -784,11 +784,11 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
 
       {/* 전체 목록 */}
       <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-x-auto">
-        <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.08)] flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-bold text-[#1E293B]">센터 단말기 현황</span>
-          <span className="text-[11px] text-[#94A3B8]">
+        <div className="px-3 py-2 bg-[#F6F6F7] border-b border-[rgba(0,0,0,0.08)] flex flex-wrap items-center gap-2">
+          <span className="text-[12px] font-bold text-[#111111]">센터 단말기 현황</span>
+          <span className="text-[11px] text-[#8A949C]">
             배정 {activeRows.length}대 · 미배정 {available.length}대
-            {ihSearch.trim() && <span className="text-[#B32646] ml-1">· 검색 {centerRows.length}건</span>}
+            {ihSearch.trim() && <span className="text-[#D60051] ml-1">· 검색 {centerRows.length}건</span>}
           </span>
           <div className="ml-auto flex items-center gap-1.5">
             <Input
@@ -799,12 +799,12 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
             />
             {ihSearch && (
               <button type="button" onClick={() => setIhSearch('')}
-                className="text-[11px] text-[#94A3B8] hover:text-[#1E293B] px-1">✕</button>
+                className="text-[11px] text-[#8A949C] hover:text-[#111111] px-1">✕</button>
             )}
           </div>
         </div>
         <table className="w-full text-[12px]">
-          <thead className="bg-[#F8F9FA]">
+          <thead className="bg-[#F6F6F7]">
             <tr>
               <SortTh label="직원명"   field="employee_name" sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
               <SortTh label="IH"       field="ih_code"       sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
@@ -815,16 +815,16 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
           </thead>
           <tbody>
             {centerSorted.length === 0 ? (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-[12px] text-[#94A3B8]">
+              <tr><td colSpan={5} className="px-3 py-6 text-center text-[12px] text-[#8A949C]">
                 {ihSearch.trim() ? '검색 결과가 없습니다.' : '단말기가 없습니다.'}
               </td></tr>
             ) : centerSorted.map((r, i) => (
-              <tr key={`${r.id}-${i}`} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
-                <td className="px-3 py-1.5 text-[#1E293B]">{r.employee_name}</td>
-                <td className="px-3 py-1.5 font-mono text-[#475569]">{r.ih_code}</td>
-                <td className="px-3 py-1.5 text-[#64748B]">{r.device || '-'}</td>
+              <tr key={`${r.id}-${i}`} className={i%2===0?'bg-white':'bg-[#F6F6F7]'}>
+                <td className="px-3 py-1.5 text-[#111111]">{r.employee_name}</td>
+                <td className="px-3 py-1.5 font-mono text-[#2F3941]">{r.ih_code}</td>
+                <td className="px-3 py-1.5 text-[#5A666F]">{r.device || '-'}</td>
                 <td className="px-3 py-1.5"><StatusBadge status={r.status} /></td>
-                <td className="px-3 py-1.5 text-[#94A3B8]">{tsKst(r.assigned_at)}</td>
+                <td className="px-3 py-1.5 text-[#8A949C]">{tsKst(r.assigned_at)}</td>
               </tr>
             ))}
           </tbody>
@@ -834,11 +834,11 @@ function TabCenter({ selCenter, canManage }: { selCenter: string; canManage: boo
       {/* 데이터 삭제 (admin/manager) */}
       {canManage && (
         <details className="border border-[rgba(0,0,0,0.1)] rounded-lg">
-          <summary className="px-3 py-2 text-[12px] text-[#64748B] cursor-pointer hover:bg-[#F8F9FA]">
+          <summary className="px-3 py-2 text-[12px] text-[#5A666F] cursor-pointer hover:bg-[#F6F6F7]">
             🗑️ 센터 보유현황 데이터 삭제
           </summary>
           <div className="p-3 border-t border-[rgba(0,0,0,0.08)]">
-            <p className="text-[11px] text-[#94A3B8] mb-2">
+            <p className="text-[11px] text-[#8A949C] mb-2">
               bus_terminal_assignments 레코드를 삭제합니다. terminal_movements 데이터는 삭제되지 않습니다.
             </p>
             <DeleteSection selCenter={selCenter} onDone={fetchData} />
@@ -879,39 +879,39 @@ function DeleteSection({ selCenter, onDone }: { selCenter: string; onDone: () =>
     setDeleting(false)
   }
 
-  if (loading) return <p className="text-[12px] text-[#94A3B8]">로딩 중...</p>
-  if (!rows.length) return <p className="text-[12px] text-[#94A3B8]">삭제할 데이터가 없습니다.</p>
+  if (loading) return <p className="text-[12px] text-[#8A949C]">로딩 중...</p>
+  if (!rows.length) return <p className="text-[12px] text-[#8A949C]">삭제할 데이터가 없습니다.</p>
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-[12px] text-[#475569]">
-        <input type="checkbox" checked={selAll} onChange={e => { setSelAll(e.target.checked); setSelIds(new Set()) }} className="accent-[#B32646]" />
+      <label className="flex items-center gap-2 text-[12px] text-[#2F3941]">
+        <input type="checkbox" checked={selAll} onChange={e => { setSelAll(e.target.checked); setSelIds(new Set()) }} className="accent-[#D60051]" />
         전체 선택 ({rows.length}건)
       </label>
       <div className="border rounded overflow-hidden max-h-48 overflow-y-auto">
         <table className="w-full text-[11px]">
-          <thead className="bg-[#F8F9FA] sticky top-0">
+          <thead className="bg-[#F6F6F7] sticky top-0">
             <tr>
               <th className="px-2 py-1.5 w-8">✓</th>
-              <th className="px-2 py-1.5 text-left text-[#64748B]">직원명</th>
-              <th className="px-2 py-1.5 text-left text-[#64748B]">IH</th>
-              <th className="px-2 py-1.5 text-left text-[#64748B]">기종</th>
-              <th className="px-2 py-1.5 text-left text-[#64748B]">상태</th>
-              <th className="px-2 py-1.5 text-left text-[#64748B]">배정일시</th>
+              <th className="px-2 py-1.5 text-left text-[#5A666F]">직원명</th>
+              <th className="px-2 py-1.5 text-left text-[#5A666F]">IH</th>
+              <th className="px-2 py-1.5 text-left text-[#5A666F]">기종</th>
+              <th className="px-2 py-1.5 text-left text-[#5A666F]">상태</th>
+              <th className="px-2 py-1.5 text-left text-[#5A666F]">배정일시</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.id} onClick={() => !selAll && toggle(r.id)}
-                className={`cursor-pointer ${(selAll || selIds.has(r.id)) ? 'bg-red-50' : i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                className={`cursor-pointer ${(selAll || selIds.has(r.id)) ? 'bg-red-50' : i%2===0?'bg-white':'bg-[#F6F6F7]'}`}>
                 <td className="px-2 py-1 text-center">
                   <input type="checkbox" readOnly checked={selAll || selIds.has(r.id)} className="accent-red-500" />
                 </td>
                 <td className="px-2 py-1">{r.employee_name}</td>
                 <td className="px-2 py-1 font-mono">{r.ih_code}</td>
-                <td className="px-2 py-1 text-[#64748B]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
+                <td className="px-2 py-1 text-[#5A666F]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
                 <td className="px-2 py-1"><StatusBadge status={r.status} /></td>
-                <td className="px-2 py-1 text-[#94A3B8]">{tsKst(r.assigned_at)}</td>
+                <td className="px-2 py-1 text-[#8A949C]">{tsKst(r.assigned_at)}</td>
               </tr>
             ))}
           </tbody>
@@ -1016,7 +1016,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
     fetchData()
   }
 
-  if (!isRegional) return <p className="text-[12px] text-[#94A3B8] py-4">이 탭은 버스 센터({TRACKING_CENTERS.map(c => c.replace('센터', '')).join('·')})에서만 사용할 수 있습니다.</p>
+  if (!isRegional) return <p className="text-[12px] text-[#8A949C] py-4">이 탭은 버스 센터({TRACKING_CENTERS.map(c => c.replace('센터', '')).join('·')})에서만 사용할 수 있습니다.</p>
 
   const STATUS_KO: Record<string, string> = { pending: '대기중', approved: '승인', rejected: '거절' }
   const pendingIn = requests.filter(r => r.to_center === (canManage ? selCenter : srcCenter) && r.status === 'pending')
@@ -1026,7 +1026,7 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
       <div className="flex gap-2 mb-2">
         {(['request','status'] as const).map(t => (
           <button key={t} onClick={() => setSubTab(t)}
-            className={`text-[12px] px-3 py-1.5 rounded border transition-colors ${subTab === t ? 'bg-[#B32646] text-white border-[#B32646]' : 'border-[rgba(0,0,0,0.12)] text-[#64748B] hover:bg-[#F8F9FA]'}`}>
+            className={`text-[12px] px-3 py-1.5 rounded border transition-colors ${subTab === t ? 'bg-[#D60051] text-white border-[#D60051]' : 'border-[rgba(0,0,0,0.12)] text-[#5A666F] hover:bg-[#F6F6F7]'}`}>
             {t === 'request' ? '📤 이동 신청' : `📋 이동 현황${pendingIn.length > 0 ? ` (대기 ${pendingIn.length})` : ''}`}
           </button>
         ))}
@@ -1034,40 +1034,40 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
       </div>
 
       {subTab === 'request' && (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
-          <p className="text-[11px] text-[#64748B]">본인 센터 단말기를 선택해 다른 센터로 이동 신청합니다.</p>
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
+          <p className="text-[11px] text-[#5A666F]">본인 센터 단말기를 선택해 다른 센터로 이동 신청합니다.</p>
           <Select value={toCtr} onValueChange={v => v !== null && setToCtr(v)}>
             <SelectTrigger className="h-8 text-[12px] w-48"><SelectValue placeholder="목적 센터 선택" /></SelectTrigger>
             <SelectContent>{destOptions.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
           </Select>
-          {loading ? <p className="text-[12px] text-[#94A3B8]">로딩 중...</p> : (
+          {loading ? <p className="text-[12px] text-[#8A949C]">로딩 중...</p> : (
             <div className="border rounded overflow-hidden max-h-72 overflow-y-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA] sticky top-0">
+                <thead className="bg-[#F6F6F7] sticky top-0">
                   <tr>
                     <th className="px-2 py-1.5 w-8">
                       <input type="checkbox" onChange={() =>
                         setSelIhs(prev => prev.size === movable.length ? new Set() : new Set(movable.map(t => t.ih_code)))
-                      } className="accent-[#B32646]" />
+                      } className="accent-[#D60051]" />
                     </th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">보유직원</th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">IH</th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">기종</th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">상태</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">보유직원</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">IH</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">기종</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">상태</th>
                   </tr>
                 </thead>
                 <tbody>
                   {movable.length === 0
-                    ? <tr><td colSpan={5} className="px-3 py-4 text-center text-[#94A3B8]">이동 신청할 단말기 없음</td></tr>
+                    ? <tr><td colSpan={5} className="px-3 py-4 text-center text-[#8A949C]">이동 신청할 단말기 없음</td></tr>
                     : movable.map((t, i) => (
                       <tr key={t.ih_code} onClick={() => toggleIh(t.ih_code)}
-                        className={`cursor-pointer ${selIhs.has(t.ih_code)?'bg-[rgba(179, 38, 70,0.06)]':i%2===0?'bg-white':'bg-[#FAFAFA]'}`}>
+                        className={`cursor-pointer ${selIhs.has(t.ih_code)?'bg-[rgba(214,0,81,0.06)]':i%2===0?'bg-white':'bg-[#F6F6F7]'}`}>
                         <td className="px-2 py-1 text-center">
-                          <input type="checkbox" readOnly checked={selIhs.has(t.ih_code)} className="accent-[#B32646]" />
+                          <input type="checkbox" readOnly checked={selIhs.has(t.ih_code)} className="accent-[#D60051]" />
                         </td>
-                        <td className="px-3 py-1 text-[#475569]">{t.employee_name}</td>
+                        <td className="px-3 py-1 text-[#2F3941]">{t.employee_name}</td>
                         <td className="px-3 py-1 font-mono">{t.ih_code}</td>
-                        <td className="px-3 py-1 text-[#64748B]">{`${t.device_type??''} ${t.sub_type??''}`.trim()||'-'}</td>
+                        <td className="px-3 py-1 text-[#5A666F]">{`${t.device_type??''} ${t.sub_type??''}`.trim()||'-'}</td>
                         <td className="px-3 py-1"><StatusBadge status={t.status} /></td>
                       </tr>
                     ))
@@ -1079,10 +1079,10 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
           <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="비고 (선택)" className="h-8 text-[12px]" />
           {msg && <p className="text-[12px] text-red-500">{msg}</p>}
           {selIhs.size > 0 && toCtr && (
-            <p className="text-[12px] text-[#64748B]">선택 <strong>{selIhs.size}건</strong> → {toCtr}</p>
+            <p className="text-[12px] text-[#5A666F]">선택 <strong>{selIhs.size}건</strong> → {toCtr}</p>
           )}
           <Button onClick={handleSubmit} disabled={submitting || selIhs.size === 0 || !toCtr}
-            className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+            className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
             {submitting ? '신청 중...' : '📤 이동 신청'}
           </Button>
         </div>
@@ -1092,35 +1092,35 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
         <div className="space-y-4">
           {pendingIn.length > 0 && (
             <div>
-              <p className="text-[12px] font-bold text-[#1E293B] mb-2">📥 받은 신청 (대기중)</p>
+              <p className="text-[12px] font-bold text-[#111111] mb-2">📥 받은 신청 (대기중)</p>
               {pendingIn.map(req => (
                 <div key={req.id} className="border border-[rgba(0,0,0,0.1)] rounded-lg p-3 mb-2 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="text-[12px] font-bold">{req.from_center} → {req.to_center}</span>
-                      <span className="text-[11px] text-[#64748B] ml-2">{(req.ih_codes??[]).length}대 · {req.requested_by_name} · {tsKst(req.requested_at)}</span>
-                      {req.notes && <p className="text-[11px] text-[#94A3B8]">비고: {req.notes}</p>}
+                      <span className="text-[11px] text-[#5A666F] ml-2">{(req.ih_codes??[]).length}대 · {req.requested_by_name} · {tsKst(req.requested_at)}</span>
+                      {req.notes && <p className="text-[11px] text-[#8A949C]">비고: {req.notes}</p>}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
-                      <Button onClick={() => handleAction(req.id, 'approve')} className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-[11px] h-7">✅ 승인</Button>
+                      <Button onClick={() => handleAction(req.id, 'approve')} className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white text-[11px] h-7">✅ 승인</Button>
                       <Button variant="outline" onClick={() => handleAction(req.id, 'reject')} className="text-[11px] h-7 text-red-500">❌ 거절</Button>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="text-[11px] w-full">
-                      <thead className="bg-[#F8F9FA]">
+                      <thead className="bg-[#F6F6F7]">
                         <tr>
-                          <th className="px-2 py-1 text-left text-[#64748B]">IH</th>
-                          <th className="px-2 py-1 text-left text-[#64748B]">기종</th>
-                          <th className="px-2 py-1 text-left text-[#64748B]">보유직원</th>
+                          <th className="px-2 py-1 text-left text-[#5A666F]">IH</th>
+                          <th className="px-2 py-1 text-left text-[#5A666F]">기종</th>
+                          <th className="px-2 py-1 text-left text-[#5A666F]">보유직원</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(req.ih_codes ?? []).map((item, i) => (
-                          <tr key={i} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
+                          <tr key={i} className={i%2===0?'bg-white':'bg-[#F6F6F7]'}>
                             <td className="px-2 py-0.5 font-mono">{item.ih_code}</td>
-                            <td className="px-2 py-0.5 text-[#64748B]">{`${item.device_type??''} ${item.sub_type??''}`.trim()||'-'}</td>
-                            <td className="px-2 py-0.5 text-[#94A3B8]">{item.employee_name||'-'}</td>
+                            <td className="px-2 py-0.5 text-[#5A666F]">{`${item.device_type??''} ${item.sub_type??''}`.trim()||'-'}</td>
+                            <td className="px-2 py-0.5 text-[#8A949C]">{item.employee_name||'-'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1131,38 +1131,38 @@ function TabTransfer({ selCenter, user, canManage }: { selCenter: string; user: 
             </div>
           )}
 
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 overflow-x-auto">
-            <p className="text-[12px] font-bold text-[#1E293B] mb-2">📋 이동 신청 이력</p>
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 overflow-x-auto">
+            <p className="text-[12px] font-bold text-[#111111] mb-2">📋 이동 신청 이력</p>
             {requests.length === 0
-              ? <p className="text-[12px] text-[#94A3B8]">이동 신청 내역이 없습니다.</p>
+              ? <p className="text-[12px] text-[#8A949C]">이동 신청 내역이 없습니다.</p>
               : (
                 <table className="w-full text-[12px]">
-                  <thead className="bg-[#F8F9FA]">
+                  <thead className="bg-[#F6F6F7]">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium text-[#64748B]">출발</th>
-                      <th className="px-3 py-2 text-left font-medium text-[#64748B]">목적</th>
-                      <th className="px-3 py-2 text-center font-medium text-[#64748B]">대수</th>
-                      <th className="px-3 py-2 text-left font-medium text-[#64748B]">신청자</th>
-                      <th className="px-3 py-2 text-left font-medium text-[#64748B]">신청일시</th>
-                      <th className="px-3 py-2 text-left font-medium text-[#64748B]">상태</th>
+                      <th className="px-3 py-2 text-left font-medium text-[#5A666F]">출발</th>
+                      <th className="px-3 py-2 text-left font-medium text-[#5A666F]">목적</th>
+                      <th className="px-3 py-2 text-center font-medium text-[#5A666F]">대수</th>
+                      <th className="px-3 py-2 text-left font-medium text-[#5A666F]">신청자</th>
+                      <th className="px-3 py-2 text-left font-medium text-[#5A666F]">신청일시</th>
+                      <th className="px-3 py-2 text-left font-medium text-[#5A666F]">상태</th>
                       {user.role === 'admin' && <th className="px-3 py-2 w-10" />}
                     </tr>
                   </thead>
                   <tbody>
                     {requests.map((r, i) => (
-                      <tr key={r.id} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
+                      <tr key={r.id} className={i%2===0?'bg-white':'bg-[#F6F6F7]'}>
                         <td className="px-3 py-1.5">{r.from_center}</td>
                         <td className="px-3 py-1.5">{r.to_center}</td>
                         <td className="px-3 py-1.5 text-center">{(r.ih_codes??[]).length}</td>
-                        <td className="px-3 py-1.5 text-[#64748B]">{r.requested_by_name}</td>
-                        <td className="px-3 py-1.5 text-[#94A3B8]">{tsKst(r.requested_at)}</td>
+                        <td className="px-3 py-1.5 text-[#5A666F]">{r.requested_by_name}</td>
+                        <td className="px-3 py-1.5 text-[#8A949C]">{tsKst(r.requested_at)}</td>
                         <td className="px-3 py-1.5">
                           <Badge text={STATUS_KO[r.status]??r.status}
-                            color={r.status==='approved'?'#2e7d32':r.status==='rejected'?'#c62828':'#b45309'} />
+                            color={r.status==='approved'?'#0C7A57':r.status==='rejected'?'#D60051':'#96620A'} />
                         </td>
                         {user.role === 'admin' && (
                           <td className="px-3 py-1.5">
-                            <button onClick={() => handleDelete(r.id)} className="text-[10px] text-[#94A3B8] hover:text-red-500">🗑️</button>
+                            <button onClick={() => handleDelete(r.id)} className="text-[10px] text-[#8A949C] hover:text-red-500">🗑️</button>
                           </td>
                         )}
                       </tr>
@@ -1221,17 +1221,17 @@ function TabHistory({ selCenter }: { selCenter: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap gap-2 items-end">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 flex flex-wrap gap-2 items-end">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">시작일</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">시작일</label>
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 text-[12px] w-36" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">종료일</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">종료일</label>
           <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 text-[12px] w-36" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">액션</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">액션</label>
           <Select value={action} onValueChange={v => v !== null && setAction(v)}>
             <SelectTrigger className="h-8 text-[12px] w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1240,16 +1240,16 @@ function TabHistory({ selCenter }: { selCenter: string }) {
           </Select>
         </div>
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="IH · 직원명 · 처리자" className="h-8 text-[12px] w-44" />
-        <Button onClick={fetch_data} className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">조회</Button>
+        <Button onClick={fetch_data} className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">조회</Button>
       </div>
 
       {!queried
-        ? <p className="text-[12px] text-[#94A3B8] py-4">조회 버튼을 눌러 이력을 확인하세요.</p>
-        : loading ? <p className="text-[12px] text-[#94A3B8] py-4">로딩 중...</p>
+        ? <p className="text-[12px] text-[#8A949C] py-4">조회 버튼을 눌러 이력을 확인하세요.</p>
+        : loading ? <p className="text-[12px] text-[#8A949C] py-4">로딩 중...</p>
         : (
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-[#64748B]">총 {filtered.length}건{search ? ` (검색: '${search}')` : ''}</p>
+              <p className="text-[11px] text-[#5A666F]">총 {filtered.length}건{search ? ` (검색: '${search}')` : ''}</p>
               <Button variant="outline" onClick={() => {
                 const exportData = filtered.map(r => {
                   const ihDisplay = r.action === 'swap' && r.extra_ih ? `${r.ih_code} → ${r.extra_ih}` : r.ih_code
@@ -1265,24 +1265,24 @@ function TabHistory({ selCenter }: { selCenter: string }) {
                 const wb = XLSX.utils.book_new()
                 XLSX.utils.book_append_sheet(wb, ws, '변경이력')
                 XLSX.writeFile(wb, `단말기이력_${selCenter}_${dateFrom}_${dateTo}.xlsx`)
-              }} className="text-[12px] h-8">📥 엑셀 다운로드</Button>
+              }} className="text-[12px] h-8">엑셀 다운로드</Button>
             </div>
-            <div className="rounded-lg border border-[#e2e8f0] overflow-hidden overflow-x-auto">
+            <div className="rounded-lg border border-[#E3E1DE] overflow-hidden overflow-x-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA]">
+                <thead className="bg-[#F6F6F7]">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B] whitespace-nowrap">시각</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">액션</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">단말기(설치→수거)</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">기종</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">직원</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">상태변경</th>
-                    <th className="px-3 py-2 text-left font-medium text-[#64748B]">처리자</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F] whitespace-nowrap">시각</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">액션</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">단말기(설치→수거)</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">기종</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">직원</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">상태변경</th>
+                    <th className="px-3 py-2 text-left font-medium text-[#5A666F]">처리자</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0
-                    ? <tr><td colSpan={7} className="px-3 py-4 text-center text-[#94A3B8]">조회된 이력 없음</td></tr>
+                    ? <tr><td colSpan={7} className="px-3 py-4 text-center text-[#8A949C]">조회된 이력 없음</td></tr>
                     : filtered.map((r, i) => {
                       const ihDisplay = r.action === 'swap' && r.extra_ih
                         ? `${r.ih_code} → ${r.extra_ih}` : r.ih_code
@@ -1294,14 +1294,14 @@ function TabHistory({ selCenter }: { selCenter: string }) {
                         ? `${STATUS_LABEL[r.from_status]??r.from_status} → ${STATUS_LABEL[r.to_status]??r.to_status}`
                         : STATUS_LABEL[r.to_status??r.from_status??''] ?? ''
                       return (
-                        <tr key={i} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
-                          <td className="px-3 py-1.5 text-[#94A3B8] whitespace-nowrap">{tsKst(r.acted_at)}</td>
-                          <td className="px-3 py-1.5"><Badge text={ACTION_LABEL[r.action]??r.action} color="#B32646" /></td>
-                          <td className="px-3 py-1.5 font-mono text-[#1E293B]">{ihDisplay}</td>
-                          <td className="px-3 py-1.5 text-[#64748B]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
-                          <td className="px-3 py-1.5 text-[#475569]">{empDisplay||'-'}</td>
-                          <td className="px-3 py-1.5 text-[#94A3B8] text-[11px]">{statusDisplay}</td>
-                          <td className="px-3 py-1.5 text-[#94A3B8]">{r.acted_by_name||'-'}</td>
+                        <tr key={i} className={i%2===0?'bg-white':'bg-[#F6F6F7]'}>
+                          <td className="px-3 py-1.5 text-[#8A949C] whitespace-nowrap">{tsKst(r.acted_at)}</td>
+                          <td className="px-3 py-1.5"><Badge text={ACTION_LABEL[r.action]??r.action} color="#D60051" /></td>
+                          <td className="px-3 py-1.5 font-mono text-[#111111]">{ihDisplay}</td>
+                          <td className="px-3 py-1.5 text-[#5A666F]">{`${r.device_type??''} ${r.sub_type??''}`.trim()||'-'}</td>
+                          <td className="px-3 py-1.5 text-[#2F3941]">{empDisplay||'-'}</td>
+                          <td className="px-3 py-1.5 text-[#8A949C] text-[11px]">{statusDisplay}</td>
+                          <td className="px-3 py-1.5 text-[#8A949C]">{r.acted_by_name||'-'}</td>
                         </tr>
                       )
                     })
@@ -1430,9 +1430,9 @@ function TabInit({ selCenter, userId, canManage, onRefresh }: {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-4">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-4">
         <div className="flex items-start gap-3">
-          <p className="text-[12px] text-[#64748B] flex-1">
+          <p className="text-[12px] text-[#5A666F] flex-1">
             엑셀 파일(IH번호 + 직원명 컬럼)을 업로드하면 일괄 등록합니다.{' '}
             {canManage ? '관리자는 센터 컬럼도 사용 가능합니다.' : `업로드 시 [${selCenter}]에 귀속됩니다.`}
           </p>
@@ -1440,31 +1440,31 @@ function TabInit({ selCenter, userId, canManage, onRefresh }: {
         </div>
 
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">등록 기준일</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">등록 기준일</label>
           <Input type="date" value={regDate} onChange={e => setRegDate(e.target.value)} className="h-8 text-[12px] w-40" />
         </div>
 
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">엑셀 파일 (.xlsx / .xls)</label>
+          <label className="text-[11px] text-[#5A666F] block mb-1">엑셀 파일 (.xlsx / .xls)</label>
           <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile}
-            className="text-[12px] text-[#475569] file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-[rgba(0,0,0,0.12)] file:text-[12px] file:bg-white file:text-[#475569] hover:file:bg-[#F8F9FA]" />
+            className="text-[12px] text-[#2F3941] file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-[rgba(0,0,0,0.12)] file:text-[12px] file:bg-white file:text-[#2F3941] hover:file:bg-[#F6F6F7]" />
         </div>
       </div>
 
       {cols.length > 0 && (
-        <div className="border border-[rgba(0,0,0,0.1)] rounded-lg p-3 space-y-3 bg-[#F8F9FA]">
-          <p className="text-[11px] font-bold text-[#64748B]">컬럼 선택</p>
+        <div className="border border-[rgba(0,0,0,0.1)] rounded-lg p-3 space-y-3 bg-[#F6F6F7]">
+          <p className="text-[11px] font-bold text-[#5A666F]">컬럼 선택</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-1">IH번호 컬럼 *</label>
+              <label className="text-[11px] text-[#5A666F] block mb-1">IH번호 컬럼 *</label>
               <Select value={ihCol} onValueChange={v => v !== null && setIhCol(v)}>
                 <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
                 <SelectContent>{cols.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-[11px] text-[#64748B] mb-1">
-                <input type="checkbox" checked={useNameCol} onChange={e => setUseNameCol(e.target.checked)} className="accent-[#B32646]" />
+              <label className="flex items-center gap-1.5 text-[11px] text-[#5A666F] mb-1">
+                <input type="checkbox" checked={useNameCol} onChange={e => setUseNameCol(e.target.checked)} className="accent-[#D60051]" />
                 직원명 컬럼
               </label>
               <Select value={useNameCol ? (nameCol || cols[0]) : '__none__'}
@@ -1478,8 +1478,8 @@ function TabInit({ selCenter, userId, canManage, onRefresh }: {
             </div>
             {canManage && (
               <div className="col-span-2 space-y-1">
-                <label className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
-                  <input type="checkbox" checked={useCtrCol} onChange={e => setUseCtrCol(e.target.checked)} className="accent-[#B32646]" />
+                <label className="flex items-center gap-1.5 text-[11px] text-[#5A666F]">
+                  <input type="checkbox" checked={useCtrCol} onChange={e => setUseCtrCol(e.target.checked)} className="accent-[#D60051]" />
                   센터 컬럼 사용 (허용: {TRACKING_CENTERS.join(', ')})
                 </label>
                 {useCtrCol && (
@@ -1488,7 +1488,7 @@ function TabInit({ selCenter, userId, canManage, onRefresh }: {
                     <SelectContent>{cols.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
                   </Select>
                 )}
-                {!useCtrCol && <p className="text-[11px] text-[#94A3B8]">센터 컬럼 없음 — 전체 행을 [{selCenter}]으로 등록합니다.</p>}
+                {!useCtrCol && <p className="text-[11px] text-[#8A949C]">센터 컬럼 없음 — 전체 행을 [{selCenter}]으로 등록합니다.</p>}
               </div>
             )}
           </div>
@@ -1503,43 +1503,43 @@ function TabInit({ selCenter, userId, canManage, onRefresh }: {
       {parsed.length > 0 && (
         <>
           <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-lg overflow-hidden">
-            <div className="px-3 py-2 bg-[#F8F9FA] text-[11px] text-[#64748B] flex gap-4">
+            <div className="px-3 py-2 bg-[#F6F6F7] text-[11px] text-[#5A666F] flex gap-4">
               <span>등록 대상 <strong>{parsed.length}</strong>건</span>
               <span>분류 성공 <strong className="text-green-600">{parsed.filter(r=>r.dtype).length}</strong>건</span>
               <span>미분류 <strong className="text-orange-500">{parsed.filter(r=>!r.dtype).length}</strong>건</span>
             </div>
             <div className="max-h-64 overflow-y-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA] sticky top-0">
+                <thead className="bg-[#F6F6F7] sticky top-0">
                   <tr>
-                    {canManage && <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">센터</th>}
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">IH</th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">직원명</th>
-                    <th className="px-3 py-1.5 text-left font-medium text-[#64748B]">기종</th>
+                    {canManage && <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">센터</th>}
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">IH</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">직원명</th>
+                    <th className="px-3 py-1.5 text-left font-medium text-[#5A666F]">기종</th>
                   </tr>
                 </thead>
                 <tbody>
                   {parsed.map((r, i) => (
-                    <tr key={i} className={i%2===0?'bg-white':'bg-[#FAFAFA]'}>
-                      {canManage && <td className="px-3 py-1 text-[#64748B]">{r.center}</td>}
+                    <tr key={i} className={i%2===0?'bg-white':'bg-[#F6F6F7]'}>
+                      {canManage && <td className="px-3 py-1 text-[#5A666F]">{r.center}</td>}
                       <td className="px-3 py-1 font-mono">{r.ih}</td>
-                      <td className="px-3 py-1">{r.name || <span className="text-[#94A3B8]">(미배정)</span>}</td>
-                      <td className="px-3 py-1">{r.dtype ? <span className="text-[#475569]">{r.dtype} {r.stype}</span> : <span className="text-orange-400">미분류</span>}</td>
+                      <td className="px-3 py-1">{r.name || <span className="text-[#8A949C]">(미배정)</span>}</td>
+                      <td className="px-3 py-1">{r.dtype ? <span className="text-[#2F3941]">{r.dtype} {r.stype}</span> : <span className="text-orange-400">미분류</span>}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-          <label className="flex items-center gap-2 text-[12px] text-[#475569]">
-            <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#B32646]" />
+          <label className="flex items-center gap-2 text-[12px] text-[#2F3941]">
+            <input type="checkbox" checked={doClear} onChange={e => setDoClear(e.target.checked)} className="accent-[#D60051]" />
             <span>
-              완전초기화 — 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 데이터 <b className="text-[#B32646]">전체 삭제</b> 후 등록
-              <span className="text-[#94A3B8]"> (불량·반납·미배정 + 센터창고 출고풀 포함 / 변경이력은 보존)</span>
+              완전초기화 — 대상 센터({[...new Set(parsed.map(r=>r.center))].join(', ')}) 기존 데이터 <b className="text-[#D60051]">전체 삭제</b> 후 등록
+              <span className="text-[#8A949C]"> (불량·반납·미배정 + 센터창고 출고풀 포함 / 변경이력은 보존)</span>
             </span>
           </label>
           <Button onClick={handleSave} disabled={saving}
-            className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+            className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
             {saving ? '저장 중...' : `✅ ${parsed.length}건 초기 등록 저장`}
           </Button>
         </>
@@ -1637,9 +1637,9 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-[#FAFAFA] border border-[#E2E8F0] rounded-lg p-3 space-y-2">
-        <div className="text-[12px] font-bold text-[#1E293B]">📥 단말기장애목록 업로드 → 자동 교체</div>
-        <p className="text-[11px] text-[#64748B] leading-relaxed">
+      <div className="bg-[#F6F6F7] border border-[#E3E1DE] rounded-lg p-3 space-y-2">
+        <div className="text-[12px] font-bold text-[#111111]">📥 단말기장애목록 업로드 → 자동 교체</div>
+        <p className="text-[11px] text-[#5A666F] leading-relaxed">
           장애목록의 <b>처리내용(AL열)</b>에서 <b>「교체 (불량IH → 신규IH)」</b>를 자동 추출합니다.
           불량 IH를 <b>보유 중인 직원/센터</b>를 찾아, 그 보유분을 <b>신규 IH</b>로 교체(불량은 교체완료 처리)합니다.
           <b>보유자 미발견</b> 행은 <b>센터를 지정</b>하면 신규 IH를 그 센터 <b>보관(미배정)</b>으로 등록합니다.
@@ -1650,23 +1650,23 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={() => fileRef.current?.click()}>
             파일 선택
           </Button>
-          <span className="text-[11px] text-[#64748B] truncate max-w-[260px]">{fileName || '선택된 파일 없음'}</span>
-          {loading && <span className="text-[11px] text-[#94A3B8]">분석 중…</span>}
+          <span className="text-[11px] text-[#5A666F] truncate max-w-[260px]">{fileName || '선택된 파일 없음'}</span>
+          {loading && <span className="text-[11px] text-[#8A949C]">분석 중…</span>}
         </div>
       </div>
 
       {rows.length > 0 && (
         <>
           <div className="text-[11px] flex flex-wrap gap-3">
-            <span className="text-[#1565c0]">교체 추출 <b>{rows.length}</b></span>
-            <span className="text-[#2e7d32]">보유자 매칭 <b>{matchedCount}</b></span>
-            <span className="text-[#c62828]">미발견 <b>{rows.length - matchedCount}</b></span>
-            <span className="text-[#94A3B8]">선택 {selectedCount}</span>
+            <span className="text-[#2F3941]">교체 추출 <b>{rows.length}</b></span>
+            <span className="text-[#0C7A57]">보유자 매칭 <b>{matchedCount}</b></span>
+            <span className="text-[#D60051]">미발견 <b>{rows.length - matchedCount}</b></span>
+            <span className="text-[#8A949C]">선택 {selectedCount}</span>
           </div>
-          <div className="overflow-x-auto border border-[#E2E8F0] rounded-lg">
+          <div className="overflow-x-auto border border-[#E3E1DE] rounded-lg">
             <table className="w-full text-[11px]">
-              <thead className="bg-[#F8F9FA]">
-                <tr className="text-[#64748B]">
+              <thead className="bg-[#F6F6F7]">
+                <tr className="text-[#5A666F]">
                   <th className="px-2 py-1.5 w-8"></th>
                   <th className="px-2 py-1.5 text-left">불량 IH → 신규 IH</th>
                   <th className="px-2 py-1.5 text-left">기종</th>
@@ -1679,27 +1679,27 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
                   const has = row.matches.length >= 1
                   const m = row.matches[pick[i] ?? 0]
                   return (
-                    <tr key={i} className={`border-t border-[#E2E8F0] ${!has ? 'bg-[#fff7f7]' : ''}`}>
+                    <tr key={i} className={`border-t border-[#E3E1DE] ${!has ? 'bg-[#fff7f7]' : ''}`}>
                       <td className="px-2 py-1.5 text-center">
                         <input type="checkbox" disabled={!has && !umCenter[i]}
                           checked={!!sel[i]} onChange={e => setSel(s => ({ ...s, [i]: e.target.checked }))} />
                       </td>
                       <td className="px-2 py-1.5 font-mono whitespace-nowrap">
-                        <span className="text-[#c62828]">{row.oldIh}</span>
-                        <span className="text-[#94A3B8]"> → </span>
-                        <span className="text-[#2e7d32]">{row.newIh}</span>
+                        <span className="text-[#D60051]">{row.oldIh}</span>
+                        <span className="text-[#8A949C]"> → </span>
+                        <span className="text-[#0C7A57]">{row.newIh}</span>
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-[#475569]">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-[#2F3941]">
                         {row.newDevice || '미분류'}
                         {!row.deviceMatch && (row.oldDevice || row.newDevice) && (
-                          <span className="ml-1 text-[#b45309]" title={`불량 ${row.oldDevice || '미분류'} / 신규 ${row.newDevice || '미분류'}`}>⚠</span>
+                          <span className="ml-1 text-[#96620A]" title={`불량 ${row.oldDevice || '미분류'} / 신규 ${row.newDevice || '미분류'}`}>⚠</span>
                         )}
                       </td>
                       <td className="px-2 py-1.5">
                         {!has ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[#c62828] whitespace-nowrap">❌ 미발견</span>
-                            <select className="text-[11px] border border-[#E2E8F0] rounded px-1 py-0.5 bg-white"
+                            <span className="text-[#D60051] whitespace-nowrap">❌ 미발견</span>
+                            <select className="text-[11px] border border-[#E3E1DE] rounded px-1 py-0.5 bg-white"
                               value={umCenter[i] ?? ''}
                               onChange={e => {
                                 const c = e.target.value
@@ -1711,11 +1711,11 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
                             </select>
                           </div>
                         ) : row.matches.length === 1 ? (
-                          <span className="text-[#475569]">
+                          <span className="text-[#2F3941]">
                             {m.center} · {m.employee_name || '센터보관'} · {STATUS_LABEL[m.status] ?? m.status}
                           </span>
                         ) : (
-                          <select className="text-[11px] border border-[#E2E8F0] rounded px-1 py-0.5 bg-white"
+                          <select className="text-[11px] border border-[#E3E1DE] rounded px-1 py-0.5 bg-white"
                             value={pick[i] ?? 0} onChange={e => setPick(pk => ({ ...pk, [i]: Number(e.target.value) }))}>
                             {row.matches.map((mm, mi) => (
                               <option key={mi} value={mi}>
@@ -1725,7 +1725,7 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
                           </select>
                         )}
                       </td>
-                      <td className="px-2 py-1.5 text-[#94A3B8] max-w-[280px] truncate" title={row.raw}>{row.raw}</td>
+                      <td className="px-2 py-1.5 text-[#8A949C] max-w-[280px] truncate" title={row.raw}>{row.raw}</td>
                     </tr>
                   )
                 })}
@@ -1734,14 +1734,14 @@ function TabFaultSwap({ onRefresh }: { onRefresh: () => void }) {
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" disabled={busy || !selectedCount} onClick={apply}
-              className="h-8 text-[12px] bg-[#B32646] hover:bg-[#a8003c] text-white">
+              className="h-8 text-[12px] bg-[#D60051] hover:bg-[#A3003D] text-white">
               {busy ? '교체 중…' : `선택 ${selectedCount}건 자동 교체`}
             </Button>
-            {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+            {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
           </div>
         </>
       )}
-      {rows.length === 0 && msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
+      {rows.length === 0 && msg && <div className="text-[11px] text-[#D60051]">{msg}</div>}
     </div>
   )
 }
@@ -1763,15 +1763,15 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
   const [refreshKey, setRefreshKey] = useState(0)
 
   if (!canManage && !isBrowse && !TRACKING_CENTERS.includes(userCenter)) {
-    return <p className="text-[#94A3B8] text-[13px]">이 페이지는 강서·강북·강동·강남·자재센터 소속 직원만 이용할 수 있습니다.</p>
+    return <p className="text-[#8A949C] text-[13px]">이 페이지는 강서·강북·강동·강남·자재센터 소속 직원만 이용할 수 있습니다.</p>
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <h2 className="text-[16px] font-bold text-[#1E293B]">📟 센터 단말현황(버스)</h2>
-          <p className="text-[11px] text-[#94A3B8] mt-0.5">자재센터에서 출고된 단말기를 직원별로 배정하고 반납을 추적합니다.</p>
+          <h2 className="text-[16px] font-bold text-[#111111]">센터 단말현황(버스)</h2>
+          <p className="text-[11px] text-[#8A949C] mt-0.5">자재센터에서 출고된 단말기를 직원별로 배정하고 반납을 추적합니다.</p>
         </div>
         {canManage && (
           <Select value={selCenter} onValueChange={v => v !== null && setSelCenter(v)}>
@@ -1781,17 +1781,17 @@ export default function BusTrackingContent({ user }: { user: SessionUser }) {
             </SelectContent>
           </Select>
         )}
-        {!canManage && <span className="text-[12px] text-[#64748B] ml-auto font-medium">{selCenter}</span>}
+        {!canManage && <span className="text-[12px] text-[#5A666F] ml-auto font-medium">{selCenter}</span>}
       </div>
 
       <Tabs defaultValue="assignments">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="assignments" className="text-[12px]">📋 배정 현황</TabsTrigger>
-          <TabsTrigger value="center"      className="text-[12px]">🏢 센터 보유현황</TabsTrigger>
-          <TabsTrigger value="transfer"    className="text-[12px]">🚛 센터간이동</TabsTrigger>
-          <TabsTrigger value="history"     className="text-[12px]">📜 변경이력</TabsTrigger>
-          {canFaultSwap && <TabsTrigger value="faultswap" className="text-[12px]">🔄 장애목록 자동교체</TabsTrigger>}
-          {canInit && <TabsTrigger value="init" className="text-[12px]">📤 초기 등록</TabsTrigger>}
+          <TabsTrigger value="assignments" className="text-[12px]">배정 현황</TabsTrigger>
+          <TabsTrigger value="center"      className="text-[12px]">센터 보유현황</TabsTrigger>
+          <TabsTrigger value="transfer"    className="text-[12px]">센터간이동</TabsTrigger>
+          <TabsTrigger value="history"     className="text-[12px]">변경이력</TabsTrigger>
+          {canFaultSwap && <TabsTrigger value="faultswap" className="text-[12px]">장애목록 자동교체</TabsTrigger>}
+          {canInit && <TabsTrigger value="init" className="text-[12px]">초기 등록</TabsTrigger>}
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
           <TabAssignments key={`assign-${selCenter}-${refreshKey}`}

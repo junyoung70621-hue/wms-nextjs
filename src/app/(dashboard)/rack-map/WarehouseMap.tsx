@@ -106,16 +106,16 @@ export default function WarehouseMap({
           type="button"
           onClick={() => setTilt(t => !t)}
           className={`h-8 px-3 text-[12px] rounded-md border transition-colors ${
-            tilt ? 'bg-[#B32646] text-white border-[#B32646]' : 'bg-white text-[#475569] border-[#E2E8F0] hover:bg-[#F1F5F9]'
+            tilt ? 'bg-[#D60051] text-white border-[#D60051]' : 'bg-white text-[#2F3941] border-[#E3E1DE] hover:bg-[#F1F1F0]'
           }`}
         >
           {tilt ? '평면 보기' : '입체(3D) 보기'}
         </button>
-        <span className="text-[11px] text-[#94A3B8]">렉을 클릭하면 선반·박스 상세가 열립니다.</span>
+        <span className="text-[11px] text-[#8A949C]">렉을 클릭하면 선반·박스 상세가 열립니다.</span>
         <GuestCallout label="평면↔3D 전환 · 렉 클릭 → 선반·박스 상세" />
       </div>
 
-      <div className="overflow-auto rounded-lg border border-[#e2e8f0] bg-[#f1f5f9] p-6">
+      <div className="overflow-auto rounded-lg border border-[#E3E1DE] bg-[#F1F1F0] p-6">
         <div style={{ perspective: tilt ? '1600px' : undefined }}>
           <div
             className="relative mx-auto transition-transform duration-500"
@@ -153,14 +153,14 @@ export default function WarehouseMap({
       </div>
 
       {/* 범례 */}
-      <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#64748B]">
+      <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#5A666F]">
         {([['orange','랙1·2'],['red','랙3~6·18~21'],['blue','랙7~10'],['green','랙11~14·22~24'],['purple','랙15~17']] as [keyof typeof PALETTE, string][]).map(([k, lbl]) => (
           <span key={k} className="inline-flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm" style={{ background: PALETTE[k].base }} />{lbl}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5 text-[#94A3B8]">
-          <span className="w-3 h-3 rounded-sm border border-[#cbd5e1] bg-white" />데이터 없음
+        <span className="inline-flex items-center gap-1.5 text-[#8A949C]">
+          <span className="w-3 h-3 rounded-sm border border-[#D9D9D9] bg-white" />데이터 없음
         </span>
       </div>
     </div>
@@ -181,11 +181,11 @@ function RackCell({ label, pal, count, tilt, hi, blink, onClick, style }: {
       style={{
         ...style,
         background: has ? `linear-gradient(160deg, ${pal.top}, ${pal.base})` : 'linear-gradient(160deg,#fff,#eef2f7)',
-        color: has ? pal.text : '#94A3B8',
-        border: hi ? '2px solid #B32646' : has ? `1px solid ${pal.side}` : '1px dashed #cbd5e1',
+        color: has ? pal.text : '#8A949C',
+        border: hi ? '2px solid #D60051' : has ? `1px solid ${pal.side}` : '1px dashed #D9D9D9',
         // 입체감: 아래쪽 두께 + 그림자 (강조 시 딥레드 글로우)
         boxShadow: hi
-          ? `0 0 0 3px rgba(179,38,70,.35), 0 4px 0 ${has ? pal.side : '#d8dee6'}, 0 7px 12px rgba(179,38,70,.4)`
+          ? `0 0 0 3px rgba(214,0,81,.35), 0 4px 0 ${has ? pal.side : '#d8dee6'}, 0 7px 12px rgba(214,0,81,.4)`
           : has
             ? `0 3px 0 ${pal.side}, 0 5px 7px rgba(0,0,0,.22)`
             : '0 1px 0 #d8dee6, 0 2px 4px rgba(0,0,0,.06)',
@@ -208,9 +208,9 @@ function DecorCell({ label, style }: { label: string; style: React.CSSProperties
       className="flex items-center justify-center rounded-[3px] text-center"
       style={{
         ...style,
-        background: isDoor ? '#1E293B' : isPillar ? 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 6px,#cbd5e1 6px,#cbd5e1 12px)' : '#fff',
-        color: isDoor ? '#fff' : '#64748B',
-        border: '1px solid #cbd5e1',
+        background: isDoor ? '#111111' : isPillar ? 'repeating-linear-gradient(45deg,#E3E1DE,#E3E1DE 6px,#D9D9D9 6px,#D9D9D9 12px)' : '#fff',
+        color: isDoor ? '#fff' : '#5A666F',
+        border: '1px solid #D9D9D9',
         boxShadow: '0 1px 2px rgba(0,0,0,.06)',
       }}
     >

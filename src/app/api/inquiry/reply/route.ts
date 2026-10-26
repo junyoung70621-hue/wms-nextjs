@@ -38,7 +38,7 @@ export async function POST(request: Request) {
           greetingName: inq.requester_name,
           bodyHtml: `
             ${infoTable(['항목', '내용'], [['문의', inq.title]])}
-            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">답변</p>
+            <p style="margin:8px 0 0; font-weight:700; color:#111111;">답변</p>
             ${textBlock(reply)}
             <p style="margin:10px 0 0; font-size:13px; color:${MAIL_COLOR.muted};">답변자 · ${session.user.name}</p>`,
         }),

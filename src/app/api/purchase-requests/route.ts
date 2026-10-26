@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import { sendMail, emailLayout, infoTable, type Cell } from '@/lib/email'
+import { sendTeamsCard, buildRequestCard, type TeamsCell } from '@/lib/teams'
 import { firePush, sendPushToRoles } from '@/lib/push'
 
 // ── 목록 조회 ─────────────────────────────────────────────────────────────
@@ -71,83 +71,23 @@ export async function POST(request: Request) {
     tag: 'purchase-request',
   }))
 
-  // 관리자·자재파트 알림 메일
-  try {
-    const { data: targets } = await supabase
-      .from('users').select('email, assigned_center')
-      .in('role', ['admin', 'materials']).eq('is_approved', true)
-
-    const emails = (targets ?? [])
-      .filter(u => u.email && u.assigned_center !== '고객지원사업부')
-      .map(u => u.email)
-
-    const who = `${session.user.name} (${session.user.assigned_center ?? session.user.center})`
-    const itemRows: Cell[][] = items.map((it: Record<string, unknown>, i: number) => {
-      const link = String(it['링크'] ?? '').trim()
-      return [
-        String(i + 1),
-        String(it['품명'] ?? ''),
-        { text: String(it['수량'] ?? ''), right: true },
-        { text: link ? `<a href="${link}" target="_blank" style="color:#2563EB; text-decoration:underline;">링크 ↗</a>` : '-' },
-      ]
-    })
-
-    // 첨부파일 다운로드 → 메일 첨부 + 본문 목록
-    const mailAttachments: { filename: string; content: Buffer }[] = []
-    for (const f of files) {
-      try {
-        const res = await fetch(f.url)
-        if (!res.ok) continue
-        const buf = Buffer.from(await res.arrayBuffer())
-        mailAttachments.push({ filename: f.name, content: buf })
-      } catch { /* 개별 첨부 실패 무시 */ }
-    }
-    const attachHtml = files.length
-      ? `<p style="margin:12px 0 0; font-weight:700; color:#1E293B;">첨부파일 (${files.length})</p>`
-        + `<ul style="margin:6px 0 0; padding-left:18px; font-size:13px; color:#334155;">`
-        + files.map(f => `<li><a href="${f.url}" target="_blank" style="color:#2563EB; text-decoration:underline;">${f.name}</a></li>`).join('')
-        + `</ul>`
-      : ''
-
-    if (emails.length) {
-      await sendMail(
-        emails,
-        `[에이텍모빌리티 자재관리] 구매 요청 접수 · ${who}`,
-        emailLayout({
-          title: '구매 요청이 접수되었습니다',
-          bodyHtml: `
-            ${infoTable(['항목', '내용'], [
-              ['요청자', { text: `<b>${who}</b>` }],
-              ['구매사유', reason.trim()],
-              ['원가반영', cost_note.trim()],
-            ])}
-            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
-            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}
-            ${attachHtml}`,
-        }),
-        mailAttachments,
-      )
-    }
-
-    // 신청자 접수 확인 메일
-    if (session.user.email) {
-      await sendMail(
-        session.user.email,
-        '[에이텍모빌리티 자재관리] 구매 요청 접수 확인',
-        emailLayout({
-          title: '구매 요청이 정상 접수되었습니다',
-          greetingName: session.user.name,
-          bodyHtml: `
-            <p>요청하신 구매 건이 접수되었습니다. 관리자 검토 후 처리 결과를 안내드립니다.</p>
-            ${infoTable(['항목', '내용'], [['구매사유', reason.trim()]])}
-            <p style="margin:8px 0 0; font-weight:700; color:#1E293B;">구매 품목</p>
-            ${infoTable(['No', '품명', '수량', '링크'], itemRows)}
-            ${attachHtml}`,
-        }),
-        mailAttachments,
-      )
-    }
-  } catch { /* 메일 실패 무시 */ }
+  // Teams 알림 (자재요청·구매요청 채널)
+  const who = `${session.user.name} (${session.user.assigned_center ?? session.user.center})`
+  const itemRows: TeamsCell[][] = items.map((it: Record<string, unknown>, i: number) => {
+    const link = String(it['링크'] ?? '').trim()
+    return [i + 1, String(it['품명'] ?? ''), { text: String(it['수량'] ?? ''), bold: true }, link ? `[링크 ↗](${link})` : '-']
+  })
+  const attachNote = files.length
+    ? `📎 첨부파일 (${files.length})\n\n` + files.map(f => `- [${f.name}](${f.url})`).join('\n\n')
+    : undefined
+  await sendTeamsCard(buildRequestCard({
+    title: '🛒 구매 요청 접수',
+    subtitle: `${who} · 품목 ${items.length}건`,
+    facts: [['요청자', who], ['구매사유', reason.trim()], ['원가반영', cost_note.trim()]],
+    tableHeaders: ['No', '품명', '수량', '링크'],
+    tableRows: itemRows,
+    note: attachNote,
+  }))
 
   return NextResponse.json({ ok: true })
 }

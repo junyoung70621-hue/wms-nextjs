@@ -23,11 +23,11 @@ function getMenuSections(user: SessionUser | null): Section[] {
   if (!user) {
     return [
       {
-        title: 'Dashboard',
+        title: '대시보드',
         items: [{ href: '/dashboard', label: '자재현황(전체)', icon: LayoutGrid }],
       },
       {
-        title: 'Asset Management',
+        title: '자산 관리',
         items: [
           { href: '/terminal/bus', label: '버스단말기 현황', icon: Bus },
           { href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront },
@@ -38,14 +38,14 @@ function getMenuSections(user: SessionUser | null): Section[] {
         ],
       },
       {
-        title: 'Requests',
+        title: '요청',
         items: [
           { href: '/material-requests', label: '자재요청현황', icon: ClipboardList },
           { href: '/purchase-requests', label: '구매 요청', icon: ShoppingCart },
         ],
       },
       {
-        title: 'Utilities',
+        title: '기타',
         items: [
           { href: '/rack-map', label: '자재창고 지도', icon: Map },
           { href: '/notices', label: '공지사항', icon: Megaphone },
@@ -68,7 +68,7 @@ function getMenuSections(user: SessionUser | null): Section[] {
   const sections: Section[] = []
 
   sections.push({
-    title: 'Dashboard',
+    title: '대시보드',
     items: [{ href: '/dashboard', label: '자재현황(전체)', icon: LayoutGrid }],
   })
 
@@ -80,11 +80,11 @@ function getMenuSections(user: SessionUser | null): Section[] {
     assetItems.push({ href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 })
   assetItems.push({ href: '/history', label: '입출고 이력', icon: History })
   if (!isGuest) assetItems.push({ href: '/usage', label: '사용내역 이력', icon: BarChart3 })
-  sections.push({ title: 'Asset Management', items: assetItems })
+  sections.push({ title: '자산 관리', items: assetItems })
 
   if (!isGuest) {
     sections.push({
-      title: 'Requests',
+      title: '요청',
       items: [
         { href: '/material-requests', label: '자재요청현황', icon: ClipboardList },
         { href: '/purchase-requests', label: '구매 요청', icon: ShoppingCart },
@@ -103,7 +103,7 @@ function getMenuSections(user: SessionUser | null): Section[] {
   utilItems.push({ href: '/notices', label: '공지사항', icon: Megaphone })
   utilItems.push({ href: '/inquiry', label: '문의하기', icon: MessageSquare })
   utilItems.push({ href: '/mypage', label: '마이페이지', icon: CircleUser })
-  sections.push({ title: 'Utilities', items: utilItems })
+  sections.push({ title: '기타', items: utilItems })
 
   return sections
 }
@@ -140,16 +140,16 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser | null;
       <Link
         href={href}
         className={cn(
-          'flex items-center gap-2.5 w-full pl-3 pr-2.5 py-[7px] rounded-md text-[13px] border-l-[3px] transition-colors',
+          'flex items-center gap-2.5 w-full px-3 py-[9px] rounded-md text-[14px] transition-colors',
           isActive
-            ? 'font-semibold text-[#b32646] bg-[#fbe9ee] border-l-[#b32646]'
-            : 'font-normal text-[#475569] border-l-transparent hover:bg-[#e5eeff] hover:text-[#1e293b]'
+            ? 'font-bold text-[#D60051] bg-[#FCEEF3]'
+            : 'font-medium text-[#2F3941] hover:bg-[#F6F6F7] hover:text-[#111111]'
         )}
       >
         <Icon size={16} strokeWidth={1.9} className="flex-shrink-0" />
         <span className="flex-1 truncate">{label}</span>
         {badge > 0 && (
-          <span className="bg-[#b32646] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
+          <span className="bg-[#D60051] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 leading-none">
             {badge > 99 ? '99+' : badge}
           </span>
         )}
@@ -159,16 +159,16 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser | null;
 
   return (
     <aside
-      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] w-[240px] bg-white border-r border-[#e2e8f0] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-transform duration-200 ${
+      className={`fixed top-[58px] left-0 h-[calc(100vh-58px)] w-[240px] bg-white border-r border-[#E3E1DE] flex flex-col overflow-y-auto overflow-x-hidden z-40 transition-transform duration-200 ${
         collapsed ? '-translate-x-full' : 'translate-x-0'
       }`}
     >
       {/* 섹션별 메뉴 */}
-      <div className="flex-1 px-2 pt-3 pb-2 space-y-[2px]">
+      <div className="flex-1 px-3 pt-3 pb-2">
         {sections.map(section => (
           <div key={section.title} className="mb-1">
             <div className="px-2 pt-3 pb-1.5">
-              <span className="text-[10px] font-bold tracking-[0.12em] text-[#94A3B8] uppercase">
+              <span className="text-[12px] font-semibold text-[#8A949C]">
                 {section.title}
               </span>
             </div>
@@ -180,18 +180,18 @@ export default function Sidebar({ user, collapsed }: { user: SessionUser | null;
       </div>
 
       {/* 유저 카드 */}
-      <div className="mx-2 mb-2 p-2 bg-[#f8f9ff] rounded-lg border border-[#e2e8f0] flex items-center gap-2 min-w-0">
-        <div className="w-[28px] h-[28px] flex-shrink-0 rounded-full bg-[#fbe9ee] border border-[rgba(179,38,70,0.25)] flex items-center justify-center text-[12px] font-bold text-[#b32646]">
+      <div className="px-4 py-3 border-t border-[#E3E1DE] flex md:hidden items-center gap-2.5 min-w-0">
+        <div className="w-[28px] h-[28px] flex-shrink-0 rounded-full bg-[#FCEEF3] border border-[rgba(214,0,81,0.25)] flex items-center justify-center text-[12px] font-bold text-[#D60051]">
           {user ? user.name.charAt(0) : '?'}
         </div>
         <div className="min-w-0">
-          <div className="text-[12px] font-semibold text-[#1E293B] truncate">{user ? user.name : '방문자'}</div>
+          <div className="text-[12px] font-semibold text-[#111111] truncate">{user ? user.name : '방문자'}</div>
           <div className="flex items-center gap-1 min-w-0">
-            <span className="text-[9px] font-bold text-[#b32646] tracking-wide flex-shrink-0">
+            <span className="text-[9px] font-bold text-[#D60051] tracking-wide flex-shrink-0">
               {user ? (ROLE_LABEL[user.role] ?? user.role.toUpperCase()) : 'GUEST'}
             </span>
-            <span className="text-[9px] text-[#CBD5E1] flex-shrink-0">·</span>
-            <span className="text-[9px] text-[#64748B] truncate">
+            <span className="text-[9px] text-[#D9D9D9] flex-shrink-0">·</span>
+            <span className="text-[9px] text-[#5A666F] truncate">
               {user ? (user.assigned_center ?? user.center) : '로그인이 필요합니다'}
             </span>
           </div>

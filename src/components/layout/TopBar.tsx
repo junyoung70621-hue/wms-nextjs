@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Settings, LogOut, LogIn, UserPlus } from 'lucide-react'
+import { LogOut, LogIn, UserPlus, Search } from 'lucide-react'
 import type { SessionUser } from '@/lib/session'
 import { useAuthGate } from '../auth/AuthGate'
 
@@ -18,10 +18,10 @@ const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchst
 
 type ActivityState = 'active' | 'away' | 'danger'
 
-const ACTIVITY_STYLE: Record<ActivityState, { pill: string; text: string }> = {
-  active: { pill: 'bg-[#eff4ff] border-[#dce9ff]', text: 'text-[#2563EB]' },
-  away: { pill: 'bg-[#fefce8] border-[#fde68a]', text: 'text-[#CA8A04]' },
-  danger: { pill: 'bg-[#fbe9ee] border-[#f3c6d1]', text: 'text-[#b32646]' },
+const ACTIVITY_TEXT: Record<ActivityState, string> = {
+  active: 'text-[#5A666F]',
+  away: 'text-[#96620A]',
+  danger: 'text-[#D60051]',
 }
 
 const ACTIVITY_LABEL: Record<ActivityState, string> = {
@@ -47,6 +47,15 @@ const TITLE_MAP: Record<string, string> = {
   '/online-users': '접속 현황',
   '/admin': '관리자',
   '/mypage': '마이페이지',
+}
+
+// 경로 → 화면 제목 (하위 경로는 가장 긴 접두 매칭)
+export function pageTitle(pathname: string): string {
+  if (TITLE_MAP[pathname]) return TITLE_MAP[pathname]
+  const key = Object.keys(TITLE_MAP)
+    .filter(k => pathname.startsWith(k + '/'))
+    .sort((a, b) => b.length - a.length)[0]
+  return key ? TITLE_MAP[key] : ''
 }
 
 type Counts = {
@@ -76,11 +85,25 @@ function today(): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
 }
 
+// 상단 우측 텍스트 링크 (레퍼런스 포털: 얇은 세로선으로 구분된 텍스트 메뉴)
+function BarItem({ children, onClick, className = '' }: {
+  children: React.ReactNode; onClick?: () => void; className?: string
+}) {
+  const base = `items-center gap-1 px-3 h-full border-l border-[#E3E1DE] text-[12.5px] whitespace-nowrap ${className}`
+  return onClick
+    ? <button onClick={onClick} className={`flex ${base} hover:bg-[#F6F6F7] transition-colors`}>{children}</button>
+    : <div className={`flex ${base}`}>{children}</div>
+}
+
+function Count({ n }: { n: number }) {
+  return <b className={n > 0 ? 'text-[#D60051]' : 'text-[#8A949C]'}>{n}</b>
+}
+
 export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { openLogin } = useAuthGate()
-  const title = TITLE_MAP[pathname] ?? ''
+  const [q, setQ] = useState('')
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, tr_pending: 0, unread_notices: 0 })
   const [remaining, setRemaining] = useState<number | null>(null)
   const [activity, setActivity] = useState<ActivityState>('active')
@@ -121,6 +144,11 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   }, [])
 
   const center = user ? (user.assigned_center ?? user.center) : ''
+  const pending = [
+    { label: '이동', n: counts.tr_pending,  href: '/warehouse?tab=transfers' },
+    { label: '자재', n: counts.mat_pending, href: '/material-requests?tab=pending' },
+    { label: '구매', n: counts.pur_pending, href: '/purchase-requests?tab=pending' },
+  ].filter(p => p.n > 0)
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -129,16 +157,12 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[58px] bg-[#f8f9ff]/95 backdrop-blur-sm border-b border-[rgba(0,0,0,0.08)] shadow-sm z-50 flex items-stretch">
-      {/* 로고 + 토글 */}
-      <div
-        className={`flex-shrink-0 flex items-center gap-2 px-3 border-r border-[rgba(0,0,0,0.08)] transition-all duration-200 ${
-          collapsed ? 'w-[48px]' : 'w-[48px] md:w-[240px]'
-        }`}
-      >
+    <header className="fixed top-0 left-0 right-0 h-[58px] bg-white border-b border-[#D9D9D9] z-50 flex items-stretch">
+      {/* 토글 + 브랜드 */}
+      <div className="flex-shrink-0 flex items-center gap-2 pl-3 pr-4">
         <button
           onClick={onToggle}
-          className="p-[6px] rounded hover:bg-[rgba(0,0,0,0.06)] flex-shrink-0 text-[#64748B] hover:text-[#1E293B] transition-colors"
+          className="p-[6px] rounded hover:bg-[#F6F6F7] flex-shrink-0 text-[#5A666F] hover:text-[#111111] transition-colors"
           aria-label="사이드바 열고 닫기"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -147,122 +171,103 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
             <rect y="12.5" width="16" height="1.5" rx="0.75" fill="currentColor" />
           </svg>
         </button>
-        <span
-          className={`hidden md:flex items-baseline gap-1 whitespace-nowrap overflow-hidden transition-all duration-200 ${
-            collapsed ? 'w-0 opacity-0' : 'opacity-100'
-          }`}
-        >
-          <span className="text-[17px] font-extrabold tracking-tight text-[#b32646] font-heading">ATEC</span>
-          <span className="text-[15px] font-semibold tracking-tight text-[#1E293B] font-heading">에이텍모빌리티</span>
+        <span className="flex items-baseline gap-1.5 whitespace-nowrap">
+          <span className="text-[22px] font-black tracking-tight text-[#D60051] leading-none">ATEC</span>
+          <span className="hidden sm:inline text-[16px] font-bold tracking-tight text-[#111111] leading-none">에이텍모빌리티</span>
         </span>
+        <span className="hidden md:inline-block h-4 w-px bg-[#D9D9D9] mx-2" />
+        <span className="hidden md:inline text-[13px] font-medium text-[#2F3941] whitespace-nowrap">자재관리 시스템</span>
       </div>
 
-      {/* 제목 */}
-      <div className="flex items-center px-5 min-w-[140px]">
-        <span className="text-[15px] font-bold text-[#1E293B] tracking-tight whitespace-nowrap">
-          {title}
-        </span>
-      </div>
+      {/* 전역 검색 → 재고 현황으로 검색어 전달 */}
+      <form
+        onSubmit={e => { e.preventDefault(); const v = q.trim(); if (v) { router.push(`/warehouse?q=${encodeURIComponent(v)}`); setQ('') } }}
+        className={`hidden md:flex items-center pl-4 border-l border-[#E3E1DE] ${collapsed ? '' : 'md:ml-1'}`}
+      >
+        <div className="flex items-center gap-2 h-9 px-3 w-[260px] lg:w-[320px] rounded-[3px] border border-[#D9D9D9] bg-white focus-within:border-[#111111] transition-colors">
+          <Search size={15} strokeWidth={2} className="text-[#8A949C] flex-shrink-0" />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="자재명 · ERP코드 · 분류 검색"
+            aria-label="자재 검색"
+            className="flex-1 min-w-0 text-[13px] bg-transparent outline-none placeholder:text-[#8A949C]"
+          />
+        </div>
+      </form>
 
-      {/* 우측 정보 영역 — 게스트는 로그인/회원가입 버튼만 */}
+      {/* 우측 — 게스트는 로그인/회원가입 버튼만 */}
       {!user ? (
         <div className="flex-1 flex items-center justify-end gap-2 pr-3 md:pr-5">
           <button
-            onClick={() => openLogin('login')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[rgba(179,38,70,0.35)] text-[#b32646] hover:bg-[#fbe9ee] transition-colors"
-            aria-label="로그인"
-          >
-            <LogIn size={16} strokeWidth={1.9} />
-            <span className="text-[12px] font-semibold whitespace-nowrap">로그인</span>
-          </button>
-          <button
             onClick={() => openLogin('register')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#b32646] text-white hover:bg-[#9a1f3c] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 h-9 text-[13px] font-semibold text-[#111111] hover:text-[#D60051] transition-colors"
             aria-label="회원가입"
           >
-            <UserPlus size={16} strokeWidth={1.9} />
-            <span className="text-[12px] font-semibold whitespace-nowrap">회원가입</span>
+            <UserPlus size={15} strokeWidth={1.9} />
+            <span className="whitespace-nowrap">회원가입</span>
+          </button>
+          <button
+            onClick={() => openLogin('login')}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-[3px] bg-[#D60051] text-white text-[13px] font-bold hover:bg-[#A3003D] transition-colors"
+            aria-label="로그인"
+          >
+            <LogIn size={15} strokeWidth={1.9} />
+            <span className="whitespace-nowrap">로그인</span>
           </button>
         </div>
       ) : (
-      <div className="flex-1 flex items-center justify-end gap-0 pr-5 overflow-hidden">
+      <div className="flex-1 flex items-stretch justify-end overflow-hidden">
+        {/* 공지 — 미확인 건이 있을 때만 */}
+        {counts.unread_notices > 0 && (
+          <BarItem onClick={() => router.push('/notices')}>
+            <span className="text-[#5A666F]">공지</span> <Count n={counts.unread_notices} />
+          </BarItem>
+        )}
 
-        {/* 공지사항 */}
-        <button
-          onClick={() => router.push('/notices')}
-          className="flex items-center gap-1 px-3 border-r border-[rgba(0,0,0,0.08)] h-full hover:bg-[rgba(0,0,0,0.03)] transition-colors"
-        >
-          <span className="text-[11px] text-[#64748B] whitespace-nowrap">공지</span>
-          <span
-            className={`text-[11px] font-bold whitespace-nowrap ${
-              counts.unread_notices > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'
-            }`}
-          >
-            {counts.unread_notices}건
-          </span>
-        </button>
-
-        {/* 처리대기 */}
-        <div className="hidden lg:flex items-center gap-3 px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
-          <span className="text-[11px] text-[#64748B] whitespace-nowrap flex-shrink-0">처리대기</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => router.push('/warehouse?tab=transfers')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
-              <span className="text-[#64748B]">이동</span>{' '}
-              <span className={`font-bold ${counts.tr_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
-                {counts.tr_pending}건
+        {/* 처리대기 — 0건 항목은 숨김 */}
+        {pending.length > 0 && (
+          <div className="hidden lg:flex items-center gap-2.5 px-3 border-l border-[#E3E1DE] text-[12.5px] whitespace-nowrap">
+            <span className="text-[#5A666F]">처리대기</span>
+            {pending.map((p, i) => (
+              <span key={p.href} className="flex items-center gap-2.5">
+                {i > 0 && <span className="text-[#D9D9D9]">·</span>}
+                <button onClick={() => router.push(p.href)} className="hover:text-[#D60051] transition-colors">
+                  {p.label} <Count n={p.n} />
+                </button>
               </span>
-            </button>
-            <span className="text-[#CBD5E1]">·</span>
-            <button onClick={() => router.push('/material-requests?tab=pending')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
-              <span className="text-[#64748B]">자재</span>{' '}
-              <span className={`font-bold ${counts.mat_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
-                {counts.mat_pending}건
-              </span>
-            </button>
-            <span className="text-[#CBD5E1]">·</span>
-            <button onClick={() => router.push('/purchase-requests?tab=pending')} className="text-[11px] whitespace-nowrap hover:opacity-70 transition-opacity">
-              <span className="text-[#64748B]">구매</span>{' '}
-              <span className={`font-bold ${counts.pur_pending > 0 ? 'text-[#B32646]' : 'text-[#94A3B8]'}`}>
-                {counts.pur_pending}건
-              </span>
-            </button>
+            ))}
           </div>
-        </div>
+        )}
 
-        {/* 세션 잔여시간 (pill) — 활동 상태별 색상 */}
-        <div className="hidden sm:flex items-center px-3 border-r border-[rgba(0,0,0,0.08)] h-full">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${ACTIVITY_STYLE[activity].pill}`}>
-            <span className={`text-[9px] font-bold tracking-[0.1em] ${ACTIVITY_STYLE[activity].text}`}>
-              {ACTIVITY_LABEL[activity]}
-            </span>
-            <span className={`text-[11px] font-mono font-bold whitespace-nowrap ${ACTIVITY_STYLE[activity].text}`}>
+        {/* 세션 잔여시간 — 자리비움/종료 임박일 때만 */}
+        {activity !== 'active' && (
+          <BarItem className={`hidden sm:flex ${ACTIVITY_TEXT[activity]}`}>
+            <span className="text-[11px] font-semibold">{ACTIVITY_LABEL[activity]}</span>
+            <span className="font-mono text-[12px] font-semibold">
               {remaining !== null ? formatRemaining(remaining) : '--:--:--'}
             </span>
-          </span>
-        </div>
+          </BarItem>
+        )}
 
-        {/* 유저 정보 */}
-        <div className="hidden md:flex items-center gap-[6px] px-3 border-r border-[rgba(0,0,0,0.08)] text-[12px] h-full">
-          <span className="font-semibold text-[#1E293B] whitespace-nowrap">{center}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span className="font-semibold text-[#1E293B] whitespace-nowrap">{user.name}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span className="text-[#64748B] whitespace-nowrap">{ROLE_LABEL[user.role] ?? user.role}</span>
-          <span className="text-[#CBD5E1]">·</span>
-          <span className="text-[#0F172A] font-semibold whitespace-nowrap font-mono text-[11px]">{today()}</span>
-        </div>
+        {/* 유저 */}
+        <BarItem className="hidden md:flex">
+          <span className="font-bold text-[#111111]">{user.name}</span>
+          <span className="text-[#5A666F]">{ROLE_LABEL[user.role] ?? user.role}</span>
+          <span className="text-[#D9D9D9] mx-0.5">·</span>
+          <span className="text-[#5A666F]">{center}</span>
+          <span className="text-[#D9D9D9] mx-0.5">·</span>
+          <span className="font-mono text-[11.5px] text-[#5A666F]">{today()}</span>
+        </BarItem>
 
-        {/* 아이콘 */}
-        <div className="flex items-center gap-1.5 pl-3">
-          <button onClick={() => router.push('/mypage')} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[#64748B] hover:bg-[#eff4ff] hover:text-[#1E293B] transition-colors" aria-label="마이페이지">
-            <Settings size={16} strokeWidth={1.9} />
-            <span className="hidden sm:inline text-[12px] font-medium whitespace-nowrap">마이페이지</span>
-          </button>
-          <button onClick={handleLogout} className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#b32646] text-white hover:bg-[#9a1f3c] transition-colors" aria-label="로그아웃">
-            <LogOut size={16} strokeWidth={1.9} />
-            <span className="hidden sm:inline text-[12px] font-semibold whitespace-nowrap">Logout</span>
-          </button>
-        </div>
+        <BarItem onClick={() => router.push('/mypage')} className="hidden sm:flex text-[#2F3941] font-medium">
+          마이페이지
+        </BarItem>
+
+        <BarItem onClick={handleLogout} className="text-[#2F3941] font-medium pr-4">
+          <LogOut size={14} strokeWidth={2} />
+          <span className="hidden sm:inline">로그아웃</span>
+        </BarItem>
       </div>
       )}
     </header>

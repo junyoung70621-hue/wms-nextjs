@@ -193,7 +193,7 @@ export default function LoginModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-xl modal-pop"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-md shadow-xl modal-pop"
         onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -201,27 +201,23 @@ export default function LoginModal({
           <button
             onClick={onClose}
             aria-label="닫기"
-            className="absolute right-4 top-4 p-1 rounded text-[#64748B] hover:bg-[rgba(0,0,0,0.06)] hover:text-[#1E293B] transition-colors"
+            className="absolute right-4 top-4 p-1 rounded text-[#5A666F] hover:bg-[rgba(0,0,0,0.06)] hover:text-[#111111] transition-colors"
           >
             <X size={18} strokeWidth={2} />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/atec_logo_full.png"
-            alt="에이텍모빌리티"
-            className="mx-auto h-8 w-auto"
-          />
-          <p className="text-gray-500 text-sm font-medium mt-2">
-            자재관리 시스템 — 로그인 또는 회원가입 후 이용할 수 있습니다
-          </p>
+          <div className="flex items-baseline justify-center gap-2 pt-2">
+            <span className="text-[28px] font-black tracking-tight text-[#D60051] leading-none">ATEC</span>
+            <span className="text-[21px] font-bold tracking-tight text-[#111111] leading-none">에이텍모빌리티</span>
+          </div>
+          <p className="text-[12px] text-[#5A666F] mt-2">자재관리 시스템</p>
         </div>
 
         <div className="px-6 pb-6 pt-2">
           <Tabs defaultValue={defaultTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-5">
-              <TabsTrigger value="login" className="data-active:bg-[#B32646] data-active:text-white">🔑 로그인</TabsTrigger>
-              <TabsTrigger value="register" className="data-active:bg-[#B32646] data-active:text-white">✏️ 회원가입</TabsTrigger>
-              <TabsTrigger value="find" className="data-active:bg-[#B32646] data-active:text-white">🔓 찾기</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-5 [&>*]:h-10">
+              <TabsTrigger value="login" >로그인</TabsTrigger>
+              <TabsTrigger value="register" >회원가입</TabsTrigger>
+              <TabsTrigger value="find" >찾기</TabsTrigger>
             </TabsList>
 
             {/* ── 로그인 탭 ── */}
@@ -234,6 +230,7 @@ export default function LoginModal({
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     placeholder="아이디 입력"
+                    className="h-11 text-[14px]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -244,6 +241,7 @@ export default function LoginModal({
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="비밀번호 입력"
+                    className="h-11 text-[14px]"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -266,7 +264,7 @@ export default function LoginModal({
                 )}
                 <Button
                   type="submit"
-                  className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
+                  className="w-full h-12 text-[15px] font-bold"
                   disabled={loginLoading}
                 >
                   {loginLoading ? '로그인 중...' : '로그인'}
@@ -363,7 +361,7 @@ export default function LoginModal({
                   )}
                   <Button
                     type="submit"
-                    className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
+                    className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white"
                     disabled={regLoading}
                   >
                     {regLoading ? '신청 중...' : '회원가입 신청'}
@@ -377,7 +375,7 @@ export default function LoginModal({
               <div className="space-y-6">
                 {/* 아이디 찾기 */}
                 <form onSubmit={handleFindId} className="space-y-3">
-                  <p className="text-[13px] font-bold text-[#1E293B]">아이디 찾기</p>
+                  <p className="text-[13px] font-bold text-[#111111]">아이디 찾기</p>
                   <p className="text-sm text-gray-500">
                     가입 시 등록한 이름과 회사 이메일이 일치하면 아이디를 알려드립니다.
                   </p>
@@ -410,14 +408,14 @@ export default function LoginModal({
                   )}
                   <Button
                     type="submit"
-                    className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
+                    className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white"
                     disabled={findLoading}
                   >
                     {findLoading ? '조회 중...' : '아이디 찾기'}
                   </Button>
                 </form>
 
-                <div className="border-t border-[#e2e8f0]" />
+                <div className="border-t border-[#E3E1DE]" />
 
                 {/* 비밀번호 찾기 */}
                 {resetSuccess ? (
@@ -431,7 +429,7 @@ export default function LoginModal({
                   </div>
                 ) : (
                   <form onSubmit={handleReset} className="space-y-3">
-                    <p className="text-[13px] font-bold text-[#1E293B]">비밀번호 찾기</p>
+                    <p className="text-[13px] font-bold text-[#111111]">비밀번호 찾기</p>
                     <p className="text-sm text-gray-500">
                       아이디와 가입 시 등록한 회사 이메일이 일치하면 임시 비밀번호를 발송합니다.
                     </p>
@@ -459,7 +457,7 @@ export default function LoginModal({
                     )}
                     <Button
                       type="submit"
-                      className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white"
+                      className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white"
                       disabled={resetLoading}
                     >
                       {resetLoading ? '발송 중...' : '임시 비밀번호 발송'}

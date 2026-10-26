@@ -134,33 +134,33 @@ export default function TerminalBoxSection({ item, canEdit, location, onChanged 
   }
 
   return (
-    <div className="border-t border-[#E2E8F0] pt-3 space-y-2">
+    <div className="border-t border-[#E3E1DE] pt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[12px] font-bold text-[#1E293B]">📟 박스 내 단말기</span>
-        <span className="text-[11px] text-[#94A3B8]">{list.length}개</span>
+        <span className="text-[12px] font-bold text-[#111111]">📟 박스 내 단말기</span>
+        <span className="text-[11px] text-[#8A949C]">{list.length}개</span>
         {canEdit && (
           <span className="ml-auto flex items-center gap-1">
             {list.length > 0 && (
               <>
                 <button type="button" disabled={busy}
                   onClick={() => setSel(sel.size === list.length ? new Set() : new Set(list.map(t => t.id)))}
-                  className="h-6 px-2 text-[11px] rounded border border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]">
+                  className="h-6 px-2 text-[11px] rounded border border-[#E3E1DE] text-[#2F3941] hover:bg-[#F1F1F0]">
                   {sel.size === list.length ? '선택 해제' : '전체 선택'}
                 </button>
                 <button type="button" disabled={busy || !sel.size} onClick={() => remove([...sel])}
-                  className="h-6 px-2 text-[11px] rounded border border-[#c62828] text-[#c62828] hover:bg-[#fef2f2] disabled:opacity-40">
+                  className="h-6 px-2 text-[11px] rounded border border-[#D60051] text-[#D60051] hover:bg-[#FCEEF3] disabled:opacity-40">
                   선택삭제 ({sel.size})
                 </button>
                 <button type="button" disabled={busy}
                   onClick={() => { if (confirm(`박스 내 단말기 ${list.length}개를 모두 삭제할까요? (되돌리기 가능)`)) remove(list.map(t => t.id)) }}
-                  className="h-6 px-2 text-[11px] rounded bg-[#c62828] text-white hover:bg-[#a51f1f] disabled:opacity-40">
+                  className="h-6 px-2 text-[11px] rounded bg-[#D60051] text-white hover:bg-[#a51f1f] disabled:opacity-40">
                   전체삭제
                 </button>
               </>
             )}
             {undo.length > 0 && (
               <button type="button" disabled={busy} onClick={restore}
-                className="h-6 px-2 text-[11px] rounded border border-[#1565c0] text-[#1565c0] hover:bg-[#eff6ff]">
+                className="h-6 px-2 text-[11px] rounded border border-[#2F3941] text-[#2F3941] hover:bg-[#F6F6F7]">
                 ↩ 되돌리기 ({undo.length})
               </button>
             )}
@@ -169,23 +169,23 @@ export default function TerminalBoxSection({ item, canEdit, location, onChanged 
       </div>
 
       {loading ? (
-        <div className="text-[11px] text-[#94A3B8]">불러오는 중…</div>
+        <div className="text-[11px] text-[#8A949C]">불러오는 중…</div>
       ) : (
         <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
           {list.length === 0 ? (
-            <span className="text-[11px] text-[#94A3B8]">등록된 단말기가 없습니다.</span>
+            <span className="text-[11px] text-[#8A949C]">등록된 단말기가 없습니다.</span>
           ) : list.map(t => {
             const on = sel.has(t.id)
             return (
               <span key={t.id}
                 onClick={canEdit ? () => toggle(t.id) : undefined}
-                className={`inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded border text-[10px] text-[#475569] ${canEdit ? 'cursor-pointer' : ''} ${on ? 'bg-[#fee2e2] border-[#c62828]' : 'bg-[#F1F5F9] border-[#E2E8F0]'}`}>
+                className={`inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded border text-[10px] text-[#2F3941] ${canEdit ? 'cursor-pointer' : ''} ${on ? 'bg-[#fee2e2] border-[#D60051]' : 'bg-[#F1F1F0] border-[#E3E1DE]'}`}>
                 {canEdit && <input type="checkbox" checked={on} readOnly className="w-3 h-3 pointer-events-none" />}
                 <span className="font-mono">{t.trcn_id}</span>
-                {t.device_type && <span className="text-[#94A3B8]">{t.device_type}</span>}
+                {t.device_type && <span className="text-[#8A949C]">{t.device_type}</span>}
                 {canEdit && (
                   <button type="button" disabled={busy} onClick={e => { e.stopPropagation(); remove([t.id]) }}
-                    className="px-1 rounded text-[#c62828] hover:bg-[#fef2f2] leading-none text-[12px]">×</button>
+                    className="px-1 rounded text-[#D60051] hover:bg-[#FCEEF3] leading-none text-[12px]">×</button>
                 )}
               </span>
             )
@@ -197,22 +197,22 @@ export default function TerminalBoxSection({ item, canEdit, location, onChanged 
         <div className="space-y-1.5 pt-1">
           <div className="flex gap-1.5">
             <input value={device} onChange={e => setDevice(e.target.value)} placeholder="기종 (예: B700 / T600)"
-              className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white w-28" />
+              className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white w-28" />
             <textarea value={ihText} onChange={e => setIhText(e.target.value)} rows={2}
               placeholder="IH 번호 (줄바꿈/쉼표로 여러 개)"
-              className="flex-1 text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white" />
+              className="flex-1 text-[12px] border border-[#E3E1DE] rounded px-2 py-1 bg-white" />
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={add} disabled={busy || !ihText.trim()}
-              className="h-8 px-3 text-[12px] rounded-md bg-[#1E293B] text-white hover:bg-[#0f172a] disabled:opacity-60">
+              className="h-8 px-3 text-[12px] rounded-md bg-[#111111] text-white hover:bg-[#0f172a] disabled:opacity-60">
               단말기 추가
             </button>
-            {err && <span className="text-[11px] text-[#c62828]">{err}</span>}
+            {err && <span className="text-[11px] text-[#D60051]">{err}</span>}
           </div>
-          <p className="text-[10px] text-[#94A3B8]">택시단말기 현황에서 입·출고하면 해당 IH가 박스에서 자동 제거됩니다.</p>
+          <p className="text-[10px] text-[#8A949C]">택시단말기 현황에서 입·출고하면 해당 IH가 박스에서 자동 제거됩니다.</p>
         </div>
       )}
-      {!canEdit && err && <span className="text-[11px] text-[#c62828]">{err}</span>}
+      {!canEdit && err && <span className="text-[11px] text-[#D60051]">{err}</span>}
     </div>
   )
 }

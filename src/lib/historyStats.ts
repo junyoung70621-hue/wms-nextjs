@@ -22,7 +22,7 @@ export const PERIOD_LABEL: Record<Period, string> = { week: '주', month: '월',
 export const TYPES = ['in', 'out', 'transfer'] as const
 export type Type = typeof TYPES[number]
 export const TYPE_LABEL: Record<Type, string> = { in: '입고', out: '출고·사용', transfer: '이동' }
-export const TYPE_COLOR: Record<Type, string> = { in: '#2e7d32', out: '#c62828', transfer: '#1565c0' }
+export const TYPE_COLOR: Record<Type, string> = { in: '#0C7A57', out: '#D60051', transfer: '#2F3941' }
 
 function kst(ts: string): Date {
   return new Date(new Date(ts).getTime() + 9 * 3600 * 1000)

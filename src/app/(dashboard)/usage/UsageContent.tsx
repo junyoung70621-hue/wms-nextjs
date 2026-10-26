@@ -115,7 +115,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
         const parsed = parseXlsx(ev.target?.result as ArrayBuffer)
         if (!parsed.length) { setMsg('❌ 올바른 양식이 아니거나, 사용수량(>0)이 입력된 행이 없습니다.'); return }
         setRows(parsed)
-      } catch { setMsg('❌ 엑셀 파일을 읽지 못했습니다.') }
+      } catch { setMsg('엑셀 파일을 읽지 못했습니다.') }
     }
     reader.readAsArrayBuffer(file)
   }
@@ -146,14 +146,14 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
   return (
     <div className="space-y-4 max-w-3xl">
       {/* 안내 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[12px] text-[#1E293B] space-y-1">
-        <p className="font-semibold text-[#1565c0]">📋 사용내역 업로드 안내</p>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[12px] text-[#111111] space-y-1">
+        <p className="font-semibold text-[#2F3941]">📋 사용내역 업로드 안내</p>
         <p>「양식 다운로드」를 누르면 해당 센터 현재고가 채워진 엑셀이 받아집니다. <b>노란색 사용수량 칸만 입력</b>해 다시 올리면 재고가 차감됩니다.</p>
-        <p className="text-[#64748B]">입력 컬럼: <code className="bg-white px-1 rounded">사용수량</code>(필수) · <code className="bg-white px-1 rounded">사용사유</code>(선택) &nbsp;|&nbsp; 프리필: <code className="bg-white px-1 rounded">자재명</code> · <code className="bg-white px-1 rounded">ERP코드</code></p>
+        <p className="text-[#5A666F]">입력 컬럼: <code className="bg-white px-1 rounded">사용수량</code>(필수) · <code className="bg-white px-1 rounded">사용사유</code>(선택) &nbsp;|&nbsp; 프리필: <code className="bg-white px-1 rounded">자재명</code> · <code className="bg-white px-1 rounded">ERP코드</code></p>
       </div>
 
       {/* 센터 선택 (admin only) + 파일 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isAdmin && (
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
@@ -162,7 +162,7 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
           </Select>
         )}
         {!isAdmin && (
-          <div className="px-3 py-1.5 border rounded text-[12px] text-[#1E293B] bg-gray-50">{userCenter}</div>
+          <div className="px-3 py-1.5 border rounded text-[12px] text-[#111111] bg-gray-50">{userCenter}</div>
         )}
         <Button variant="outline" className="text-[12px] h-8" onClick={downloadTemplate} disabled={tmplLoading}>
           {tmplLoading ? '양식 생성 중...' : '📥 양식 다운로드'}
@@ -170,12 +170,12 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
         <label className="cursor-pointer">
           <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
           <span className="inline-flex items-center px-3 h-8 border rounded text-[12px] bg-white hover:bg-gray-50 transition-colors cursor-pointer">
-            📂 엑셀 파일 선택
+            엑셀 파일 선택
           </span>
         </label>
-        <GuestCallout label="양식 다운로드 → 사용수량 입력 → 업로드하면 재고 자동 차감" />
+        <GuestCallout label="양식 다운로드 → 사용수량 입력 업로드하면 재고 자동 차감" />
         {rows.length > 0 && (
-          <Button variant="ghost" className="text-[12px] h-8 text-[#94A3B8]" onClick={reset}>✕ 초기화</Button>
+          <Button variant="ghost" className="text-[12px] h-8 text-[#8A949C]" onClick={reset}>✕ 초기화</Button>
         )}
       </div>
       </div>
@@ -184,33 +184,33 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
 
       {/* 미리보기 */}
       {rows.length > 0 && (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] font-semibold text-[#1E293B]">
+            <span className="text-[12px] font-semibold text-[#111111]">
               미리보기 — {rows.length}행 · 센터: <b>{isAdmin ? center : userCenter}</b>
             </span>
             <Button onClick={handleSubmit} disabled={saving}
-              className="bg-[#B32646] hover:bg-[#B0003D] text-white text-[12px] h-8">
+              className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
               {saving ? '처리 중...' : `📤 ${rows.length}건 차감 확정`}
             </Button>
           </div>
           <div className="border rounded overflow-auto max-h-[400px]">
             <table className="w-full text-[12px] border-collapse">
-              <thead className="sticky top-0 bg-[#F8F9FA]">
+              <thead className="sticky top-0 bg-[#F6F6F7]">
                 <tr>
                   {['#','자재명','ERP코드','사용수량','사용사유'].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold text-[#5A666F] border-b whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-3 py-1.5 text-[#94A3B8]">{i + 1}</td>
-                    <td className="px-3 py-1.5 font-medium text-[#1E293B]">{r.item_name}</td>
-                    <td className="px-3 py-1.5 font-mono text-[#64748B] text-[11px]">{r.erp_code}</td>
-                    <td className="px-3 py-1.5 text-right font-mono font-bold text-[#B32646]">{r.quantity}</td>
-                    <td className="px-3 py-1.5 text-[#475569]">{r.reason}</td>
+                    <td className="px-3 py-1.5 text-[#8A949C]">{i + 1}</td>
+                    <td className="px-3 py-1.5 font-medium text-[#111111]">{r.item_name}</td>
+                    <td className="px-3 py-1.5 font-mono text-[#5A666F] text-[11px]">{r.erp_code}</td>
+                    <td className="px-3 py-1.5 text-right font-mono font-bold text-[#D60051]">{r.quantity}</td>
+                    <td className="px-3 py-1.5 text-[#2F3941]">{r.reason}</td>
                   </tr>
                 ))}
               </tbody>
@@ -221,14 +221,14 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
 
       {/* 처리 결과 */}
       {results && results.length > 0 && (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
-          <p className="text-[12px] font-semibold text-[#1E293B]">처리 결과</p>
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-2">
+          <p className="text-[12px] font-semibold text-[#111111]">처리 결과</p>
           <div className="border rounded overflow-auto max-h-[300px]">
             <table className="w-full text-[12px] border-collapse">
-              <thead className="sticky top-0 bg-[#F8F9FA]">
+              <thead className="sticky top-0 bg-[#F6F6F7]">
                 <tr>
                   {['결과','자재명','수량','변경 전→후','사유/오류'].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold text-[#5A666F] border-b whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -236,12 +236,12 @@ function UploadTab({ user, onDone }: { user: SessionUser; onDone: () => void }) 
                 {results.map((r, i) => (
                   <tr key={i} className={r.ok ? (i % 2 === 0 ? 'bg-white' : 'bg-gray-50') : 'bg-red-50'}>
                     <td className="px-3 py-1.5">{r.ok ? '✅' : '❌'}</td>
-                    <td className="px-3 py-1.5 font-medium text-[#1E293B]">{r.item_name}</td>
+                    <td className="px-3 py-1.5 font-medium text-[#111111]">{r.item_name}</td>
                     <td className="px-3 py-1.5 text-right font-mono font-bold">{r.quantity}</td>
-                    <td className="px-3 py-1.5 font-mono text-[#64748B] text-[11px] whitespace-nowrap">
+                    <td className="px-3 py-1.5 font-mono text-[#5A666F] text-[11px] whitespace-nowrap">
                       {r.ok ? `${r.before} → ${r.after}` : '-'}
                     </td>
-                    <td className={`px-3 py-1.5 text-[11px] ${r.ok ? 'text-[#475569]' : 'text-red-600 font-medium'}`}>
+                    <td className={`px-3 py-1.5 text-[11px] ${r.ok ? 'text-[#2F3941]' : 'text-red-600 font-medium'}`}>
                       {r.ok ? (r.reason || '') : (r.error ?? '')}
                     </td>
                   </tr>
@@ -323,7 +323,7 @@ function HistoryTab({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isAdminOrMaterials ? (
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
@@ -334,60 +334,60 @@ function HistoryTab({ user }: { user: SessionUser }) {
             </SelectContent>
           </Select>
         ) : (
-          <div className="px-3 py-1.5 border rounded text-sm text-[#1E293B] bg-gray-50 min-w-[120px]">{userCenter}</div>
+          <div className="px-3 py-1.5 border rounded text-sm text-[#111111] bg-gray-50 min-w-[120px]">{userCenter}</div>
         )}
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646]" />
+          className="border rounded px-2 py-1.5 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#D60051]" />
         <span className="text-gray-400 text-sm">~</span>
         <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          className="border rounded px-2 py-1.5 text-sm text-[#1E293B] bg-white focus:outline-none focus:border-[#B32646]" />
+          className="border rounded px-2 py-1.5 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#D60051]" />
         <Input className="w-[200px]" placeholder="자재명 / 담당자 / 사유..."
           value={search} onChange={e => setSearch(e.target.value)} />
         <Select value={limit} onValueChange={v => v !== null && setLimit(v)}>
           <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
           <SelectContent>{['100','200','500','1000'].map(n => <SelectItem key={n} value={n}>{n}건</SelectItem>)}</SelectContent>
         </Select>
-        <Button variant="outline" onClick={fetchData} disabled={loading}>{loading ? '로딩 중...' : '🔄 새로고침'}</Button>
+        <Button variant="outline" onClick={fetchData} disabled={loading}>{loading ? '로딩 중...' : '새로고침'}</Button>
         <Button variant="outline" onClick={handleCsvDownload} disabled={loading || filtered.length === 0}>⬇️ CSV</Button>
       </div>
       </div>
 
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{error}</p>}
 
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
       <div className="flex flex-wrap gap-3 text-[12px]">
-        <span className="text-[#64748B]">총 <b className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
+        <span className="text-[#5A666F]">총 <b className="text-[#111111]">{filtered.length.toLocaleString()}</b>건</span>
         {filtered.length > 0 && (
-          <span className="text-[#c62828]">출고 합계 <b>{filtered.reduce((s, h) => s + h.quantity, 0).toLocaleString()}</b>개</span>
+          <span className="text-[#D60051]">출고 합계 <b>{filtered.reduce((s, h) => s + h.quantity, 0).toLocaleString()}</b>개</span>
         )}
       </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">데이터 로딩 중...</div>
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#E3E1DE]">데이터 로딩 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">사용내역이 없습니다.</div>
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#E3E1DE]">사용내역이 없습니다.</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-auto max-h-[600px]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] overflow-auto max-h-[600px]">
           <table className="w-full text-[12px] border-collapse">
-            <thead className="sticky top-0 bg-[#F8F9FA] z-10">
+            <thead className="sticky top-0 bg-[#F6F6F7] z-10">
               <tr>
                 {['일시','센터','담당자','자재명','사용수량','변경전','변경후','사유'].map(h => (
-                  <th key={h} className="text-left px-3 py-2 font-semibold text-[#64748B] border-b border-[rgba(0,0,0,0.08)] whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-3 py-2 font-semibold text-[#5A666F] border-b border-[rgba(0,0,0,0.08)] whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((h, i) => (
                 <tr key={h.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                  <td className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#475569]">{tsKst(h.acted_at)}</td>
-                  <td className="px-3 py-1.5 whitespace-nowrap text-[#64748B]">{h.from_center ?? h.warehouse?.location ?? ''}</td>
-                  <td className="px-3 py-1.5 whitespace-nowrap text-[#1E293B]">{h.users?.name ?? ''}</td>
-                  <td className="px-3 py-1.5 text-[#1E293B] max-w-[200px] truncate font-medium">{h.warehouse?.item_name ?? ''}</td>
-                  <td className="px-3 py-1.5 text-right font-mono font-bold text-[#B32646]">{h.quantity.toLocaleString()}</td>
-                  <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">{h.snapshot_qty_before ?? ''}</td>
-                  <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">{h.snapshot_qty_after ?? ''}</td>
-                  <td className="px-3 py-1.5 text-[#475569] max-w-[220px] truncate">{h.reason ?? ''}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#2F3941]">{tsKst(h.acted_at)}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap text-[#5A666F]">{h.from_center ?? h.warehouse?.location ?? ''}</td>
+                  <td className="px-3 py-1.5 whitespace-nowrap text-[#111111]">{h.users?.name ?? ''}</td>
+                  <td className="px-3 py-1.5 text-[#111111] max-w-[200px] truncate font-medium">{h.warehouse?.item_name ?? ''}</td>
+                  <td className="px-3 py-1.5 text-right font-mono font-bold text-[#D60051]">{h.quantity.toLocaleString()}</td>
+                  <td className="px-3 py-1.5 text-right font-mono text-[#8A949C]">{h.snapshot_qty_before ?? ''}</td>
+                  <td className="px-3 py-1.5 text-right font-mono text-[#8A949C]">{h.snapshot_qty_after ?? ''}</td>
+                  <td className="px-3 py-1.5 text-[#2F3941] max-w-[220px] truncate">{h.reason ?? ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -404,11 +404,10 @@ export default function UsageContent({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-[#1E293B]">📊 사용내역</h2>
       <Tabs defaultValue="upload">
         <TabsList>
-          <TabsTrigger value="upload"  className="text-[13px]">📤 업로드 (재고 차감)</TabsTrigger>
-          <TabsTrigger value="history" className="text-[13px]">📋 이력 조회</TabsTrigger>
+          <TabsTrigger value="upload"  className="text-[13px]">업로드 (재고 차감)</TabsTrigger>
+          <TabsTrigger value="history" className="text-[13px]">이력 조회</TabsTrigger>
         </TabsList>
         <TabsContent value="upload" className="mt-4">
           <UploadTab user={user} onDone={() => setRefreshKey(k => k + 1)} />

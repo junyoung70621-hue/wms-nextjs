@@ -242,9 +242,9 @@ export default function GuestPreview({ variant = 'default' }: { variant?: Varian
       {/* 스탯 카드 — 라벨은 선명, 숫자만 블러 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cfg.stats.map(s => (
-          <div key={s.label} className="rounded-xl border border-[#e2e8f0] bg-white p-4">
-            <div className="text-[11px] font-semibold text-[#64748B]">{s.label}</div>
-            <div data-guest-blur className="mt-1 text-[22px] font-extrabold text-[#1E293B]">
+          <div key={s.label} className="rounded-xl border border-[#E3E1DE] bg-white p-4">
+            <div className="text-[11px] font-semibold text-[#5A666F]">{s.label}</div>
+            <div data-guest-blur className="mt-1 text-[22px] font-extrabold text-[#111111]">
               {s.value}
             </div>
           </div>
@@ -252,31 +252,31 @@ export default function GuestPreview({ variant = 'default' }: { variant?: Varian
       </div>
 
       {/* 필터/탭 목업 */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white p-3 flex flex-wrap items-center gap-2">
+      <div className="rounded-xl border border-[#E3E1DE] bg-white p-3 flex flex-wrap items-center gap-2">
         {cfg.chips.map((c, i) => (
           <span
             key={c}
             className={`rounded-md px-3 py-1.5 text-[12px] font-medium border ${
               i === 0
-                ? 'border-[#b32646] bg-[#fbe9ee] text-[#b32646] font-semibold'
-                : 'border-[#e2e8f0] bg-[#f8f9ff] text-[#475569]'
+                ? 'border-[#D60051] bg-[#FCEEF3] text-[#D60051] font-semibold'
+                : 'border-[#E3E1DE] bg-[#F6F6F7] text-[#2F3941]'
             }`}
           >
             {c}
           </span>
         ))}
-        <span className="ml-auto hidden sm:block w-56 rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-[12px] text-[#94A3B8]">
+        <span className="ml-auto hidden sm:block w-56 rounded-md border border-[#E3E1DE] bg-white px-3 py-1.5 text-[12px] text-[#8A949C]">
           검색어 입력
         </span>
       </div>
 
       {/* 테이블 — 숫자·자재명 계열 컬럼만 블러 */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white overflow-x-auto">
+      <div className="rounded-xl border border-[#E3E1DE] bg-white overflow-x-auto">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="border-b border-[#e2e8f0] bg-[#f8f9ff]">
+            <tr className="border-b border-[#E3E1DE] bg-[#F6F6F7]">
               {cfg.columns.map(col => (
-                <th key={col.label} className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">
+                <th key={col.label} className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">
                   {col.label}
                 </th>
               ))}
@@ -284,12 +284,12 @@ export default function GuestPreview({ variant = 'default' }: { variant?: Varian
           </thead>
           <tbody>
             {rows.map((row, r) => (
-              <tr key={r} className="border-b border-[#f1f5f9] last:border-0">
+              <tr key={r} className="border-b border-[#F1F1F0] last:border-0">
                 {row.map((cell, c) => (
                   <td
                     key={c}
                     {...(cell.blur ? {} : { 'data-guest-clear': true })}
-                    className="px-3 py-2.5 whitespace-nowrap text-[#334155]"
+                    className="px-3 py-2.5 whitespace-nowrap text-[#111111]"
                   >
                     {cell.value}
                   </td>

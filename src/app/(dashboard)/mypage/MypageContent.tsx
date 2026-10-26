@@ -77,14 +77,12 @@ export default function MypageContent({ user }: { user: SessionUser }) {
 
   return (
     <div className="max-w-lg space-y-4">
-      <h2 className="text-xl font-bold text-[#1E293B]">👤 마이페이지</h2>
-
       {/* 계정 정보 요약 */}
-      <div className="bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-3 text-sm space-y-1">
+      <div className="bg-[rgba(214,0,81,0.04)] border border-[rgba(214,0,81,0.15)] rounded-lg p-3 text-sm space-y-1">
         <div className="flex gap-4 flex-wrap">
-          <span><span className="text-[#64748B]">아이디</span> <b className="text-[#1E293B]">{user.username}</b></span>
-          <span><span className="text-[#64748B]">권한</span> <b className="text-[#B32646]">{ROLE_LABEL[user.role] ?? user.role}</b></span>
-          <span><span className="text-[#64748B]">소속</span> <b className="text-[#1E293B]">{center}</b></span>
+          <span><span className="text-[#5A666F]">아이디</span> <b className="text-[#111111]">{user.username}</b></span>
+          <span><span className="text-[#5A666F]">권한</span> <b className="text-[#D60051]">{ROLE_LABEL[user.role] ?? user.role}</b></span>
+          <span><span className="text-[#5A666F]">소속</span> <b className="text-[#111111]">{center}</b></span>
         </div>
       </div>
 
@@ -92,8 +90,8 @@ export default function MypageContent({ user }: { user: SessionUser }) {
         <CardContent className="pt-5">
           <Tabs defaultValue="info">
             <TabsList className="grid w-full grid-cols-2 mb-5">
-              <TabsTrigger value="info">📋 내 정보 수정</TabsTrigger>
-              <TabsTrigger value="pw">🔑 비밀번호 변경</TabsTrigger>
+              <TabsTrigger value="info">내 정보 수정</TabsTrigger>
+              <TabsTrigger value="pw">비밀번호 변경</TabsTrigger>
             </TabsList>
 
             {/* ── 내 정보 탭 ── */}
@@ -113,7 +111,7 @@ export default function MypageContent({ user }: { user: SessionUser }) {
                 </div>
                 {infoErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{infoErr}</p>}
                 {infoMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{infoMsg}</p>}
-                <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={infoLoad}>
+                <Button type="submit" className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white" disabled={infoLoad}>
                   {infoLoad ? '저장 중...' : '저장'}
                 </Button>
               </form>
@@ -136,7 +134,7 @@ export default function MypageContent({ user }: { user: SessionUser }) {
                 </div>
                 {pwErr && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">{pwErr}</p>}
                 {pwMsg && <p className="text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded">{pwMsg}</p>}
-                <Button type="submit" className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white" disabled={pwLoad}>
+                <Button type="submit" className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white" disabled={pwLoad}>
                   {pwLoad ? '변경 중...' : '비밀번호 변경'}
                 </Button>
               </form>

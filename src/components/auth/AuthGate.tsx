@@ -47,13 +47,13 @@ export function GuestClickOverlay({ className }: { className?: string }) {
 export function GuestModePill() {
   const { openLogin } = useAuthGate()
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full bg-[#1E293B] pl-4 pr-1.5 py-1.5 shadow-xl max-w-[calc(100vw-24px)]">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full bg-[#111111] pl-4 pr-1.5 py-1.5 shadow-xl max-w-[calc(100vw-24px)]">
       <span className="text-[12.5px] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
         👁 둘러보기 모드 · 실제 데이터는 로그인 후 확인할 수 있습니다
       </span>
       <button
         onClick={() => openLogin('login')}
-        className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-[#b32646] hover:bg-[#9a1f3c] text-white text-[12px] font-bold px-3.5 py-1.5 transition-colors"
+        className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] font-bold px-3.5 py-1.5 transition-colors"
       >
         로그인
       </button>

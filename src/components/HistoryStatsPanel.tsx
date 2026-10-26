@@ -16,7 +16,7 @@ type Filters = {
 function kstToday() { return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10) }
 function daysAgo(n: number) { return new Date(Date.now() + 9 * 3600000 - n * 86400000).toISOString().slice(0, 10) }
 
-const INK = '#1E293B', MUTED = '#94A3B8', GRID = '#E2E8F0'
+const INK = '#111111', MUTED = '#8A949C', GRID = '#E3E1DE'
 
 // 입출고 이력 통계 패널 — 기간별 추이 / 자재별 TOP / 센터 간 이동 / 자재×기간 표 + Excel
 export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
@@ -74,21 +74,21 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-4">
+    <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[13px] font-bold text-[#1E293B]">📊 이동·사용 통계</span>
-        <span className="text-[11px] text-[#94A3B8]">{from} ~ {to}{cat !== '전체' && ` · ${cat}`} · {filtered.length.toLocaleString()}건{rows.length >= 5000 && ' (최대 5,000건까지 집계)'}</span>
+        <span className="text-[13px] font-bold text-[#111111]">📊 이동·사용 통계</span>
+        <span className="text-[11px] text-[#8A949C]">{from} ~ {to}{cat !== '전체' && ` · ${cat}`} · {filtered.length.toLocaleString()}건{rows.length >= 5000 && ' (최대 5,000건까지 집계)'}</span>
         <div className="ml-auto flex items-center gap-1">
           {catList.map(c => (
             <button key={c} type="button" onClick={() => setCat(c)}
-              className={`h-7 px-2.5 text-[11px] rounded border ${cat === c ? 'bg-[#1E293B] border-[#1E293B] text-white' : 'border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]'}`}>
+              className={`h-7 px-2.5 text-[11px] rounded border ${cat === c ? 'bg-[#111111] border-[#111111] text-white' : 'border-[#E3E1DE] text-[#2F3941] hover:bg-[#F1F1F0]'}`}>
               {c}
             </button>
           ))}
-          <span className="w-px h-5 bg-[#E2E8F0] mx-1" />
+          <span className="w-px h-5 bg-[#E3E1DE] mx-1" />
           {(Object.keys(PERIOD_LABEL) as Period[]).map(p => (
             <button key={p} type="button" onClick={() => setPeriod(p)}
-              className={`h-7 px-2.5 text-[11px] rounded border ${period === p ? 'bg-[#B32646] border-[#B32646] text-white' : 'border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]'}`}>
+              className={`h-7 px-2.5 text-[11px] rounded border ${period === p ? 'bg-[#D60051] border-[#D60051] text-white' : 'border-[#E3E1DE] text-[#2F3941] hover:bg-[#F1F1F0]'}`}>
               {PERIOD_LABEL[p]}별
             </button>
           ))}
@@ -100,19 +100,19 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
 
       {err && <p className="text-[12px] text-red-600">{err}</p>}
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-10 text-center">집계 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-10 text-center">집계 중…</div>
       ) : st.periods.length === 0 ? (
-        <div className="text-[12px] text-[#94A3B8] py-10 text-center">해당 기간 이력이 없습니다.</div>
+        <div className="text-[12px] text-[#8A949C] py-10 text-center">해당 기간 이력이 없습니다.</div>
       ) : (
         <>
           <div className="grid lg:grid-cols-2 gap-4">
             <section>
-              <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">{PERIOD_LABEL[period]}별 수량 추이</h4>
+              <h4 className="text-[12px] font-semibold text-[#111111] mb-1">{PERIOD_LABEL[period]}별 수량 추이</h4>
               <Legend />
               <PeriodBars st={st} period={period} />
             </section>
             <section>
-              <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">많이 움직인 자재 TOP 15 <span className="text-[#94A3B8] font-normal">(출고·사용 + 이동)</span></h4>
+              <h4 className="text-[12px] font-semibold text-[#111111] mb-1">많이 움직인 자재 TOP 15 <span className="text-[#8A949C] font-normal">(출고·사용 + 이동)</span></h4>
               <Legend only={['out', 'transfer']} />
               <ItemBars list={st.items} />
             </section>
@@ -120,11 +120,11 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
 
           <div className="grid lg:grid-cols-3 gap-4">
             <section className="lg:col-span-2">
-              <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">자재 × {PERIOD_LABEL[period]} <span className="text-[#94A3B8] font-normal">(출고·사용 + 이동 수량, 상위 30)</span></h4>
+              <h4 className="text-[12px] font-semibold text-[#111111] mb-1">자재 × {PERIOD_LABEL[period]} <span className="text-[#8A949C] font-normal">(출고·사용 + 이동 수량, 상위 30)</span></h4>
               <PivotTable list={st.items} keys={st.periods.map(p => p.key)} period={period} label="자재명" />
             </section>
             <section>
-              <h4 className="text-[12px] font-semibold text-[#1E293B] mb-1">센터 간 이동</h4>
+              <h4 className="text-[12px] font-semibold text-[#111111] mb-1">센터 간 이동</h4>
               <FlowTable st={st} />
             </section>
           </div>
@@ -136,7 +136,7 @@ export default function HistoryStatsPanel({ filters }: { filters: Filters }) {
 
 function Legend({ only }: { only?: Type[] }) {
   return (
-    <div className="flex gap-3 text-[11px] text-[#475569] mb-1">
+    <div className="flex gap-3 text-[11px] text-[#2F3941] mb-1">
       {(only ?? TYPES).map(t => (
         <span key={t} className="inline-flex items-center gap-1">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: TYPE_COLOR[t] }} />{TYPE_LABEL[t]}
@@ -204,7 +204,7 @@ function PeriodBars({ st, period }: { st: ReturnType<typeof computeStats>; perio
 // 자재별 가로 누적 막대 (출고·사용 + 이동)
 function ItemBars({ list }: { list: ItemAgg[] }) {
   const items = list.filter(i => i.total > 0).slice(0, 15)
-  if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-6 text-center">움직인 자재 없음</div>
+  if (!items.length) return <div className="text-[11px] text-[#8A949C] py-6 text-center">움직인 자재 없음</div>
   const rowH = 16, W = 560, labelW = 170, valW = 44, padY = 4
   const H = items.length * rowH + padY * 2
   const max = Math.max(1, ...items.map(i => i.total))
@@ -235,25 +235,25 @@ function ItemBars({ list }: { list: ItemAgg[] }) {
 
 function PivotTable({ list, keys, period, label }: { list: ItemAgg[]; keys: string[]; period: Period; label: string }) {
   const items = list.filter(i => i.total > 0).slice(0, 30)
-  if (!items.length) return <div className="text-[11px] text-[#94A3B8] py-6 text-center">데이터 없음</div>
+  if (!items.length) return <div className="text-[11px] text-[#8A949C] py-6 text-center">데이터 없음</div>
   return (
-    <div className="overflow-auto max-h-80 rounded border border-[#E2E8F0]">
+    <div className="overflow-auto max-h-80 rounded border border-[#E3E1DE]">
       <table className="text-[11px] border-collapse min-w-full">
-        <thead className="sticky top-0 bg-[#F8F9FA]">
+        <thead className="sticky top-0 bg-[#F6F6F7]">
           <tr>
-            <th className="px-2 py-1.5 text-left font-semibold text-[#64748B] border-b sticky left-0 bg-[#F8F9FA]">{label}</th>
-            <th className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b">합계</th>
-            {keys.map(k => <th key={k} className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b whitespace-nowrap">{bucketLabel(k, period)}</th>)}
+            <th className="px-2 py-1.5 text-left font-semibold text-[#5A666F] border-b sticky left-0 bg-[#F6F6F7]">{label}</th>
+            <th className="px-2 py-1.5 text-right font-semibold text-[#5A666F] border-b">합계</th>
+            {keys.map(k => <th key={k} className="px-2 py-1.5 text-right font-semibold text-[#5A666F] border-b whitespace-nowrap">{bucketLabel(k, period)}</th>)}
           </tr>
         </thead>
         <tbody>
           {items.map((it, i) => (
             <tr key={it.item} className={i % 2 ? 'bg-gray-50' : 'bg-white'}>
-              <td className="px-2 py-1 text-[#1E293B] whitespace-nowrap max-w-[200px] truncate sticky left-0 bg-inherit" title={it.item}>{it.item}</td>
-              <td className="px-2 py-1 text-right font-mono font-bold text-[#1E293B]">{it.total.toLocaleString()}</td>
+              <td className="px-2 py-1 text-[#111111] whitespace-nowrap max-w-[200px] truncate sticky left-0 bg-inherit" title={it.item}>{it.item}</td>
+              <td className="px-2 py-1 text-right font-mono font-bold text-[#111111]">{it.total.toLocaleString()}</td>
               {keys.map(k => {
                 const v = it.byPeriod[k] ?? 0
-                return <td key={k} className={`px-2 py-1 text-right font-mono ${v ? 'text-[#1E293B]' : 'text-[#CBD5E1]'}`}>{v ? v.toLocaleString() : '·'}</td>
+                return <td key={k} className={`px-2 py-1 text-right font-mono ${v ? 'text-[#111111]' : 'text-[#D9D9D9]'}`}>{v ? v.toLocaleString() : '·'}</td>
               })}
             </tr>
           ))}
@@ -264,27 +264,27 @@ function PivotTable({ list, keys, period, label }: { list: ItemAgg[]; keys: stri
 }
 
 function FlowTable({ st }: { st: ReturnType<typeof computeStats> }) {
-  if (!st.flows.length) return <div className="text-[11px] text-[#94A3B8] py-6 text-center">센터 간 이동 없음</div>
+  if (!st.flows.length) return <div className="text-[11px] text-[#8A949C] py-6 text-center">센터 간 이동 없음</div>
   const max = Math.max(1, ...st.flows.map(f => f.qty))
   return (
-    <div className="overflow-auto max-h-80 rounded border border-[#E2E8F0]">
+    <div className="overflow-auto max-h-80 rounded border border-[#E3E1DE]">
       <table className="text-[11px] border-collapse w-full">
-        <thead className="sticky top-0 bg-[#F8F9FA]">
+        <thead className="sticky top-0 bg-[#F6F6F7]">
           <tr>
-            <th className="px-2 py-1.5 text-left font-semibold text-[#64748B] border-b">경로</th>
-            <th className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b">수량</th>
-            <th className="px-2 py-1.5 text-right font-semibold text-[#64748B] border-b">건수</th>
+            <th className="px-2 py-1.5 text-left font-semibold text-[#5A666F] border-b">경로</th>
+            <th className="px-2 py-1.5 text-right font-semibold text-[#5A666F] border-b">수량</th>
+            <th className="px-2 py-1.5 text-right font-semibold text-[#5A666F] border-b">건수</th>
           </tr>
         </thead>
         <tbody>
           {st.flows.slice(0, 30).map((f, i) => (
             <tr key={`${f.from}→${f.to}`} className={i % 2 ? 'bg-gray-50' : 'bg-white'}>
-              <td className="px-2 py-1 text-[#1E293B] whitespace-nowrap">
-                <div>{f.from} <span className="text-[#94A3B8]">→</span> {f.to}</div>
-                <div className="h-1 rounded bg-[#1565c0] mt-0.5" style={{ width: `${Math.max(2, (f.qty / max) * 100)}%` }} />
+              <td className="px-2 py-1 text-[#111111] whitespace-nowrap">
+                <div>{f.from} <span className="text-[#8A949C]">→</span> {f.to}</div>
+                <div className="h-1 rounded bg-[#2F3941] mt-0.5" style={{ width: `${Math.max(2, (f.qty / max) * 100)}%` }} />
               </td>
-              <td className="px-2 py-1 text-right font-mono text-[#1E293B]">{f.qty.toLocaleString()}</td>
-              <td className="px-2 py-1 text-right font-mono text-[#64748B]">{f.cnt}</td>
+              <td className="px-2 py-1 text-right font-mono text-[#111111]">{f.qty.toLocaleString()}</td>
+              <td className="px-2 py-1 text-right font-mono text-[#5A666F]">{f.cnt}</td>
             </tr>
           ))}
         </tbody>

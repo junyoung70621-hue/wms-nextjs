@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,7 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Boxes, ClipboardCheck, TriangleAlert, PackageX, type LucideIcon } from 'lucide-react'
+import { ClipboardCheck, TriangleAlert, PackageX, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SessionUser } from '@/lib/session'
 import { GUEST_VIEWER } from '@/lib/guestViewer'
@@ -104,32 +105,31 @@ const ACTION_KO: Record<string, string> = {
   in: '📥 입고', out: '📤 출고', transfer: '🚚 이동', edit: '✏️ 수정',
 }
 const TR_STATUS: Record<string, { label: string; color: string }> = {
-  pending:   { label: '⏳ 대기중', color: '#f57c00' },
-  approved:  { label: '✅ 승인됨', color: '#2e7d32' },
-  rejected:  { label: '❌ 거절됨', color: '#c62828' },
+  pending:   { label: '⏳ 대기중', color: '#96620A' },
+  approved:  { label: '✅ 승인됨', color: '#0C7A57' },
+  rejected:  { label: '❌ 거절됨', color: '#D60051' },
   cancelled: { label: '🚫 취소됨', color: '#757575' },
 }
 
 // ── KPI 카드 ─────────────────────────────────────────────────────────────────
-function KpiCard({ enLabel, koLabel, value, unit = '개', color, icon: Icon, active, onClick }: {
-  enLabel: string; koLabel: string; value: number; unit?: string; color: string
+function KpiCard({ koLabel, value, unit = '개', color, icon: Icon, active, onClick }: {
+  koLabel: string; value: number; unit?: string; color: string
   icon: LucideIcon; active?: boolean; onClick?: () => void
 }) {
   return (
     <div onClick={onClick}
       className={cn(
         'bg-white rounded-lg p-4 cursor-pointer transition-all',
-        active ? 'border-2 shadow-sm' : 'border border-[#e2e8f0] hover:border-[#cbd5e1]'
+        active ? 'border-2 shadow-sm' : 'border border-[#E3E1DE] hover:border-[#D9D9D9]'
       )}
       style={active ? { borderColor: color } : undefined}>
       <div className="flex items-start justify-between">
-        <span className="text-[10px] font-bold tracking-[0.08em] text-[#94A3B8] uppercase">{enLabel}</span>
+        <span className="text-[12.5px] font-semibold text-[#5A666F]">{koLabel}</span>
         <Icon size={18} strokeWidth={1.9} style={{ color }} />
       </div>
-      <div className="mt-3 text-[11px] text-[#64748B]">{koLabel}</div>
-      <div className="flex items-baseline gap-1 mt-0.5">
+      <div className="flex items-baseline gap-1 mt-3">
         <span data-guest-blur className="text-[28px] font-bold leading-none font-heading" style={{ color }}>{value.toLocaleString()}</span>
-        <span className="text-[12px] text-[#94A3B8]">{unit}</span>
+        <span className="text-[12px] text-[#8A949C]">{unit}</span>
       </div>
     </div>
   )
@@ -243,20 +243,20 @@ function ItemDetailModal({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}>
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-5 py-3 border-b bg-[#F8F9FA]">
+        <div className="flex items-center justify-between px-5 py-3 border-b bg-[#F6F6F7]">
           <div>
-            <div className="text-[15px] font-bold text-[#1E293B]">{item.item_name}</div>
-            <div className="text-[11px] text-[#64748B]">
+            <div className="text-[15px] font-bold text-[#111111]">{item.item_name}</div>
+            <div className="text-[11px] text-[#5A666F]">
               {[item.category_large, item.category_mid, item.category_small].filter(Boolean).join(' > ')}
               {item.erp_code && ` · ERP: ${item.erp_code}`}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[20px] font-bold"
-              style={{ color: item.quantity === 0 ? '#c62828' : item.quantity <= 9 ? '#f57c00' : '#2e7d32' }}>
+              style={{ color: item.quantity === 0 ? '#D60051' : item.quantity <= 9 ? '#96620A' : '#0C7A57' }}>
               {item.quantity.toLocaleString()}개
             </span>
-            <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-xl leading-none">×</button>
+            <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-xl leading-none">×</button>
           </div>
         </div>
 
@@ -264,7 +264,7 @@ function ItemDetailModal({
         <div className="flex border-b text-[12px]">
           {modalTabs.map(t => (
             <button key={t} onClick={() => setTab(t as typeof tab)}
-              className={`px-4 py-2 font-medium border-b-2 transition-colors ${tab === t ? 'border-[#B32646] text-[#B32646]' : 'border-transparent text-[#64748B] hover:text-[#1E293B]'}`}>
+              className={`px-4 py-2 font-medium border-b-2 transition-colors ${tab === t ? 'border-[#D60051] text-[#D60051]' : 'border-transparent text-[#5A666F] hover:text-[#111111]'}`}>
               {tabLabel(t)}
             </button>
           ))}
@@ -276,22 +276,22 @@ function ItemDetailModal({
             histLoad ? <p className="text-gray-400 text-sm text-center py-8">로딩 중...</p> :
             history.length === 0 ? <p className="text-gray-400 text-sm text-center py-8">이력이 없습니다.</p> :
             <table className="w-full text-[11px]">
-              <thead className="bg-[#F8F9FA] sticky top-0">
+              <thead className="bg-[#F6F6F7] sticky top-0">
                 <tr>
                   {['일시','구분','수량','변동','담당자','사유'].map(h => (
-                    <th key={h} className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b">{h}</th>
+                    <th key={h} className="px-2 py-1.5 text-left text-[#5A666F] font-semibold border-b">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {history.map((h, i) => (
                   <tr key={h.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-2 py-1 text-[#94A3B8] whitespace-nowrap">{tsKst(h.acted_at)}</td>
+                    <td className="px-2 py-1 text-[#8A949C] whitespace-nowrap">{tsKst(h.acted_at)}</td>
                     <td className="px-2 py-1 whitespace-nowrap">{ACTION_KO[h.action_type] ?? h.action_type}</td>
                     <td className="px-2 py-1 text-right font-mono font-bold">{h.quantity}</td>
-                    <td className="px-2 py-1 text-[#64748B] whitespace-nowrap">{h.snapshot_qty_before} → {h.snapshot_qty_after}</td>
-                    <td className="px-2 py-1 text-[#64748B]">{h.actor?.name ?? '-'}</td>
-                    <td className="px-2 py-1 text-[#94A3B8] max-w-[150px] truncate">{h.reason ?? '-'}</td>
+                    <td className="px-2 py-1 text-[#5A666F] whitespace-nowrap">{h.snapshot_qty_before} → {h.snapshot_qty_after}</td>
+                    <td className="px-2 py-1 text-[#5A666F]">{h.actor?.name ?? '-'}</td>
+                    <td className="px-2 py-1 text-[#8A949C] max-w-[150px] truncate">{h.reason ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -302,26 +302,26 @@ function ItemDetailModal({
           {tab === 'transfer' && (
             <div className="space-y-4 max-w-sm">
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">출발 센터</label>
-                <input value={center} disabled className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8]" />
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">출발 센터</label>
+                <input value={center} disabled className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#8A949C]" />
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">도착 센터 *</label>
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">도착 센터 *</label>
                 <select value={trDest} onChange={e => setTrDest(e.target.value)}
-                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]">
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D60051]">
                   <option value="">선택하세요</option>
                   {destinations.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">수량 * (현재 {item.quantity}개)</label>
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">수량 * (현재 {item.quantity}개)</label>
                 <input type="number" min={1} max={item.quantity} value={trQty}
                   onChange={e => setTrQty(Math.min(item.quantity, Math.max(1, parseInt(e.target.value) || 1)))}
-                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646]" />
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D60051]" />
               </div>
               {trMsg && <p className="text-[12px]">{trMsg}</p>}
               <Button onClick={handleTransfer} disabled={trSaving || !trDest}
-                className="w-full bg-[#B32646] hover:bg-[#B0003D] text-white">
+                className="w-full bg-[#D60051] hover:bg-[#A3003D] text-white">
                 {trSaving ? '신청 중...' : '🚚 이동 신청'}
               </Button>
             </div>
@@ -338,30 +338,30 @@ function ItemDetailModal({
                   ['erp_code','ERP코드'], ['erp_name','ERP품명'], ['repair_manager','수리담당자'],
                 ] as [string, string][]).map(([key, label]) => (
                   <div key={key}>
-                    <label className="text-[11px] font-semibold text-[#64748B] block mb-1">{label}</label>
+                    <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">{label}</label>
                     <input value={String(editData[key] ?? '')} type={key === 'quantity' ? 'number' : 'text'}
                       onChange={e => setEditData(p => ({ ...p, [key]: key === 'quantity' ? parseInt(e.target.value) || 0 : e.target.value }))}
-                      className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646]" />
+                      className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051]" />
                   </div>
                 ))}
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">센터 (위치 변경)</label>
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">센터 (위치 변경)</label>
                 <select value={String(editData.location ?? item.location)}
                   onChange={e => setEditData(p => ({ ...p, location: e.target.value }))}
-                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] bg-white">
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051] bg-white">
                   {CENTERS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">비고</label>
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">비고</label>
                 <textarea value={String(editData.notes ?? '')} rows={2}
                   onChange={e => setEditData(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
+                  className="w-full border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051] resize-none" />
               </div>
               {editMsg && <p className="text-[12px]">{editMsg}</p>}
               <div className="flex items-center gap-3 flex-wrap">
-                <Button onClick={handleEdit} disabled={editSaving} className="bg-[#B32646] hover:bg-[#B0003D] text-white">
+                <Button onClick={handleEdit} disabled={editSaving} className="bg-[#D60051] hover:bg-[#A3003D] text-white">
                   {editSaving ? '저장 중...' : '💾 저장'}
                 </Button>
                 <div className="ml-auto">
@@ -418,29 +418,29 @@ function ItemGroupModal({ group, isHub, onClose, onOpenBox }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-[640px] max-w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E2E8F0]">
+        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E3E1DE]">
           <div className="min-w-0">
-            <div className="text-[14px] font-bold text-[#1E293B] truncate">{group.item_name}</div>
-            <div className="text-[11px] text-[#64748B] mt-0.5">
+            <div className="text-[14px] font-bold text-[#111111] truncate">{group.item_name}</div>
+            <div className="text-[11px] text-[#5A666F] mt-0.5">
               {[group.category_large, group.category_mid, group.category_small].filter(Boolean).join(' > ') || '분류 없음'}
             </div>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0 ml-3">
             <div className="text-right">
-              <div className="text-[10px] text-[#94A3B8]">전체 수량</div>
-              <div className="text-[18px] font-bold font-mono text-[#B32646] leading-tight">{group.quantity.toLocaleString()}</div>
+              <div className="text-[10px] text-[#8A949C]">전체 수량</div>
+              <div className="text-[18px] font-bold font-mono text-[#D60051] leading-tight">{group.quantity.toLocaleString()}</div>
             </div>
-            <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">×</button>
+            <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none">×</button>
           </div>
         </div>
         <div className="p-4 overflow-y-auto">
-          <div className="text-[11px] text-[#64748B] mb-2">{isHub ? '박스별 보관 현황' : '보관 현황'} · {boxes.length}건 — 행을 클릭하면 이력·수정·이동 상세가 열립니다.</div>
-          <div className="rounded border border-[#E2E8F0] overflow-hidden">
+          <div className="text-[11px] text-[#5A666F] mb-2">{isHub ? '박스별 보관 현황' : '보관 현황'} · {boxes.length}건 — 행을 클릭하면 이력·수정·이동 상세가 열립니다.</div>
+          <div className="rounded border border-[#E3E1DE] overflow-hidden">
             <table className="w-full text-[12px]">
-              <thead className="bg-[#F8F9FA]">
+              <thead className="bg-[#F6F6F7]">
                 <tr>
                   {[isHub ? '렉 / 단 / 박스' : '위치', '수량', 'ERP코드', 'ERP품명', ''].map((h, i) => (
-                    <th key={i} className={`px-3 py-1.5 text-[11px] font-semibold text-[#64748B] border-b ${h === '수량' ? 'text-right' : 'text-left'}`}>{h}</th>
+                    <th key={i} className={`px-3 py-1.5 text-[11px] font-semibold text-[#5A666F] border-b ${h === '수량' ? 'text-right' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -448,13 +448,13 @@ function ItemGroupModal({ group, isHub, onClose, onOpenBox }: {
                 {boxes.map((b, i) => (
                   <tr key={b.id} onClick={() => onOpenBox(b)}
                     className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 cursor-pointer`}>
-                    <td data-guest-clear className="px-3 py-1.5 font-mono text-[11px] text-[#1E293B] whitespace-nowrap">{isHub ? boxLoc(b) : (b.location ?? '')}</td>
-                    <td className={`px-3 py-1.5 text-right font-mono ${(b.quantity ?? 0) === 0 ? 'text-red-500 font-bold' : (b.quantity ?? 0) <= 9 ? 'text-amber-500 font-semibold' : 'text-[#1E293B]'}`}>
+                    <td data-guest-clear className="px-3 py-1.5 font-mono text-[11px] text-[#111111] whitespace-nowrap">{isHub ? boxLoc(b) : (b.location ?? '')}</td>
+                    <td className={`px-3 py-1.5 text-right font-mono ${(b.quantity ?? 0) === 0 ? 'text-red-500 font-bold' : (b.quantity ?? 0) <= 9 ? 'text-amber-500 font-semibold' : 'text-[#111111]'}`}>
                       {(b.quantity ?? 0).toLocaleString()}
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-[11px] text-[#475569]">{b.erp_code ?? ''}</td>
-                    <td className="px-3 py-1.5 text-[11px] text-[#64748B] truncate max-w-[180px]">{b.erp_name ?? ''}</td>
-                    <td className="px-3 py-1.5 text-right text-[11px] text-[#B32646] whitespace-nowrap">상세 ›</td>
+                    <td className="px-3 py-1.5 font-mono text-[11px] text-[#2F3941]">{b.erp_code ?? ''}</td>
+                    <td className="px-3 py-1.5 text-[11px] text-[#5A666F] truncate max-w-[180px]">{b.erp_name ?? ''}</td>
+                    <td className="px-3 py-1.5 text-right text-[11px] text-[#D60051] whitespace-nowrap">상세 ›</td>
                   </tr>
                 ))}
               </tbody>
@@ -509,24 +509,24 @@ function AddItemModal({ defaultCenter, onClose, onAdded }: {
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E2E8F0]">
-          <h3 className="text-[14px] font-bold text-[#1E293B]">➕ 자재 추가</h3>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">✕</button>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E3E1DE]">
+          <h3 className="text-[14px] font-bold text-[#111111]">자재 추가</h3>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none">✕</button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">품명 *</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">품명 *</label>
               <Input value={form.item_name} onChange={e => set('item_name')(e.target.value)}
                 placeholder="품명 입력" className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">수량 *</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">수량 *</label>
               <Input type="number" min="0" value={form.quantity}
                 onChange={e => set('quantity')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">센터 *</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">센터 *</label>
               <Select value={form.location} onValueChange={v => v !== null && set('location')(v)}>
                 <SelectTrigger className="h-8 text-[12px]"><SelectValue placeholder="센터 선택" /></SelectTrigger>
                 <SelectContent>
@@ -535,45 +535,45 @@ function AddItemModal({ defaultCenter, onClose, onAdded }: {
               </Select>
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">랙 번호</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">랙 번호</label>
               <Input value={form.rack_no} onChange={e => set('rack_no')(e.target.value)}
                 placeholder="예: A-01" className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">선반</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">선반</label>
               <Input value={form.shelf} onChange={e => set('shelf')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">박스 번호</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">박스 번호</label>
               <Input value={form.box_no} onChange={e => set('box_no')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">대분류</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">대분류</label>
               <Input value={form.category_large} onChange={e => set('category_large')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">중분류</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">중분류</label>
               <Input value={form.category_mid} onChange={e => set('category_mid')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">소분류</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">소분류</label>
               <Input value={form.category_small} onChange={e => set('category_small')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">ERP 품명</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">ERP 품명</label>
               <Input value={form.erp_name} onChange={e => set('erp_name')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">ERP 코드</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">ERP 코드</label>
               <Input value={form.erp_code} onChange={e => set('erp_code')(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">비고</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">비고</label>
               <Input value={form.notes} onChange={e => set('notes')(e.target.value)} className="h-8 text-[12px]" />
             </div>
           </div>
 
-          <p className="text-[11px] text-[#94A3B8]">
+          <p className="text-[11px] text-[#8A949C]">
             💡 센터를 <b>자재센터</b>로, 랙 번호를 입력하면 자재창고지도에 함께 표시됩니다.
           </p>
           {msg && (
@@ -583,7 +583,7 @@ function AddItemModal({ defaultCenter, onClose, onAdded }: {
           <div className="flex justify-end gap-2">
             <Button variant="outline" className="text-[12px] h-8" onClick={onClose}>취소</Button>
             <Button onClick={submit} disabled={saving}
-              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+              className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
               {saving ? '추가 중...' : '자재 추가'}
             </Button>
           </div>
@@ -615,7 +615,8 @@ function InventoryTab({ user, center, onCenterChange }: {
   const [filterLarge, setFilterLarge] = useState('전체')
   const [filterMid,   setFilterMid]   = useState('전체')
   const [filterSmall, setFilterSmall] = useState('전체')
-  const [search,      setSearch]      = useState('')
+  const searchParams = useSearchParams()
+  const [search,      setSearch]      = useState(() => searchParams.get('q') ?? '')
   const [kpiFilter,   setKpiFilter]   = useState<'all'|'low'|'zero'>('all')
 
   const [page,     setPage]     = useState(1)
@@ -630,6 +631,12 @@ function InventoryTab({ user, center, onCenterChange }: {
   const [actDest,     setActDest]     = useState('')
   const [stockSaving, setStockSaving] = useState(false)
   const [stockMsg,    setStockMsg]    = useState('')
+  // 처리 완료 메시지는 액션 패널이 닫힌 뒤 표 위에 잠시 남긴다
+  useEffect(() => {
+    if (!stockMsg || actionMode) return
+    const t = setTimeout(() => setStockMsg(''), 4000)
+    return () => clearTimeout(t)
+  }, [stockMsg, actionMode])
 
   const [detailItem, setDetailItem] = useState<Item | null>(null)
   const [groupItem,  setGroupItem]  = useState<Group | null>(null)
@@ -706,13 +713,13 @@ function InventoryTab({ user, center, onCenterChange }: {
 
   function SortIcon({ field }: { field: string }) {
     if (sortField !== field) return <span className="text-gray-300 ml-1">↕</span>
-    return <span className="ml-1" style={{ color: '#B32646' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+    return <span className="ml-1" style={{ color: '#D60051' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   function qtyColor(q: number) {
     if (q === 0) return 'text-red-500 font-bold'
     if (q <= 9)  return 'text-amber-500 font-semibold'
-    return 'text-[#1E293B]'
+    return 'text-[#111111]'
   }
 
   const qtyOf = (id: number) => stockQties[id] ?? 1
@@ -794,8 +801,8 @@ function InventoryTab({ user, center, onCenterChange }: {
           </Button>
           {canAddItem && (
             <Button onClick={() => setShowAdd(true)}
-              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px]">
-              ➕ 자재 추가
+              className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px]">
+              자재 추가
             </Button>
           )}
           <GuestCallout label="품명·분류·위치 입력해 새 자재 등록" />
@@ -804,17 +811,17 @@ function InventoryTab({ user, center, onCenterChange }: {
           <div className="flex gap-2 flex-wrap">
             {canStock && (
               <>
-                <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
+                <Button size="sm" className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white"
                   onClick={() => openAction('in')}>📥 입고 ({selected.size})</Button>
-                <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
+                <Button size="sm" className="bg-[#D60051] hover:bg-[#A3003D] text-white"
                   onClick={() => openAction('out')}>📤 출고 ({selected.size})</Button>
               </>
             )}
             {canAct && (
               <>
-                <Button size="sm" className="bg-[#c62828] hover:bg-[#8e0000] text-white"
+                <Button size="sm" className="bg-[#D60051] hover:bg-[#A3003D] text-white"
                   onClick={() => openAction('use')}>🧾 사용내역 입력 ({selected.size})</Button>
-                <Button size="sm" className="bg-[#1565c0] hover:bg-[#0d47a1] text-white"
+                <Button size="sm" className="bg-[#2F3941] hover:bg-[#1C2126] text-white"
                   onClick={() => openAction('transfer')}>🚚 이동신청 ({selected.size})</Button>
               </>
             )}
@@ -827,46 +834,50 @@ function InventoryTab({ user, center, onCenterChange }: {
       {/* KPI */}
       {!loading && data.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
-          <KpiCard enLabel="Total Inventory" koLabel="전체" value={kpi.all} color="#3B82F6" icon={ClipboardCheck}
+          <KpiCard koLabel="전체 품목" value={kpi.all} color="#2F3941" icon={ClipboardCheck}
             active={kpiFilter === 'all'} onClick={() => { setKpiFilter('all'); setPage(1) }} />
-          <KpiCard enLabel="Low Stock Alert" koLabel="부족 (1~9)" value={kpi.low} color="#f59e0b" icon={TriangleAlert}
+          <KpiCard koLabel="재고 부족 (1~9개)" value={kpi.low} color="#96620A" icon={TriangleAlert}
             active={kpiFilter === 'low'} onClick={() => { setKpiFilter(kpiFilter === 'low' ? 'all' : 'low'); setPage(1) }} />
-          <KpiCard enLabel="Out of Stock" koLabel="없음" value={kpi.zero} color="#B32646" icon={PackageX}
+          <KpiCard koLabel="재고 없음" value={kpi.zero} color="#D60051" icon={PackageX}
             active={kpiFilter === 'zero'} onClick={() => { setKpiFilter(kpiFilter === 'zero' ? 'all' : 'zero'); setPage(1) }} />
         </div>
       )}
 
       {/* 필터 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 flex flex-wrap gap-2 items-center">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 flex flex-wrap gap-2 items-center">
         <Input className="w-[200px] h-8 text-[12px]" placeholder="자재명 / ERP코드 / 분류명..."
           value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
         <Select value={filterLarge} onValueChange={v => { if (v !== null) { setFilterLarge(v); setFilterMid('전체'); setFilterSmall('전체'); setPage(1) } }}>
-          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="대분류" /></SelectTrigger>
-          <SelectContent>{largeList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectTrigger className="w-[130px] h-8 text-[12px]"><SelectValue placeholder="대분류" /></SelectTrigger>
+          <SelectContent>{largeList.map(c => <SelectItem key={c} value={c}>{c === '전체' ? '대분류 전체' : c}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={filterMid} onValueChange={v => { if (v !== null) { setFilterMid(v); setFilterSmall('전체'); setPage(1) } }}>
-          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="중분류" /></SelectTrigger>
-          <SelectContent>{midList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectTrigger className="w-[130px] h-8 text-[12px]"><SelectValue placeholder="중분류" /></SelectTrigger>
+          <SelectContent>{midList.map(c => <SelectItem key={c} value={c}>{c === '전체' ? '중분류 전체' : c}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={filterSmall} onValueChange={v => { if (v !== null) { setFilterSmall(v); setPage(1) } }}>
-          <SelectTrigger className="w-[115px] h-8 text-[12px]"><SelectValue placeholder="소분류" /></SelectTrigger>
-          <SelectContent>{smallList.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectTrigger className="w-[130px] h-8 text-[12px]"><SelectValue placeholder="소분류" /></SelectTrigger>
+          <SelectContent>{smallList.map(c => <SelectItem key={c} value={c}>{c === '전체' ? '소분류 전체' : c}</SelectItem>)}</SelectContent>
         </Select>
         {(filterLarge !== '전체' || filterMid !== '전체' || filterSmall !== '전체' || search || kpiFilter !== 'all') && (
-          <Button variant="ghost" className="text-[#B32646] text-[12px] h-8"
+          <Button variant="ghost" className="text-[#D60051] text-[12px] h-8"
             onClick={() => { setFilterLarge('전체'); setFilterMid('전체'); setFilterSmall('전체'); setSearch(''); setKpiFilter('all'); setPage(1) }}>
             ✕ 초기화
           </Button>
         )}
       </div>
 
+      {stockMsg && !actionMode && (
+        <p className="text-[12.5px] font-semibold text-[#0C7A57] bg-[#EEF7F2] border border-[#CBE7D8] rounded px-3 py-2">{stockMsg}</p>
+      )}
+
       {/* 액션 패널 (입고/출고/사용/이동신청) */}
       {actionMode && selected.size > 0 && (() => {
         const META = {
-          in:       { title: '📥 입고',        btn: '✅ 입고 확정',   color: 'bg-[#2e7d32] hover:bg-[#1b5e20] text-white' },
-          out:      { title: '📤 출고',        btn: '✅ 출고 확정',   color: 'bg-[#c62828] hover:bg-[#8e0000] text-white' },
-          use:      { title: '🧾 사용내역 입력', btn: '✅ 사용 확정',   color: 'bg-[#c62828] hover:bg-[#8e0000] text-white' },
-          transfer: { title: '🚚 이동 신청',    btn: '🚚 이동 신청',   color: 'bg-[#1565c0] hover:bg-[#0d47a1] text-white' },
+          in:       { title: '📥 입고',        btn: '✅ 입고 확정',   color: 'bg-[#0C7A57] hover:bg-[#0C7A57] text-white' },
+          out:      { title: '📤 출고',        btn: '✅ 출고 확정',   color: 'bg-[#D60051] hover:bg-[#A3003D] text-white' },
+          use:      { title: '🧾 사용내역 입력', btn: '✅ 사용 확정',   color: 'bg-[#D60051] hover:bg-[#A3003D] text-white' },
+          transfer: { title: '🚚 이동 신청',    btn: '🚚 이동 신청',   color: 'bg-[#2F3941] hover:bg-[#1C2126] text-white' },
         }[actionMode]
         const needReason = actionMode !== 'transfer'
         const dests = transferDestinations(center)
@@ -875,19 +886,19 @@ function InventoryTab({ user, center, onCenterChange }: {
           <div className="border rounded-lg p-4 bg-[#FFF8F0] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-bold">{META.title} — {selected.size}개 자재</span>
-              <button onClick={resetAction} className="text-[#94A3B8] hover:text-red-400">✕</button>
+              <button onClick={resetAction} className="text-[#8A949C] hover:text-red-400">✕</button>
             </div>
 
             {actionMode === 'transfer' && (
               <div className="flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-[#64748B] block mb-1">출발 센터</label>
-                  <input value={center} disabled className="border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8] w-40" />
+                  <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">출발 센터</label>
+                  <input value={center} disabled className="border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#8A949C] w-40" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#64748B] block mb-1">도착 센터 *</label>
+                  <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">도착 센터 *</label>
                   <select value={actDest} onChange={e => setActDest(e.target.value)}
-                    className="border rounded px-3 py-1.5 text-[12px] w-40 focus:outline-none focus:border-[#B32646] bg-white">
+                    className="border rounded px-3 py-1.5 text-[12px] w-40 focus:outline-none focus:border-[#D60051] bg-white">
                     <option value="">선택하세요</option>
                     {dests.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
@@ -895,14 +906,14 @@ function InventoryTab({ user, center, onCenterChange }: {
               </div>
             )}
 
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+            <div className="space-y-2 max-h-72 overflow-y-auto">
               {data.filter(r => selected.has(r.id)).map(r => (
                 <div key={r.id} className={`flex items-center gap-2 ${qtyOf(r.id) === 0 ? 'opacity-50' : ''}`}>
                   <span className="text-[12px] flex-1 truncate">
                     {r.item_name}
-                    {isHub && <span className="text-[#94A3B8] font-mono text-[10px] ml-1.5">{boxLoc(r)}</span>}
+                    {isHub && <span className="text-[#8A949C] font-mono text-[10px] ml-1.5">{boxLoc(r)}</span>}
                   </span>
-                  <span className="text-[11px] text-[#94A3B8]">현재 {r.quantity}개</span>
+                  <span className="text-[11px] text-[#8A949C]">현재 {r.quantity}개</span>
                   <input type="number" min={0} value={stockQties[r.id] ?? 1}
                     onChange={e => setStockQties(prev => ({ ...prev, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                     title="0 입력 시 이 박스는 처리하지 않음"
@@ -913,10 +924,10 @@ function InventoryTab({ user, center, onCenterChange }: {
 
             {needReason && (
               <div>
-                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">사유 *</label>
+                <label className="text-[11px] font-semibold text-[#5A666F] block mb-1">사유 *</label>
                 <input value={stockReason} onChange={e => setStockReason(e.target.value)}
                   placeholder={actionMode === 'use' ? '사용 사유' : '입출고 사유'}
-                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#B32646] bg-white" />
+                  className="w-full border rounded px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#D60051] bg-white" />
               </div>
             )}
 
@@ -932,10 +943,10 @@ function InventoryTab({ user, center, onCenterChange }: {
       })()}
 
       {/* 테이블 카드 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 space-y-3">
       {/* 테이블 정보 */}
       <div className="flex items-center justify-between text-[12px] text-gray-500">
-        <span><b className="text-[#1E293B]">{center}</b> — <span data-guest-blur>{sorted.length.toLocaleString()}</span>개 품목<GuestCallout label="행 선택 → 입고·출고·이동신청 처리" /></span>
+        <span><b className="text-[#111111]">{center}</b> — <span data-guest-blur>{sorted.length.toLocaleString()}</span>개 품목<GuestCallout label="행 선택 → 입고·출고·이동신청 처리" /></span>
         <Select value={String(pageSize)} onValueChange={v => { setPageSize(Number(v)); setPage(1) }}>
           <SelectTrigger className="w-[85px] h-7 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{[20, 50, 100, 200].map(n => <SelectItem key={n} value={String(n)}>{n}개씩</SelectItem>)}</SelectContent>
@@ -944,13 +955,16 @@ function InventoryTab({ user, center, onCenterChange }: {
 
       {/* 테이블 */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 border rounded">데이터 로딩 중...</div>
+        <div className="space-y-2 animate-pulse" aria-label="데이터 로딩 중">
+          <div className="h-9 rounded bg-[#F1F1F0]" />
+          {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 rounded bg-[#F6F6F7]" />)}
+        </div>
       ) : sorted.length === 0 ? (
         <div className="flex items-center justify-center h-48 text-gray-400 border rounded">📭 해당 조건의 재고가 없습니다.</div>
       ) : (
-        <div className="rounded-md overflow-auto max-h-[520px] border border-[#e2e8f0]">
+        <div className="rounded-md overflow-auto max-h-[520px] border border-[#E3E1DE]">
           <table className="w-full text-[12px] border-collapse min-w-[720px]">
-            <thead className="sticky top-0 bg-[#F8F9FA] z-10">
+            <thead className="sticky top-0 bg-[#F6F6F7] z-10">
               <tr>
                 {canSelect && (
                   <th className="px-2 py-2 border-b w-8">
@@ -964,11 +978,11 @@ function InventoryTab({ user, center, onCenterChange }: {
                   ['대분류', 'category_large'], ['중분류', 'category_mid'], ['소분류', 'category_small'],
                 ] as [string, SortField][]).map(([label, field]) => (
                   <th key={field} onClick={() => handleSort(field)}
-                    className="px-3 py-2 text-left text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap cursor-pointer hover:text-[#B32646] select-none uppercase tracking-wide">
+                    className="px-3 py-2 text-left text-[11px] font-semibold text-[#5A666F] border-b whitespace-nowrap cursor-pointer hover:text-[#D60051] select-none uppercase tracking-wide">
                     {label}<SortIcon field={field} />
                   </th>
                 ))}
-                {isHub && <th className="px-3 py-2 text-right text-[11px] font-semibold text-[#64748B] border-b whitespace-nowrap">박스</th>}
+                {isHub && <th className="px-3 py-2 text-right text-[11px] font-semibold text-[#5A666F] border-b whitespace-nowrap">박스</th>}
               </tr>
             </thead>
             <tbody>
@@ -986,18 +1000,18 @@ function InventoryTab({ user, center, onCenterChange }: {
                   )}
                   <td className="px-3 py-1.5 max-w-[260px] truncate">
                     <button onClick={() => setGroupItem(g)}
-                      className="text-[#1E293B] font-medium hover:text-[#B32646] hover:underline text-left w-full truncate">
+                      className="text-[#111111] font-medium hover:text-[#D60051] hover:underline text-left w-full truncate">
                       {g.item_name}
                     </button>
                   </td>
                   <td className={`px-3 py-1.5 text-right font-mono ${qtyColor(g.quantity)}`}>
                     {g.quantity.toLocaleString()}
                   </td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_large ?? ''}</td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_mid ?? ''}</td>
-                  <td data-guest-clear className="px-3 py-1.5 text-[#475569] whitespace-nowrap">{g.category_small ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#2F3941] whitespace-nowrap">{g.category_large ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#2F3941] whitespace-nowrap">{g.category_mid ?? ''}</td>
+                  <td data-guest-clear className="px-3 py-1.5 text-[#2F3941] whitespace-nowrap">{g.category_small ?? ''}</td>
                   {isHub && (
-                    <td data-guest-clear className="px-3 py-1.5 text-right text-[#64748B] font-mono text-[11px] whitespace-nowrap">
+                    <td data-guest-clear className="px-3 py-1.5 text-right text-[#5A666F] font-mono text-[11px] whitespace-nowrap">
                       {g.boxes.length}
                     </td>
                   )}
@@ -1012,9 +1026,11 @@ function InventoryTab({ user, center, onCenterChange }: {
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(1)}>처음</Button>
           <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>◀</Button>
-          <span className="text-[12px] text-gray-600">{currentPage} / {totalPages}</span>
+          <span className="text-[12px] text-[#5A666F] px-1">{currentPage} / {totalPages} 페이지</span>
           <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>▶</Button>
+          <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(totalPages)}>끝</Button>
         </div>
       )}
       </div>
@@ -1093,10 +1109,10 @@ function TransferTab({ user }: { user: SessionUser }) {
       <div className="border rounded-lg p-4 bg-white space-y-2">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-[13px] font-semibold text-[#1E293B]">
+            <div className="text-[13px] font-semibold text-[#111111]">
               {tr.warehouse?.item_name ?? '자재 정보 없음'}
             </div>
-            <div className="text-[12px] text-[#64748B] mt-0.5">
+            <div className="text-[12px] text-[#5A666F] mt-0.5">
               신청자: {tr.requester?.name ?? '-'} · {tsKst(tr.requested_at)}
             </div>
           </div>
@@ -1104,14 +1120,14 @@ function TransferTab({ user }: { user: SessionUser }) {
         </div>
 
         <div className="flex items-center gap-2 text-[12px]">
-          <span className="bg-[#F8F9FA] border px-2 py-0.5 rounded text-[#475569]">{tr.from_center}</span>
-          <span className="text-[#94A3B8]">→</span>
-          <span className="bg-[#F8F9FA] border px-2 py-0.5 rounded text-[#475569]">{tr.to_center}</span>
-          <span className="ml-auto font-mono font-bold text-[#1E293B]">{tr.quantity}개</span>
+          <span className="bg-[#F6F6F7] border px-2 py-0.5 rounded text-[#2F3941]">{tr.from_center}</span>
+          <span className="text-[#8A949C]">→</span>
+          <span className="bg-[#F6F6F7] border px-2 py-0.5 rounded text-[#2F3941]">{tr.to_center}</span>
+          <span className="ml-auto font-mono font-bold text-[#111111]">{tr.quantity}개</span>
         </div>
 
         {tr.status !== 'pending' && tr.approver?.name && (
-          <div className="text-[11px] text-[#94A3B8]">
+          <div className="text-[11px] text-[#8A949C]">
             처리자: {tr.approver.name}{tr.processed_at && ` · ${tsKst(tr.processed_at)}`}
           </div>
         )}
@@ -1120,7 +1136,7 @@ function TransferTab({ user }: { user: SessionUser }) {
           <div className="flex gap-2 pt-1">
             {approvable && (
               <>
-                <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white"
+                <Button size="sm" className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white"
                   disabled={acting === tr.id} onClick={() => handleAction(tr.id, 'approved')}>
                   ✅ 승인
                 </Button>
@@ -1131,13 +1147,13 @@ function TransferTab({ user }: { user: SessionUser }) {
               </>
             )}
             {myRequest && (
-              <Button size="sm" variant="outline" className="text-[#94A3B8]"
+              <Button size="sm" variant="outline" className="text-[#8A949C]"
                 disabled={acting === tr.id} onClick={() => handleAction(tr.id, 'cancelled')}>
                 🚫 취소
               </Button>
             )}
             {!approvable && !myRequest && (
-              <span className="text-[11px] text-[#94A3B8] self-center">🔒 승인 권한 없음</span>
+              <span className="text-[11px] text-[#8A949C] self-center">🔒 승인 권한 없음</span>
             )}
           </div>
         )}
@@ -1148,7 +1164,7 @@ function TransferTab({ user }: { user: SessionUser }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[12px] text-[#64748B]">
+        <p className="text-[12px] text-[#5A666F]">
           {role === 'manager' && `📌 ${userCenter} 관련 이동 내역 · ${userCenter}으로 들어오는 이동만 승인 가능`}
           {role === 'materials' && '📌 자재센터 관련 이동 내역'}
           {role === 'user' && '📌 본인이 신청한 이동 내역'}
@@ -1367,16 +1383,16 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
   return (
     <div className="space-y-4 max-w-xl">
       <div className="border rounded-lg p-4 space-y-3">
-        <h3 className="text-[14px] font-bold text-[#1E293B]">💾 데이터 내보내기</h3>
+        <h3 className="text-[14px] font-bold text-[#111111]">데이터 내보내기</h3>
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] text-[#64748B]">현재 센터 ({center})</span>
+            <span className="text-[12px] text-[#5A666F]">현재 센터 ({center})</span>
             <Button onClick={handleExport} disabled={downloading} variant="outline" className="text-[12px] h-8">
               {downloading ? '다운로드 중...' : '📥 CSV'}
             </Button>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[12px] text-[#64748B]">전체 센터 ({viewable.length}개)</span>
+            <span className="text-[12px] text-[#5A666F]">전체 센터 ({viewable.length}개)</span>
             <Button onClick={handleExportAll} disabled={dlAllLoading} variant="outline" className="text-[12px] h-8">
               {dlAllLoading ? '다운로드 중...' : '📥 전체 CSV'}
             </Button>
@@ -1386,17 +1402,17 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
 
       {/* 재고 일괄 등록 (관리자 전용) */}
       <div className="border rounded-lg p-4 space-y-3">
-        <h3 className="text-[14px] font-bold text-[#1E293B]">📤 재고 일괄 등록</h3>
-        <p className="text-[11px] text-[#94A3B8]">
+        <h3 className="text-[14px] font-bold text-[#111111]">재고 일괄 등록</h3>
+        <p className="text-[11px] text-[#8A949C]">
           내보내기 CSV/엑셀과 동일한 양식(자재명·수량·분류·렉/단/박스·ERP·비고·센터)을 업로드하면 일괄 추가됩니다.
           <br />행에 <b>센터</b> 값이 없으면 아래 <b>기본 센터</b>로 등록됩니다.
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <input ref={upFileRef} type="file" accept=".xlsx,.xls,.csv"
             onChange={handleUpFile}
-            className="text-[12px] file:mr-2 file:rounded file:border file:border-[#cbd5e1] file:bg-white file:px-2 file:py-1 file:text-[12px]" />
+            className="text-[12px] file:mr-2 file:rounded file:border file:border-[#D9D9D9] file:bg-white file:px-2 file:py-1 file:text-[12px]" />
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-[#64748B]">기본 센터</span>
+            <span className="text-[11px] text-[#5A666F]">기본 센터</span>
             <Select value={upCenter} onValueChange={v => v !== null && setUpCenter(v)}>
               <SelectTrigger className="w-[140px] h-8 text-[12px]"><SelectValue /></SelectTrigger>
               <SelectContent>{viewable.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
@@ -1405,26 +1421,26 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
         </div>
 
         {upRows.length > 0 && (
-          <div className="text-[11px] text-[#64748B]">
+          <div className="text-[11px] text-[#5A666F]">
             인식된 행 {upRows.length}개
             {upNoCenter > 0 && <span className="text-amber-600"> · 센터 미지정 {upNoCenter}개 → {upCenter}</span>}
           </div>
         )}
 
         {upMsg && (
-          <p className={`text-[12px] ${upMsg.startsWith('✅') ? 'text-green-600' : upMsg.startsWith('❌') ? 'text-red-500' : 'text-[#64748B]'}`}>{upMsg}</p>
+          <p className={`text-[12px] ${upMsg.startsWith('✅') ? 'text-green-600' : upMsg.startsWith('❌') ? 'text-red-500' : 'text-[#5A666F]'}`}>{upMsg}</p>
         )}
 
         <Button onClick={handleBulkRegister} disabled={upSaving || upRows.length === 0}
-          className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px] h-8">
+          className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px] h-8">
           {upSaving ? '등록 중...' : `⬆️ ${upRows.length || ''}건 등록`}
         </Button>
       </div>
 
       {/* 센터 지정 삭제 (관리자 전용) */}
       <div className="border border-red-200 rounded-lg p-4 space-y-3">
-        <h3 className="text-[14px] font-bold text-red-600">🗑️ 센터 재고 삭제</h3>
-        <p className="text-[11px] text-[#94A3B8]">
+        <h3 className="text-[14px] font-bold text-red-600">센터 재고 삭제</h3>
+        <p className="text-[11px] text-[#8A949C]">
           선택한 센터의 <b>모든 재고 품목</b>이 영구 삭제됩니다. 되돌릴 수 없습니다.
         </p>
         <div className="flex items-center gap-2">
@@ -1432,7 +1448,7 @@ function AdminTab({ center, viewable, onChanged }: { center: string; viewable: s
             <SelectTrigger className="w-[150px] h-8 text-[12px]"><SelectValue /></SelectTrigger>
             <SelectContent>{viewable.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}</SelectContent>
           </Select>
-          <span className="text-[12px] text-[#64748B]">
+          <span className="text-[12px] text-[#5A666F]">
             {delCount === null ? '조회 중...' : `${delCount.toLocaleString()}개 품목`}
           </span>
         </div>
@@ -1486,23 +1502,13 @@ export default function WarehouseContent({ user, initialTab }: { user: SessionUs
 
   return (
     <div className="space-y-4">
-      {/* 페이지 헤더 */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-[#b32646] flex items-center justify-center text-white flex-shrink-0">
-          <Boxes size={20} strokeWidth={1.9} />
-        </div>
-        <div>
-          <h2 className="text-[20px] font-bold text-[#0b1c30] font-heading leading-tight">재고 현황</h2>
-          <p className="text-[12px] text-[#64748B] mt-0.5">실시간 창고 자재 및 단말기 재고 데이터입니다.</p>
-        </div>
-      </div>
       <Tabs key={activeTab} defaultValue={activeTab}>
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="inventory"  className="text-[13px]">📦 재고 현황</TabsTrigger>
-          <TabsTrigger value="transfers"  className="text-[13px]">🚚 이동 신청 현황</TabsTrigger>
-          {!isGuest && <TabsTrigger value="material-requests" className="text-[13px]">📋 자재요청</TabsTrigger>}
-          {!isGuest && <TabsTrigger value="usage"             className="text-[13px]">📊 사용내역</TabsTrigger>}
-          {isAdmin  && <TabsTrigger value="admin"             className="text-[13px]">⚙️ 관리자</TabsTrigger>}
+          <TabsTrigger value="inventory"  className="text-[13px]">재고 현황</TabsTrigger>
+          <TabsTrigger value="transfers"  className="text-[13px]">이동 신청 현황</TabsTrigger>
+          {!isGuest && <TabsTrigger value="material-requests" className="text-[13px]">자재요청</TabsTrigger>}
+          {!isGuest && <TabsTrigger value="usage"             className="text-[13px]">사용내역</TabsTrigger>}
+          {isAdmin  && <TabsTrigger value="admin"             className="text-[13px]">관리자</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="inventory" className="mt-4">

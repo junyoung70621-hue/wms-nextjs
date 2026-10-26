@@ -68,8 +68,8 @@ function ItemChip({ item, onClick }: { item: Item; onClick: () => void }) {
           : 'bg-white border border-[rgba(0,0,0,0.08)] hover:bg-gray-50'
       }`}
     >
-      <div className="font-medium text-[#1E293B] truncate leading-tight">{item.item_name}</div>
-      <div className={`text-[10px] mt-0.5 ${low ? 'text-red-500 font-bold' : 'text-[#94A3B8]'}`}>
+      <div className="font-medium text-[#111111] truncate leading-tight">{item.item_name}</div>
+      <div className={`text-[10px] mt-0.5 ${low ? 'text-red-500 font-bold' : 'text-[#8A949C]'}`}>
         {item.quantity.toLocaleString()}개
         {item.box_no ? ` · ${item.box_no}` : ''}
       </div>
@@ -142,8 +142,8 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className={`bg-white rounded-xl shadow-xl p-5 max-w-full max-h-[85vh] overflow-y-auto space-y-3 ${isTerminalBox ? 'w-[440px]' : 'w-[340px]'}`} onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between">
-          <h3 className="text-[14px] font-bold text-[#1E293B] truncate pr-2">{item.item_name}</h3>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none flex-shrink-0">×</button>
+          <h3 className="text-[14px] font-bold text-[#111111] truncate pr-2">{item.item_name}</h3>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none flex-shrink-0">×</button>
         </div>
 
         {canEdit ? (
@@ -151,7 +151,7 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
             <div className="grid grid-cols-2 gap-2">
               {FIELDS.map(([key, label, num]) => (
                 <div key={key} className={key === 'item_name' ? 'col-span-2' : ''}>
-                  <label className="text-[11px] text-[#64748B] block mb-0.5">{label}</label>
+                  <label className="text-[11px] text-[#5A666F] block mb-0.5">{label}</label>
                   <Input
                     type={num ? 'number' : 'text'}
                     value={form[key]}
@@ -163,9 +163,9 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
             </div>
             {qtyChanged && (
               <div>
-                <label className="text-[11px] text-[#64748B] block mb-0.5">
-                  수량 변경 사유 <span className="text-[#B32646]">*</span>
-                  <span className="text-[#94A3B8] ml-1">({item.quantity.toLocaleString()} → {(Number(form.quantity) || 0).toLocaleString()})</span>
+                <label className="text-[11px] text-[#5A666F] block mb-0.5">
+                  수량 변경 사유 <span className="text-[#D60051]">*</span>
+                  <span className="text-[#8A949C] ml-1">({item.quantity.toLocaleString()} → {(Number(form.quantity) || 0).toLocaleString()})</span>
                 </label>
                 <Input
                   value={reason}
@@ -175,16 +175,16 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
                 />
               </div>
             )}
-            {msg && <div className="text-[11px] text-[#c62828]">{msg}</div>}
+            {msg && <div className="text-[11px] text-[#D60051]">{msg}</div>}
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={onClose}
-                className="h-8 px-3 text-[12px] rounded-md border border-[#E2E8F0] text-[#475569] hover:bg-[#F1F5F9]">취소</button>
+                className="h-8 px-3 text-[12px] rounded-md border border-[#E3E1DE] text-[#2F3941] hover:bg-[#F1F1F0]">취소</button>
               <button onClick={save} disabled={saving}
-                className="h-8 px-3 text-[12px] rounded-md bg-[#B32646] text-white hover:bg-[#9a1f3c] disabled:opacity-60">
+                className="h-8 px-3 text-[12px] rounded-md bg-[#D60051] text-white hover:bg-[#A3003D] disabled:opacity-60">
                 {saving ? '저장 중…' : '저장'}
               </button>
             </div>
-            <p className="text-[10px] text-[#94A3B8]">재고 현황과 동일한 데이터로, 저장 시 즉시 반영됩니다.</p>
+            <p className="text-[10px] text-[#8A949C]">재고 현황과 동일한 데이터로, 저장 시 즉시 반영됩니다.</p>
           </>
         ) : (
           <table className="w-full text-[12px]">
@@ -198,8 +198,8 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
                 ['중분류', item.category_mid ?? '-'],
               ].map(([k, v]) => (
                 <tr key={k}>
-                  <td className="py-1.5 pr-3 text-[#64748B] w-16">{k}</td>
-                  <td className="py-1.5 font-medium text-[#1E293B]">{v}</td>
+                  <td className="py-1.5 pr-3 text-[#5A666F] w-16">{k}</td>
+                  <td className="py-1.5 font-medium text-[#111111]">{v}</td>
                 </tr>
               ))}
             </tbody>
@@ -263,31 +263,31 @@ function RackDetailModal({ rackNo, label, items, terminals, focus, onBoxClick, o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-[680px] max-w-full max-h-[82vh] flex flex-col modal-pop" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
           <div className="flex items-center gap-2">
-            <span className="text-[14px] font-bold text-[#B32646]">📍 {label}</span>
-            <span className="text-[11px] text-[#94A3B8]">{rackItems.length}개 품목</span>
+            <span className="text-[14px] font-bold text-[#D60051]">📍 {label}</span>
+            <span className="text-[11px] text-[#8A949C]">{rackItems.length}개 품목</span>
             {focus && (
-              <span className="text-[11px] px-2 py-0.5 rounded bg-[#FBE9EE] text-[#B32646] truncate max-w-[300px]">
+              <span className="text-[11px] px-2 py-0.5 rounded bg-[#FCEEF3] text-[#D60051] truncate max-w-[300px]">
                 🔍 {focus.itemName} → 선반 {focus.shelf} · 박스 {focus.boxNo ?? '미지정'}
               </span>
             )}
           </div>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none">×</button>
         </div>
         <div className="p-4 overflow-y-auto">
           {rackItems.length === 0 ? (
-            <div className="text-[12px] text-[#94A3B8] py-8 text-center">이 렉에 등록된 자재가 없습니다.</div>
+            <div className="text-[12px] text-[#8A949C] py-8 text-center">이 렉에 등록된 자재가 없습니다.</div>
           ) : shelves.map(([shelfName, boxes], si) => (
             <div
               key={shelfName}
-              className={`shelf-reveal mb-2.5 last:mb-0 rounded-lg border bg-[#F8FAFC] overflow-hidden ${focus?.shelf === shelfName ? 'border-[#B32646]' : 'border-[#E2E8F0]'}`}
+              className={`shelf-reveal mb-2.5 last:mb-0 rounded-lg border bg-[#F6F6F7] overflow-hidden ${focus?.shelf === shelfName ? 'border-[#D60051]' : 'border-[#E3E1DE]'}`}
               style={{ animationDelay: `${si * 70}ms` }}
             >
               {/* 선반 헤더 (렉 가로 칸처럼) */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#FBE9EE] to-transparent border-b border-[#E2E8F0]">
-                <span className="text-[11px] font-bold text-[#B32646]">🗄️ 선반 {shelfName}</span>
-                <span className="text-[10px] text-[#94A3B8]">박스 {boxes.length}개</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#FCEEF3] to-transparent border-b border-[#E3E1DE]">
+                <span className="text-[11px] font-bold text-[#D60051]">🗄️ 선반 {shelfName}</span>
+                <span className="text-[10px] text-[#8A949C]">박스 {boxes.length}개</span>
               </div>
               {/* 박스번호 칩 */}
               <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
@@ -299,16 +299,16 @@ function RackDetailModal({ rackNo, label, items, terminals, focus, onBoxClick, o
                       key={box.boxNo ?? `none-${bi}`}
                       ref={isFocusBox(shelfName, box.boxNo) ? focusRef : undefined}
                       onClick={() => onBoxClick({ shelf: shelfName, boxNo: box.boxNo, items: box.items })}
-                      className={`text-left px-2.5 py-2 rounded-lg border bg-white hover:border-[#B32646] hover:bg-[#FBE9EE]/40 hover:-translate-y-[1px] transition-all ${
-                        isFocusBox(shelfName, box.boxNo) ? 'border-[#B32646] bg-[#FBE9EE] ring-2 ring-[#B32646]/40' : 'border-[#E2E8F0]'}`}
+                      className={`text-left px-2.5 py-2 rounded-lg border bg-white hover:border-[#D60051] hover:bg-[#FCEEF3]/40 hover:-translate-y-[1px] transition-all ${
+                        isFocusBox(shelfName, box.boxNo) ? 'border-[#D60051] bg-[#FCEEF3] ring-2 ring-[#D60051]/40' : 'border-[#E3E1DE]'}`}
                     >
-                      <div className="flex items-center gap-1 text-[12px] font-bold text-[#1E293B] truncate leading-tight">
+                      <div className="flex items-center gap-1 text-[12px] font-bold text-[#111111] truncate leading-tight">
                         <span>📦</span>
                         <span className="truncate">{box.boxNo ?? '박스 미지정'}</span>
                       </div>
-                      <div className="text-[10px] text-[#94A3B8] mt-0.5">
+                      <div className="text-[10px] text-[#8A949C] mt-0.5">
                         품목 {box.items.length} · {qty.toLocaleString()}개
-                        {ihCount > 0 && <span className="text-[#2563EB]"> · IH {ihCount}</span>}
+                        {ihCount > 0 && <span className="text-[#2F3941]"> · IH {ihCount}</span>}
                       </div>
                     </button>
                   )
@@ -333,22 +333,22 @@ function BoxContentModal({ rackNo, shelf, boxNo, items, terminals, onItemClick, 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-[460px] max-w-full max-h-[85vh] flex flex-col modal-pop" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E2E8F0]">
+        <div className="flex items-start justify-between px-4 py-3 border-b border-[#E3E1DE]">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[14px] font-bold text-[#1E293B] truncate">
+            <div className="flex items-center gap-1.5 text-[14px] font-bold text-[#111111] truncate">
               <span>📦</span><span className="truncate">박스 {boxNo ?? '미지정'}</span>
             </div>
-            <div className="text-[11px] text-[#94A3B8] mt-0.5">랙 {rackNo} · 선반 {shelf}</div>
+            <div className="text-[11px] text-[#8A949C] mt-0.5">랙 {rackNo} · 선반 {shelf}</div>
           </div>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none flex-shrink-0">×</button>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none flex-shrink-0">×</button>
         </div>
 
         <div className="p-4 overflow-y-auto space-y-4">
           {/* 품목 목록 */}
           <div>
-            <div className="text-[11px] font-bold text-[#64748B] mb-1.5">📋 품목 <span className="text-[#94A3B8] font-normal">({sorted.length})</span></div>
+            <div className="text-[11px] font-bold text-[#5A666F] mb-1.5">📋 품목 <span className="text-[#8A949C] font-normal">({sorted.length})</span></div>
             {sorted.length === 0 ? (
-              <div className="text-[11px] text-[#94A3B8]">품목이 없습니다.</div>
+              <div className="text-[11px] text-[#8A949C]">품목이 없습니다.</div>
             ) : (
               <div className="space-y-1">
                 {sorted.map(it => {
@@ -358,11 +358,11 @@ function BoxContentModal({ rackNo, shelf, boxNo, items, terminals, onItemClick, 
                       key={it.id}
                       onClick={() => onItemClick(it)}
                       className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-left transition-colors ${
-                        low ? 'bg-red-50 border-red-200 hover:bg-red-100' : 'bg-white border-[#E2E8F0] hover:bg-[#F1F5F9]'
+                        low ? 'bg-red-50 border-red-200 hover:bg-red-100' : 'bg-white border-[#E3E1DE] hover:bg-[#F1F1F0]'
                       }`}
                     >
-                      <span className="text-[12px] font-medium text-[#1E293B] truncate">{it.item_name}</span>
-                      <span className={`text-[11px] flex-shrink-0 ${low ? 'text-red-500 font-bold' : 'text-[#64748B]'}`}>{it.quantity.toLocaleString()}개</span>
+                      <span className="text-[12px] font-medium text-[#111111] truncate">{it.item_name}</span>
+                      <span className={`text-[11px] flex-shrink-0 ${low ? 'text-red-500 font-bold' : 'text-[#5A666F]'}`}>{it.quantity.toLocaleString()}개</span>
                     </button>
                   )
                 })}
@@ -373,19 +373,19 @@ function BoxContentModal({ rackNo, shelf, boxNo, items, terminals, onItemClick, 
           {/* 박스 내 단말기(IH) */}
           {ihList.length > 0 && (
             <div>
-              <div className="text-[11px] font-bold text-[#64748B] mb-1.5">📟 박스 내 단말기 <span className="text-[#94A3B8] font-normal">({ihList.length})</span></div>
+              <div className="text-[11px] font-bold text-[#5A666F] mb-1.5">📟 박스 내 단말기 <span className="text-[#8A949C] font-normal">({ihList.length})</span></div>
               <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                 {ihList.map(t => (
-                  <span key={t.trcn_id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[10px] text-[#475569]">
+                  <span key={t.trcn_id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#F1F1F0] border border-[#E3E1DE] text-[10px] text-[#2F3941]">
                     <span className="font-mono">{t.trcn_id}</span>
-                    {t.device_type && <span className="text-[#94A3B8]">{t.device_type}</span>}
+                    {t.device_type && <span className="text-[#8A949C]">{t.device_type}</span>}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          <p className="text-[10px] text-[#94A3B8]">품목을 클릭하면 상세·수정 화면이 열립니다.</p>
+          <p className="text-[10px] text-[#8A949C]">품목을 클릭하면 상세·수정 화면이 열립니다.</p>
         </div>
       </div>
     </div>
@@ -531,7 +531,7 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
   return (
     <div className="space-y-4">
       {/* 필터 바 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {isManager && (
           <Select value={center} onValueChange={v => v !== null && handleCenterChange(v)}>
@@ -556,12 +556,12 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
               className="h-8 text-[12px] w-72"
             />
             {focused && search.trim() && (
-              <div className="absolute z-30 mt-1 w-[380px] max-h-[340px] overflow-auto bg-white border border-[#e2e8f0] rounded-lg shadow-lg">
+              <div className="absolute z-30 mt-1 w-[380px] max-h-[340px] overflow-auto bg-white border border-[#E3E1DE] rounded-lg shadow-lg">
                 {matches.length === 0 ? (
-                  <div className="px-3 py-3 text-[12px] text-[#94A3B8]">일치하는 자재가 없습니다.</div>
+                  <div className="px-3 py-3 text-[12px] text-[#8A949C]">일치하는 자재가 없습니다.</div>
                 ) : (
                   <>
-                    <div className="px-3 py-1.5 text-[10px] text-[#94A3B8] border-b border-[#f1f5f9] sticky top-0 bg-white">
+                    <div className="px-3 py-1.5 text-[10px] text-[#8A949C] border-b border-[#F1F1F0] sticky top-0 bg-white">
                       {matches.length}개 위치 · 마우스를 올리면 지도에서 깜빡입니다 · 클릭 후 지도의 렉을 누르면 상세
                     </div>
                     {matches.slice(0, 50).map(m => (
@@ -574,22 +574,22 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
                           setTarget({ rackNo: m.rack_no!, focus: { shelf: m.shelf ?? '미지정', boxNo: m.box_no, itemName: m.item_name } })
                           setHoverRack(null); setFocused(false)
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-[#f1f5f9] border-b border-[#f1f5f9] last:border-0"
+                        className="w-full text-left px-3 py-2 hover:bg-[#F1F1F0] border-b border-[#F1F1F0] last:border-0"
                       >
-                        <div className="text-[12px] font-medium text-[#1E293B] truncate">
+                        <div className="text-[12px] font-medium text-[#111111] truncate">
                           {m.item_name}
-                          {m._ih && <span className="ml-1.5 font-mono text-[10px] text-[#2563eb]">IH {m._ih}</span>}
+                          {m._ih && <span className="ml-1.5 font-mono text-[10px] text-[#2F3941]">IH {m._ih}</span>}
                         </div>
-                        <div className="text-[11px] text-[#64748B] mt-0.5 flex flex-wrap items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 rounded bg-[#fbe9ee] text-[#B32646] font-semibold">랙 {m.rack_no}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-[#F1F5F9]">선반 {m.shelf ?? '-'}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-[#F1F5F9]">박스 {m.box_no ?? '-'}</span>
-                          <span className="text-[#94A3B8] ml-auto">{m.quantity}개</span>
+                        <div className="text-[11px] text-[#5A666F] mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded bg-[#FCEEF3] text-[#D60051] font-semibold">랙 {m.rack_no}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-[#F1F1F0]">선반 {m.shelf ?? '-'}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-[#F1F1F0]">박스 {m.box_no ?? '-'}</span>
+                          <span className="text-[#8A949C] ml-auto">{m.quantity}개</span>
                         </div>
                       </button>
                     ))}
                     {matches.length > 50 && (
-                      <div className="px-3 py-1.5 text-[10px] text-[#94A3B8]">상위 50개 위치만 표시</div>
+                      <div className="px-3 py-1.5 text-[10px] text-[#8A949C]">상위 50개 위치만 표시</div>
                     )}
                   </>
                 )}
@@ -605,10 +605,10 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
           />
         )}
         <GuestCallout label="자재명·IH 검색 → 랙·선반·박스 위치 표시" />
-        <span className="text-[11px] text-[#94A3B8] ml-auto">
+        <span className="text-[11px] text-[#8A949C] ml-auto">
           {isHub
             ? target
-              ? <span className="text-[#B32646] font-semibold">📍 {target.focus.itemName} → 랙 {target.rackNo} · 선반 {target.focus.shelf} · 박스 {target.focus.boxNo ?? '미지정'} — 깜빡이는 렉을 클릭하세요</span>
+              ? <span className="text-[#D60051] font-semibold">📍 {target.focus.itemName} → 랙 {target.rackNo} · 선반 {target.focus.shelf} · 박스 {target.focus.boxNo ?? '미지정'} — 깜빡이는 렉을 클릭하세요</span>
               : (search.trim() ? `${matches.length}개 위치 매칭` : `${Object.keys(rackCounts).length}개 렉`)
             : `${filtered.length}개 품목 · ${racks.length}개 랙`}
         </span>
@@ -616,7 +616,7 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중...</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중...</div>
       ) : error ? (
         <div className="text-red-500 text-[12px]">{error}</div>
       ) : isHub ? (
@@ -628,11 +628,11 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
             setSelectedRack({ rackNo, label, focus: target?.rackNo === rackNo ? target.focus : undefined })}
         />
       ) : racks.length === 0 && noRack.length === 0 ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">
           {center} 센터에 등록된 자재 없음
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
         <div className="space-y-3">
           {racks.map(rack => {
             const shelvesSorted = Object.entries(rack.shelves)
@@ -642,18 +642,18 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
                 key={rack.rack_no}
                 className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden"
               >
-                <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-[#B32646]">
+                <div className="px-3 py-2 bg-[#F6F6F7] border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2">
+                  <span className="text-[12px] font-bold text-[#D60051]">
                     📍 {rack.rack_no}
                   </span>
-                  <span className="text-[10px] text-[#94A3B8]">
+                  <span className="text-[10px] text-[#8A949C]">
                     {Object.values(rack.shelves).flat().length}개 품목
                   </span>
                 </div>
                 <div className="p-2">
                   {shelvesSorted.map(([shelfName, shelfItems]) => (
                     <div key={shelfName} className="mb-2 last:mb-0">
-                      <div className="text-[10px] text-[#64748B] font-medium mb-1 px-1">
+                      <div className="text-[10px] text-[#5A666F] font-medium mb-1 px-1">
                         선반 {shelfName}
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
@@ -675,9 +675,9 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
           {/* 위치 미지정 */}
           {noRack.length > 0 && (
             <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] overflow-hidden">
-              <div className="px-3 py-2 bg-[#F8F9FA] border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2">
-                <span className="text-[12px] font-bold text-[#94A3B8]">📦 위치 미지정</span>
-                <span className="text-[10px] text-[#94A3B8]">{noRack.length}개 품목</span>
+              <div className="px-3 py-2 bg-[#F6F6F7] border-b border-[rgba(0,0,0,0.06)] flex items-center gap-2">
+                <span className="text-[12px] font-bold text-[#8A949C]">📦 위치 미지정</span>
+                <span className="text-[10px] text-[#8A949C]">{noRack.length}개 품목</span>
               </div>
               <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
                 {noRack.map(item => (

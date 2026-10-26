@@ -35,10 +35,10 @@ type PurchaseRequest = {
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 const STATUS_KO: Record<string, { label: string; color: string }> = {
-  pending:     { label: '⏳ 대기중',  color: '#f57c00' },
-  in_progress: { label: '🔄 처리중',  color: '#1565c0' },
-  completed:   { label: '✅ 완료',    color: '#2e7d32' },
-  rejected:    { label: '❌ 거절',    color: '#c62828' },
+  pending:     { label: '⏳ 대기중',  color: '#96620A' },
+  in_progress: { label: '🔄 처리중',  color: '#2F3941' },
+  completed:   { label: '✅ 완료',    color: '#0C7A57' },
+  rejected:    { label: '❌ 거절',    color: '#D60051' },
   cancelled:   { label: '🚫 취소됨', color: '#757575' },
 }
 
@@ -71,7 +71,7 @@ function DownloadFormButton({ req }: { req: PurchaseRequest }) {
   }
   return (
     <Button size="sm" variant="outline" disabled={busy} onClick={handleDownload}
-      className="text-[12px] text-[#B32646] border-[#B32646]/40 hover:bg-[#B32646]/5">
+      className="text-[12px] text-[#D60051] border-[#D60051]/40 hover:bg-[#D60051]/5">
       {busy ? '생성 중...' : '📄 구매요청서 다운로드'}
     </Button>
   )
@@ -106,15 +106,15 @@ function ManagerCard({
       <button onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left">
         <div className="min-w-0">
-          <span className="text-[13px] font-semibold text-[#1E293B]">{req.requester_name}</span>
-          <span className="text-[12px] text-[#64748B] ml-2">
+          <span className="text-[13px] font-semibold text-[#111111]">{req.requester_name}</span>
+          <span className="text-[12px] text-[#5A666F] ml-2">
             {req.requester_center} · {tsKst(req.requested_at)}
           </span>
-          <div className="text-[11px] text-[#94A3B8] mt-0.5 truncate max-w-xs">{req.reason}</div>
+          <div className="text-[11px] text-[#8A949C] mt-0.5 truncate max-w-xs">{req.reason}</div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 ml-2">
           <span className="text-[12px] font-bold" style={{ color: st.color }}>{st.label}</span>
-          <span className="text-[#94A3B8]">{open ? '▲' : '▼'}</span>
+          <span className="text-[#8A949C]">{open ? '▲' : '▼'}</span>
         </div>
       </button>
 
@@ -124,24 +124,24 @@ function ManagerCard({
           {req.items?.length > 0 && (
             <div className="mt-3 border rounded overflow-x-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA]">
+                <thead className="bg-[#F6F6F7]">
                   <tr>
                     {['No', '품명', '수량', '링크'].map(h => (
-                      <th key={h} className="px-3 py-1.5 text-left text-[#64748B] font-semibold border-b">{h}</th>
+                      <th key={h} className="px-3 py-1.5 text-left text-[#5A666F] font-semibold border-b">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {req.items.map((it, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-3 py-1.5 text-[#94A3B8]">{i + 1}</td>
-                      <td className="px-3 py-1.5 text-[#1E293B] font-medium">{it.품명}</td>
+                      <td className="px-3 py-1.5 text-[#8A949C]">{i + 1}</td>
+                      <td className="px-3 py-1.5 text-[#111111] font-medium">{it.품명}</td>
                       <td className="px-3 py-1.5 text-right font-mono">{it.수량}</td>
                       <td className="px-3 py-1.5">
                         {it.링크
                           ? <a href={it.링크} target="_blank" rel="noreferrer"
                                className="text-blue-500 underline text-[11px]">링크</a>
-                          : <span className="text-[#CBD5E1]">-</span>}
+                          : <span className="text-[#D9D9D9]">-</span>}
                       </td>
                     </tr>
                   ))}
@@ -150,24 +150,24 @@ function ManagerCard({
             </div>
           )}
 
-          {req.cost_note    && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
-          {req.notes        && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.cost_note    && <p className="text-[12px] text-[#5A666F]">💰 원가반영: {req.cost_note}</p>}
+          {req.notes        && <p className="text-[12px] text-[#5A666F]">📝 비고: {req.notes}</p>}
           {req.reply_message && (
-            <p className="text-[12px] text-[#0284C7] bg-[#F0F9FF] border border-[#BAE6FD] rounded px-3 py-2">
+            <p className="text-[12px] text-[#2F3941] bg-[#F6F6F7] border border-[#E3E1DE] rounded px-3 py-2">
               💬 담당자: {req.reply_message}
             </p>
           )}
           {req.attachments && req.attachments.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[12px] font-semibold text-[#64748B]">📎 첨부파일</p>
+              <p className="text-[12px] font-semibold text-[#5A666F]">📎 첨부파일</p>
               {req.attachments.map((a, i) => (
                 <a key={i} href={a.url} target="_blank" rel="noreferrer"
-                  className="block text-[12px] text-[#2563EB] hover:underline truncate">📎 {a.name}</a>
+                  className="block text-[12px] text-[#2F3941] hover:underline truncate">📎 {a.name}</a>
               ))}
             </div>
           )}
           {req.processor?.name && (
-            <p className="text-[11px] text-[#94A3B8]">
+            <p className="text-[11px] text-[#8A949C]">
               처리자: {req.processor.name}
               {req.processed_at && ` · ${tsKst(req.processed_at)}`}
             </p>
@@ -181,11 +181,11 @@ function ManagerCard({
           {/* 상태 변경 */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center gap-2">
-              <span className="text-[12px] text-[#64748B] flex-shrink-0">상태 변경:</span>
+              <span className="text-[12px] text-[#5A666F] flex-shrink-0">상태 변경:</span>
               <select
                 value={selStatus}
                 onChange={e => setSelStatus(e.target.value)}
-                className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646]"
+                className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051]"
               >
                 {STATUS_OPTIONS.map(s => (
                   <option key={s} value={s}>{STATUS_KO[s]?.label ?? s}</option>
@@ -198,11 +198,11 @@ function ManagerCard({
                 onChange={e => setReplyMsg(e.target.value)}
                 rows={2}
                 placeholder="신청자에게 보낼 메시지 (선택)"
-                className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none"
+                className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D60051] resize-none"
               />
             )}
             {selStatus !== req.status && (
-              <Button size="sm" className="bg-[#B32646] hover:bg-[#B0003D] text-white"
+              <Button size="sm" className="bg-[#D60051] hover:bg-[#A3003D] text-white"
                 disabled={saving} onClick={handleSave}>
                 {saving ? '저장 중...' : '💾 저장'}
               </Button>
@@ -256,13 +256,13 @@ function MyCard({
       <button onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left">
         <div className="min-w-0">
-          <span className="text-[13px] font-semibold text-[#1E293B]">{tsKst(req.requested_at)}</span>
-          <span className="text-[12px] text-[#64748B] ml-2">품목 {req.items?.length ?? 0}개</span>
-          <div className="text-[11px] text-[#94A3B8] mt-0.5 truncate max-w-xs">{req.reason}</div>
+          <span className="text-[13px] font-semibold text-[#111111]">{tsKst(req.requested_at)}</span>
+          <span className="text-[12px] text-[#5A666F] ml-2">품목 {req.items?.length ?? 0}개</span>
+          <div className="text-[11px] text-[#8A949C] mt-0.5 truncate max-w-xs">{req.reason}</div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 ml-2">
           <span className="text-[12px] font-bold" style={{ color: st.color }}>{st.label}</span>
-          <span className="text-[#94A3B8]">{open ? '▲' : '▼'}</span>
+          <span className="text-[#8A949C]">{open ? '▲' : '▼'}</span>
         </div>
       </button>
 
@@ -271,24 +271,24 @@ function MyCard({
           {req.items?.length > 0 && (
             <div className="mt-3 border rounded overflow-x-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA]">
+                <thead className="bg-[#F6F6F7]">
                   <tr>
                     {['No', '품명', '수량', '링크'].map(h => (
-                      <th key={h} className="px-3 py-1.5 text-left text-[#64748B] font-semibold border-b">{h}</th>
+                      <th key={h} className="px-3 py-1.5 text-left text-[#5A666F] font-semibold border-b">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {req.items.map((it, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-3 py-1.5 text-[#94A3B8]">{i + 1}</td>
-                      <td className="px-3 py-1.5 text-[#1E293B] font-medium">{it.품명}</td>
+                      <td className="px-3 py-1.5 text-[#8A949C]">{i + 1}</td>
+                      <td className="px-3 py-1.5 text-[#111111] font-medium">{it.품명}</td>
                       <td className="px-3 py-1.5 text-right font-mono">{it.수량}</td>
                       <td className="px-3 py-1.5">
                         {it.링크
                           ? <a href={it.링크} target="_blank" rel="noreferrer"
                                className="text-blue-500 underline text-[11px]">링크</a>
-                          : <span className="text-[#CBD5E1]">-</span>}
+                          : <span className="text-[#D9D9D9]">-</span>}
                       </td>
                     </tr>
                   ))}
@@ -296,19 +296,19 @@ function MyCard({
               </table>
             </div>
           )}
-          {req.cost_note    && <p className="text-[12px] text-[#64748B]">💰 원가반영: {req.cost_note}</p>}
-          {req.notes        && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
+          {req.cost_note    && <p className="text-[12px] text-[#5A666F]">💰 원가반영: {req.cost_note}</p>}
+          {req.notes        && <p className="text-[12px] text-[#5A666F]">📝 비고: {req.notes}</p>}
           {req.reply_message && (
-            <p className="text-[12px] text-[#0284C7] bg-[#F0F9FF] border border-[#BAE6FD] rounded px-3 py-2">
+            <p className="text-[12px] text-[#2F3941] bg-[#F6F6F7] border border-[#E3E1DE] rounded px-3 py-2">
               💬 담당자: {req.reply_message}
             </p>
           )}
           {req.attachments && req.attachments.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[12px] font-semibold text-[#64748B]">📎 첨부파일</p>
+              <p className="text-[12px] font-semibold text-[#5A666F]">📎 첨부파일</p>
               {req.attachments.map((a, i) => (
                 <a key={i} href={a.url} target="_blank" rel="noreferrer"
-                  className="block text-[12px] text-[#2563EB] hover:underline truncate">📎 {a.name}</a>
+                  className="block text-[12px] text-[#2F3941] hover:underline truncate">📎 {a.name}</a>
               ))}
             </div>
           )}
@@ -370,8 +370,8 @@ function NaverSearchModal({ onSelect, onClose }: { onSelect: (title: string, lin
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="text-[14px] font-bold text-[#1E293B]">🔍 네이버 쇼핑 검색</span>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-xl leading-none">×</button>
+          <span className="text-[14px] font-bold text-[#111111]">🔍 네이버 쇼핑 검색</span>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-xl leading-none">×</button>
         </div>
         <form onSubmit={search} className="p-3 flex gap-2 border-b">
           <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="상품명 검색 (예: 전동드릴)"
@@ -381,22 +381,22 @@ function NaverSearchModal({ onSelect, onClose }: { onSelect: (title: string, lin
           </Button>
         </form>
         <div className="overflow-y-auto flex-1 p-2 min-h-[120px]">
-          {msg && <p className="text-[12px] text-[#94A3B8] text-center py-6">{msg}</p>}
+          {msg && <p className="text-[12px] text-[#8A949C] text-center py-6">{msg}</p>}
           {results.map((r, i) => (
             <button key={i} type="button" onClick={() => { onSelect(r.title, r.link); onClose() }}
-              className="w-full flex items-center gap-3 p-2 hover:bg-[#F1F5F9] rounded text-left">
+              className="w-full flex items-center gap-3 p-2 hover:bg-[#F1F1F0] rounded text-left">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {r.image && <img src={r.image} alt="" className="w-12 h-12 object-cover rounded border border-[#E2E8F0] flex-shrink-0" />}
+              {r.image && <img src={r.image} alt="" className="w-12 h-12 object-cover rounded border border-[#E3E1DE] flex-shrink-0" />}
               <div className="min-w-0 flex-1">
-                <div className="text-[12px] text-[#1E293B] line-clamp-2">{r.title}</div>
-                <div className="text-[11px] text-[#64748B] mt-0.5">
+                <div className="text-[12px] text-[#111111] line-clamp-2">{r.title}</div>
+                <div className="text-[11px] text-[#5A666F] mt-0.5">
                   {r.lprice ? `${Number(r.lprice).toLocaleString()}원` : ''}{r.mallName ? ` · ${r.mallName}` : ''}
                 </div>
               </div>
             </button>
           ))}
         </div>
-        <div className="px-4 py-2 border-t text-[10px] text-[#94A3B8]">상품을 누르면 품명·링크가 자동 입력됩니다.</div>
+        <div className="px-4 py-2 border-t text-[10px] text-[#8A949C]">상품을 누르면 품명·링크가 자동 입력됩니다.</div>
       </div>
     </div>
   )
@@ -505,38 +505,38 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
       {/* 요청자 정보 */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-semibold text-[#64748B] mb-1">요청자</label>
+          <label className="block text-[11px] font-semibold text-[#5A666F] mb-1">요청자</label>
           <input value={user.name} disabled
-            className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8]" />
+            className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#8A949C]" />
         </div>
         <div>
-          <label className="block text-[11px] font-semibold text-[#64748B] mb-1">소속</label>
+          <label className="block text-[11px] font-semibold text-[#5A666F] mb-1">소속</label>
           <input value={user.assigned_center ?? user.center} disabled
-            className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#94A3B8]" />
+            className="w-full border rounded px-3 py-1.5 text-[12px] bg-gray-50 text-[#8A949C]" />
         </div>
       </div>
 
       {/* 구매 목록 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-[11px] font-semibold text-[#64748B]">구매 목록 *</label>
+          <label className="text-[11px] font-semibold text-[#5A666F]">구매 목록 *</label>
           <Button size="sm" variant="outline" onClick={addRow} className="text-[11px] h-6 px-2">+ 행 추가</Button>
         </div>
         <div className="border rounded overflow-x-auto">
           <table className="w-full text-[12px] min-w-[460px]">
-            <thead className="bg-[#F8F9FA]">
+            <thead className="bg-[#F6F6F7]">
               <tr>
-                <th className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b w-8">No</th>
-                <th className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b">품명 *</th>
-                <th className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b w-20">수량 *</th>
-                <th className="px-2 py-1.5 text-left text-[#64748B] font-semibold border-b">링크 (URL)</th>
+                <th className="px-2 py-1.5 text-left text-[#5A666F] font-semibold border-b w-8">No</th>
+                <th className="px-2 py-1.5 text-left text-[#5A666F] font-semibold border-b">품명 *</th>
+                <th className="px-2 py-1.5 text-left text-[#5A666F] font-semibold border-b w-20">수량 *</th>
+                <th className="px-2 py-1.5 text-left text-[#5A666F] font-semibold border-b">링크 (URL)</th>
                 <th className="px-2 py-1.5 border-b w-8"></th>
               </tr>
             </thead>
             <tbody>
               {items.map((it, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-2 py-1 text-[#94A3B8] text-center">{i + 1}</td>
+                  <td className="px-2 py-1 text-[#8A949C] text-center">{i + 1}</td>
                   <td className="px-2 py-1">
                     <div className="flex items-center gap-1">
                       <input value={it.품명} onChange={e => updateItem(i, '품명', e.target.value)}
@@ -559,7 +559,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
                   <td className="px-2 py-1 text-center">
                     {items.length > 1 && (
                       <button onClick={() => removeRow(i)}
-                        className="text-[#CBD5E1] hover:text-red-400 text-[14px] leading-none">×</button>
+                        className="text-[#D9D9D9] hover:text-red-400 text-[14px] leading-none">×</button>
                     )}
                   </td>
                 </tr>
@@ -571,47 +571,47 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
 
       {/* 구매사유 */}
       <div>
-        <label className="block text-[11px] font-semibold text-[#64748B] mb-1">구매사유 *</label>
+        <label className="block text-[11px] font-semibold text-[#5A666F] mb-1">구매사유 *</label>
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
           placeholder="품의서에 들어갈 구매사유 문구를 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D60051] resize-none" />
       </div>
 
       {/* 원가반영 */}
       <div>
-        <label className="block text-[11px] font-semibold text-[#64748B] mb-1">원가반영 *</label>
+        <label className="block text-[11px] font-semibold text-[#5A666F] mb-1">원가반영 *</label>
         <textarea value={costNote} onChange={e => setCostNote(e.target.value)} rows={3}
           placeholder="원가반영 내용을 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D60051] resize-none" />
       </div>
 
       {/* 비고 */}
       <div>
-        <label className="block text-[11px] font-semibold text-[#64748B] mb-1">비고 (선택)</label>
+        <label className="block text-[11px] font-semibold text-[#5A666F] mb-1">비고 (선택)</label>
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
           placeholder="추가 전달사항이 있으면 입력해주세요."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none" />
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D60051] resize-none" />
       </div>
 
       {/* 첨부파일 */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-[11px] font-semibold text-[#64748B]">첨부파일 (선택)</label>
-          <span className="text-[10px] text-[#94A3B8]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB · 메일로 함께 발송됩니다</span>
+          <label className="text-[11px] font-semibold text-[#5A666F]">첨부파일 (선택)</label>
+          <span className="text-[10px] text-[#8A949C]">최대 {MAX_ATTACH}개 · 개당 {MAX_FILE_MB}MB · 메일로 함께 발송됩니다</span>
         </div>
         {attachments.length > 0 && (
           <ul className="mb-2 space-y-1">
             {attachments.map((a, i) => (
-              <li key={i} className="flex items-center justify-between gap-2 bg-[#F8F9FA] border rounded px-3 py-1.5">
+              <li key={i} className="flex items-center justify-between gap-2 bg-[#F6F6F7] border rounded px-3 py-1.5">
                 <a href={a.url} target="_blank" rel="noreferrer"
-                  className="text-[12px] text-[#1E293B] truncate hover:text-[#B32646] hover:underline">📎 {a.name}</a>
+                  className="text-[12px] text-[#111111] truncate hover:text-[#D60051] hover:underline">📎 {a.name}</a>
                 <button type="button" onClick={() => removeAttachment(i)}
-                  className="flex-shrink-0 text-[#CBD5E1] hover:text-red-400 text-[14px] leading-none">×</button>
+                  className="flex-shrink-0 text-[#D9D9D9] hover:text-red-400 text-[14px] leading-none">×</button>
               </li>
             ))}
           </ul>
         )}
-        <label className="inline-flex items-center gap-2 cursor-pointer text-[12px] text-[#B32646] border border-[#B32646]/40 hover:bg-[#B32646]/5 rounded px-3 py-1.5 transition-colors">
+        <label className="inline-flex items-center gap-2 cursor-pointer text-[12px] text-[#D60051] border border-[#D60051]/40 hover:bg-[#D60051]/5 rounded px-3 py-1.5 transition-colors">
           {uploading ? '업로드 중...' : '＋ 파일 추가'}
           <input type="file" multiple className="hidden" disabled={uploading}
             onChange={handleFilePick} />
@@ -623,7 +623,7 @@ function NewRequestForm({ user, onSubmitted }: { user: SessionUser; onSubmitted:
       )}
 
       <Button onClick={handleSubmit} disabled={submitting || uploading}
-        className="bg-[#B32646] hover:bg-[#B0003D] text-white w-full">
+        className="bg-[#D60051] hover:bg-[#A3003D] text-white w-full">
         {submitting ? '제출 중...' : uploading ? '파일 업로드 중...' : '📨 요청 제출'}
       </Button>
 
@@ -730,10 +730,9 @@ export default function PurchaseRequestsContent({ user, initialTab }: { user: Se
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#1E293B]">🛒 구매 요청</h2>
+      <div className="flex items-center justify-end">
         <Button variant="outline" onClick={fetchAll} disabled={loading} className="text-[12px]">
-          {loading ? '로딩 중...' : '🔄 새로고침'}
+          {loading ? '로딩 중...' : '새로고침'}
         </Button>
       </div>
 
@@ -758,7 +757,7 @@ export default function PurchaseRequestsContent({ user, initialTab }: { user: Se
 
         {/* 새 요청 작성 */}
         <TabsContent value="new" className="mt-4">
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
             <NewRequestForm user={user} onSubmitted={fetchAll} />
           </div>
         </TabsContent>

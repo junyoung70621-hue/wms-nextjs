@@ -23,10 +23,10 @@ type Request = {
 }
 
 const STATUS_KO: Record<string, { label: string; color: string }> = {
-  pending:   { label: '⏳ 대기중',  color: '#f57c00' },
-  approved:  { label: '✅ 승인',    color: '#2e7d32' },
-  rejected:  { label: '❌ 거절',    color: '#c62828' },
-  on_hold:   { label: '⏸️ 보류',   color: '#1565c0' },
+  pending:   { label: '⏳ 대기중',  color: '#96620A' },
+  approved:  { label: '✅ 승인',    color: '#0C7A57' },
+  rejected:  { label: '❌ 거절',    color: '#D60051' },
+  on_hold:   { label: '⏸️ 보류',   color: '#2F3941' },
   cancelled: { label: '🚫 취소됨', color: '#757575' },
 }
 
@@ -123,13 +123,13 @@ function ApproveModal({ req, onClose, onConfirm }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-[600px] max-w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B]">✅ 승인 — 박스별 차감 수량 지정</div>
-          <button onClick={onClose} className="text-[#94A3B8] hover:text-[#1E293B] text-lg leading-none">×</button>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111]">✅ 승인 — 박스별 차감 수량 지정</div>
+          <button onClick={onClose} className="text-[#8A949C] hover:text-[#111111] text-lg leading-none">×</button>
         </div>
         <div className="p-4 overflow-y-auto space-y-3">
           {loading ? (
-            <div className="text-[12px] text-[#94A3B8] py-6 text-center">자재센터 재고 불러오는 중…</div>
+            <div className="text-[12px] text-[#8A949C] py-6 text-center">자재센터 재고 불러오는 중…</div>
           ) : (req.items ?? []).map((it, i) => {
             const opts = boxes[it.item_name] ?? []
             const m = alloc[it.item_name] ?? {}
@@ -139,41 +139,41 @@ function ApproveModal({ req, onClose, onConfirm }: {
             const excluded = target === 0
             const enough = assigned === target
             return (
-              <div key={i} className={`border border-[#E2E8F0] rounded-lg p-3 space-y-2 ${excluded ? 'opacity-60 bg-[#F8F9FA]' : ''}`}>
+              <div key={i} className={`border border-[#E3E1DE] rounded-lg p-3 space-y-2 ${excluded ? 'opacity-60 bg-[#F6F6F7]' : ''}`}>
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className={`text-[13px] font-semibold text-[#1E293B] ${excluded ? 'line-through' : ''}`}>{it.item_name}</span>
+                  <span className={`text-[13px] font-semibold text-[#111111] ${excluded ? 'line-through' : ''}`}>{it.item_name}</span>
                   <div className="flex items-center gap-2 text-[12px]">
-                    <span className="text-[#64748B]">요청 {it.requested_qty}개</span>
-                    <span className="text-[#B32646] font-bold">승인</span>
+                    <span className="text-[#5A666F]">요청 {it.requested_qty}개</span>
+                    <span className="text-[#D60051] font-bold">승인</span>
                     <input type="number" min={0} max={it.requested_qty} value={target}
                       onChange={e => setApproveQty(it.item_name, parseInt(e.target.value))}
-                      className="w-16 border border-[#E2E8F0] rounded px-2 py-0.5 text-[12px] text-right bg-white focus:outline-none focus:border-[#B32646]" />
+                      className="w-16 border border-[#E3E1DE] rounded px-2 py-0.5 text-[12px] text-right bg-white focus:outline-none focus:border-[#D60051]" />
                     <button type="button"
                       onClick={() => setApproveQty(it.item_name, excluded ? it.requested_qty : 0)}
-                      className={`px-2 py-0.5 rounded border text-[11px] ${excluded ? 'border-[#2e7d32] text-[#2e7d32]' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#c62828] hover:text-[#c62828]'}`}>
+                      className={`px-2 py-0.5 rounded border text-[11px] ${excluded ? 'border-[#0C7A57] text-[#0C7A57]' : 'border-[#E3E1DE] text-[#5A666F] hover:border-[#D60051] hover:text-[#D60051]'}`}>
                       {excluded ? '포함' : '제외'}
                     </button>
                   </div>
                 </div>
                 {excluded ? (
-                  <div className="text-[11px] text-[#64748B]">이 품목은 승인에서 제외됩니다 (차감 없음)</div>
+                  <div className="text-[11px] text-[#5A666F]">이 품목은 승인에서 제외됩니다 (차감 없음)</div>
                 ) : opts.length === 0 ? (
-                  <div className="text-[11px] text-[#c62828]">⚠️ 자재센터에 재고 박스가 없습니다 (차감 불가) — 제외하거나 보류하세요</div>
+                  <div className="text-[11px] text-[#D60051]">⚠️ 자재센터에 재고 박스가 없습니다 (차감 불가) — 제외하거나 보류하세요</div>
                 ) : (
                   <>
                     <div className="space-y-1.5">
                       {opts.map(o => (
                         <div key={o.id} className="flex items-center gap-2">
-                          <span className="text-[11px] text-[#475569] flex-1 truncate">{boxLabel(o)}</span>
+                          <span className="text-[11px] text-[#2F3941] flex-1 truncate">{boxLabel(o)}</span>
                           <input type="number" min={0} max={o.quantity} value={m[o.id] ?? 0}
                             onChange={e => setQty(it.item_name, o.id, o.quantity, parseInt(e.target.value))}
-                            className="w-20 border border-[#E2E8F0] rounded px-2 py-0.5 text-[12px] text-right bg-white focus:outline-none focus:border-[#B32646]" />
+                            className="w-20 border border-[#E3E1DE] rounded px-2 py-0.5 text-[12px] text-right bg-white focus:outline-none focus:border-[#D60051]" />
                         </div>
                       ))}
                     </div>
-                    <div className={`text-[11px] font-semibold ${enough ? 'text-[#16a34a]' : 'text-[#c62828]'}`}>
+                    <div className={`text-[11px] font-semibold ${enough ? 'text-[#0C7A57]' : 'text-[#D60051]'}`}>
                       배정 {assigned} / 승인 {target}
-                      {target !== it.requested_qty && <span className="text-[#f57c00]"> · 요청 {it.requested_qty}에서 수정됨</span>}
+                      {target !== it.requested_qty && <span className="text-[#96620A]"> · 요청 {it.requested_qty}에서 수정됨</span>}
                       {!enough && (assigned < target
                         ? (avail < target ? ` · ⚠️ 자재센터 재고 부족 (최대 ${avail})` : ' · ⚠️ 배정 수량이 부족합니다')
                         : ' · ⚠️ 배정이 승인수량보다 많습니다')}
@@ -184,14 +184,14 @@ function ApproveModal({ req, onClose, onConfirm }: {
             )
           })}
           <div>
-            <label className="text-[11px] text-[#64748B] block mb-1">신청자에게 보낼 메시지 (선택)</label>
+            <label className="text-[11px] text-[#5A666F] block mb-1">신청자에게 보낼 메시지 (선택)</label>
             <textarea value={reply} onChange={e => setReply(e.target.value)} rows={2}
-              className="w-full border border-[#E2E8F0] rounded px-3 py-2 text-[12px] bg-white focus:outline-none focus:border-[#B32646] resize-none" />
+              className="w-full border border-[#E3E1DE] rounded px-3 py-2 text-[12px] bg-white focus:outline-none focus:border-[#D60051] resize-none" />
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#E2E8F0]">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#E3E1DE]">
           <Button size="sm" variant="outline" onClick={onClose}>취소</Button>
-          <Button size="sm" className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white" disabled={saving || !valid} onClick={submit}>
+          <Button size="sm" className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white" disabled={saving || !valid} onClick={submit}>
             {saving ? '처리 중…' : '승인 확정'}
           </Button>
         </div>
@@ -231,16 +231,16 @@ function RequestCard({
       <button onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left">
         <div className="min-w-0">
-          <span className="text-[13px] font-medium text-[#1E293B]">
+          <span className="text-[13px] font-medium text-[#111111]">
             {req.requester_name}
           </span>
-          <span className="text-[12px] text-[#64748B] ml-2">
+          <span className="text-[12px] text-[#5A666F] ml-2">
             {req.from_center} · {tsKst(req.requested_at)}
           </span>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 ml-2">
           <span className="text-[13px] font-bold" style={{ color: st.color }}>{st.label}</span>
-          <span className="text-[#94A3B8]">{open ? '▲' : '▼'}</span>
+          <span className="text-[#8A949C]">{open ? '▲' : '▼'}</span>
         </div>
       </button>
 
@@ -250,25 +250,25 @@ function RequestCard({
           {req.items?.length > 0 && (
             <div className="mt-3 border rounded overflow-hidden">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#F8F9FA]">
+                <thead className="bg-[#F6F6F7]">
                   <tr>
                     {['자재명','ERP','현재재고','요청수량', ...(req.status === 'approved' ? ['승인수량'] : []), '재고상태'].map(h => (
-                      <th key={h} className="px-3 py-1.5 text-left text-[#64748B] font-semibold border-b border-[rgba(0,0,0,0.08)]">{h}</th>
+                      <th key={h} className="px-3 py-1.5 text-left text-[#5A666F] font-semibold border-b border-[rgba(0,0,0,0.08)]">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {req.items.map((it, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-3 py-1.5 text-[#1E293B]">{it.item_name}</td>
-                      <td className="px-3 py-1.5">{it.erp_code === undefined ? <span className="text-[#94A3B8] text-[11px]">-</span> : <ErpBadge code={it.erp_code} />}</td>
+                      <td className="px-3 py-1.5 text-[#111111]">{it.item_name}</td>
+                      <td className="px-3 py-1.5">{it.erp_code === undefined ? <span className="text-[#8A949C] text-[11px]">-</span> : <ErpBadge code={it.erp_code} />}</td>
                       <td className="px-3 py-1.5 text-right font-mono">{it.current_qty}</td>
                       <td className="px-3 py-1.5 text-right font-mono font-bold">{it.requested_qty}</td>
                       {req.status === 'approved' && (
                         <td className="px-3 py-1.5 text-right font-mono font-bold">
                           {it.approved_qty === undefined ? it.requested_qty
-                            : it.approved_qty === 0 ? <span className="text-[#c62828]">제외</span>
-                            : <span className={it.approved_qty !== it.requested_qty ? 'text-[#f57c00]' : 'text-[#2e7d32]'}>{it.approved_qty}</span>}
+                            : it.approved_qty === 0 ? <span className="text-[#D60051]">제외</span>
+                            : <span className={it.approved_qty !== it.requested_qty ? 'text-[#96620A]' : 'text-[#0C7A57]'}>{it.approved_qty}</span>}
                         </td>
                       )}
                       <td className="px-3 py-1.5">
@@ -283,10 +283,10 @@ function RequestCard({
             </div>
           )}
 
-          {req.notes      && <p className="text-[12px] text-[#64748B]">📝 비고: {req.notes}</p>}
-          {req.reply_message && <p className="text-[12px] text-[#0284C7]">💬 회신: {req.reply_message}</p>}
+          {req.notes      && <p className="text-[12px] text-[#5A666F]">📝 비고: {req.notes}</p>}
+          {req.reply_message && <p className="text-[12px] text-[#2F3941]">💬 회신: {req.reply_message}</p>}
           {req.processor?.name && (
-            <p className="text-[11px] text-[#94A3B8]">
+            <p className="text-[11px] text-[#8A949C]">
               처리자: {req.processor.name}
               {req.processed_at && ` · ${tsKst(req.processed_at)}`}
             </p>
@@ -297,7 +297,7 @@ function RequestCard({
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => setShowApprove(true)}
-                  className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white" disabled={actionLoad}>
+                  className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white" disabled={actionLoad}>
                   ✅ 승인
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => { setPendingAction('rejected'); setShowReply(true) }}
@@ -316,10 +316,10 @@ function RequestCard({
                     onChange={e => setReplyText(e.target.value)}
                     rows={2}
                     placeholder="신청자에게 보낼 메시지 (선택)"
-                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-[#B32646] resize-none"
+                    className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-[#D60051] resize-none"
                   />
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#B32646] hover:bg-[#B0003D] text-white"
+                    <Button size="sm" className="bg-[#D60051] hover:bg-[#A3003D] text-white"
                       disabled={actionLoad} onClick={() => pendingAction && handleAction(pendingAction)}>
                       {actionLoad ? '처리 중...' : '확인 처리'}
                     </Button>
@@ -384,7 +384,7 @@ type WarehouseItem = { id: number; item_name: string; quantity: number; category
 function ErpBadge({ code }: { code: string | null | undefined }) {
   return code
     ? <span className="inline-block px-1.5 py-0.5 rounded bg-[#ecfdf5] text-[#047857] text-[10px] font-mono whitespace-nowrap" title="ERP 등록">{code}</span>
-    : <span className="inline-block px-1.5 py-0.5 rounded bg-[#fef2f2] text-[#c62828] text-[10px] font-semibold whitespace-nowrap" title="ERP 미등록 (자재센터 기준)">ERP 미등록</span>
+    : <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCEEF3] text-[#D60051] text-[10px] font-semibold whitespace-nowrap" title="ERP 미등록 (자재센터 기준)">ERP 미등록</span>
 }
 
 // 이 센터들은 자재요청 시 '버스 > 설치자재'만 보이고 요청 가능
@@ -480,12 +480,12 @@ function NewRequestForm({
       {/* 요청자 정보 */}
       <div className="grid grid-cols-2 gap-3 text-[12px]">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">요청자</label>
-          <div className="border rounded px-3 py-1.5 bg-[#F8F9FA] text-[#94A3B8]">{user.name}</div>
+          <label className="text-[11px] text-[#5A666F] block mb-1">요청자</label>
+          <div className="border rounded px-3 py-1.5 bg-[#F6F6F7] text-[#8A949C]">{user.name}</div>
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-1">소속</label>
-          <div className="border rounded px-3 py-1.5 bg-[#F8F9FA] text-[#94A3B8]">
+          <label className="text-[11px] text-[#5A666F] block mb-1">소속</label>
+          <div className="border rounded px-3 py-1.5 bg-[#F6F6F7] text-[#8A949C]">
             {user.assigned_center ?? user.center}
           </div>
         </div>
@@ -494,12 +494,12 @@ function NewRequestForm({
       {/* 자재 검색 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-[11px] text-[#64748B] font-medium">
+          <label className="text-[11px] text-[#5A666F] font-medium">
             자재센터 재고에서 선택 *
-            {onlyBusInstall && <span className="ml-1.5 text-[#1565c0] font-semibold">· 버스 설치자재만</span>}
+            {onlyBusInstall && <span className="ml-1.5 text-[#2F3941] font-semibold">· 버스 설치자재만</span>}
           </label>
           {selectedCount > 0 && (
-            <span className="text-[11px] text-[#B32646] font-bold">{selectedCount}종 선택됨</span>
+            <span className="text-[11px] text-[#D60051] font-bold">{selectedCount}종 선택됨</span>
           )}
         </div>
         <Input
@@ -509,28 +509,28 @@ function NewRequestForm({
           className="h-8 text-[12px] mb-2"
         />
         {loading ? (
-          <div className="text-[12px] text-[#94A3B8] py-4 text-center">로딩 중...</div>
+          <div className="text-[12px] text-[#8A949C] py-4 text-center">로딩 중...</div>
         ) : (
           <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
             <table className="w-full text-[12px]">
-              <thead className="bg-[#F8F9FA] sticky top-0">
+              <thead className="bg-[#F6F6F7] sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-[#64748B] font-medium">품명</th>
-                  <th className="px-3 py-2 text-left text-[#64748B] font-medium w-40">ERP</th>
-                  <th className="px-3 py-2 text-right text-[#64748B] font-medium w-20">재고</th>
-                  <th className="px-3 py-2 text-center text-[#64748B] font-medium w-28">요청 수량</th>
+                  <th className="px-3 py-2 text-left text-[#5A666F] font-medium">품명</th>
+                  <th className="px-3 py-2 text-left text-[#5A666F] font-medium w-40">ERP</th>
+                  <th className="px-3 py-2 text-right text-[#5A666F] font-medium w-20">재고</th>
+                  <th className="px-3 py-2 text-center text-[#5A666F] font-medium w-28">요청 수량</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={4} className="px-3 py-4 text-center text-[#94A3B8]">검색 결과 없음</td></tr>
+                  <tr><td colSpan={4} className="px-3 py-4 text-center text-[#8A949C]">검색 결과 없음</td></tr>
                 ) : filtered.map((item, i) => {
                   const qty = selected[item.item_name] ?? 0
                   return (
-                    <tr key={item.item_name} className={qty > 0 ? 'bg-[rgba(179, 38, 70,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}>
-                      <td className="px-3 py-1.5 text-[#1E293B]">{item.item_name}</td>
+                    <tr key={item.item_name} className={qty > 0 ? 'bg-[rgba(214,0,81,0.04)]' : i % 2 === 0 ? 'bg-white' : 'bg-[#F6F6F7]'}>
+                      <td className="px-3 py-1.5 text-[#111111]">{item.item_name}</td>
                       <td className="px-3 py-1.5"><ErpBadge code={item.erp_code} /></td>
-                      <td className={`px-3 py-1.5 text-right font-mono ${item.total === 0 ? 'text-red-400' : 'text-[#475569]'}`}>
+                      <td className={`px-3 py-1.5 text-right font-mono ${item.total === 0 ? 'text-red-400' : 'text-[#2F3941]'}`}>
                         {item.total.toLocaleString()}
                       </td>
                       <td className="px-3 py-1.5 text-center">
@@ -541,7 +541,7 @@ function NewRequestForm({
                           value={qty || ''}
                           placeholder="0"
                           onChange={e => handleQtyChange(item.item_name, parseInt(e.target.value) || 0)}
-                          className="w-20 border rounded px-2 py-0.5 text-[11px] text-center focus:outline-none focus:border-[#B32646]"
+                          className="w-20 border rounded px-2 py-0.5 text-[11px] text-center focus:outline-none focus:border-[#D60051]"
                         />
                       </td>
                     </tr>
@@ -555,15 +555,15 @@ function NewRequestForm({
 
       {/* 선택된 자재 요약 */}
       {selectedCount > 0 && (
-        <div className="bg-[rgba(179, 38, 70,0.04)] border border-[rgba(179, 38, 70,0.15)] rounded-lg p-3">
-          <div className="text-[11px] font-bold text-[#B32646] mb-2">선택된 자재 ({selectedCount}종)</div>
+        <div className="bg-[rgba(214,0,81,0.04)] border border-[rgba(214,0,81,0.15)] rounded-lg p-3">
+          <div className="text-[11px] font-bold text-[#D60051] mb-2">선택된 자재 ({selectedCount}종)</div>
           <div className="space-y-1">
             {Object.entries(selected).filter(([, q]) => q > 0).map(([name, qty]) => (
               <div key={name} className="flex items-center justify-between gap-2 text-[12px]">
-                <span className="text-[#1E293B] truncate">{name}</span>
+                <span className="text-[#111111] truncate">{name}</span>
                 <span className="flex items-center gap-2 flex-shrink-0">
                   <ErpBadge code={aggregated.find(a => a.item_name === name)?.erp_code ?? null} />
-                  <span className="text-[#B32646] font-bold">{qty}개 요청</span>
+                  <span className="text-[#D60051] font-bold">{qty}개 요청</span>
                 </span>
               </div>
             ))}
@@ -573,13 +573,13 @@ function NewRequestForm({
 
       {/* 비고 */}
       <div>
-        <label className="text-[11px] text-[#64748B] mb-1 block">비고 (선택)</label>
+        <label className="text-[11px] text-[#5A666F] mb-1 block">비고 (선택)</label>
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
           rows={2}
           placeholder="추가 사항을 입력하세요..."
-          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#B32646] resize-none"
+          className="w-full border rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#D60051] resize-none"
         />
       </div>
 
@@ -588,7 +588,7 @@ function NewRequestForm({
       <Button
         onClick={handleSubmit}
         disabled={saving || selectedCount === 0}
-        className="bg-[#B32646] hover:bg-[#a8003c] text-white"
+        className="bg-[#D60051] hover:bg-[#A3003D] text-white"
       >
         {saving ? '제출 중...' : '📦 자재요청 제출'}
       </Button>
@@ -717,13 +717,13 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
           <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
           <TabsList className="h-auto w-max flex-nowrap">
             {canRequest && (
-              <TabsTrigger value="new" className="text-[12px]">➕ 새 요청</TabsTrigger>
+              <TabsTrigger value="new" className="text-[12px]">새 요청</TabsTrigger>
             )}
             {isManager && (
               <TabsTrigger value="pending" className="text-[12px]">
-                ⏳ 대기중
+                대기중
                 {pendingCount > 0 && (
-                  <span className="ml-1 bg-[#f57c00] text-white text-[9px] font-bold rounded px-1 py-0.5">
+                  <span className="ml-1 bg-[#96620A] text-white text-[9px] font-bold rounded px-1 py-0.5">
                     {pendingCount}
                   </span>
                 )}
@@ -753,7 +753,7 @@ export default function MaterialRequestsContent({ user, initialTab }: { user: Se
         {canRequest && (
           <TabsContent value="new">
             <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4">
-              <h3 className="text-[13px] font-semibold text-[#1E293B] mb-4">자재센터에 자재 요청</h3>
+              <h3 className="text-[13px] font-semibold text-[#111111] mb-4">자재센터에 자재 요청</h3>
               <NewRequestForm user={user} onSubmitted={fetchData} />
             </div>
           </TabsContent>

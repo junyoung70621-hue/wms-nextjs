@@ -90,7 +90,7 @@ export async function POST(request: Request) {
               ['이름', name],
               ['소속 센터', center],
             ])}
-            <p style="margin-top:10px; color:#64748B; font-size:13px;">승인이 완료되면 별도 메일로 안내드립니다.</p>`,
+            <p style="margin-top:10px; color:#5A666F; font-size:13px;">승인이 완료되면 별도 메일로 안내드립니다.</p>`,
         }),
       )
 

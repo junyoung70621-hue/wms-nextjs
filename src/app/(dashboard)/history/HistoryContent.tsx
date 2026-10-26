@@ -149,10 +149,8 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
   // ── 렌더링 ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-[#1E293B]">📋 입출고 이력</h2>
-
       {/* 필터 바 */}
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
       <div className="flex flex-wrap gap-2 items-center">
         {/* 작업 유형 */}
         <Select value={filterAction} onValueChange={v => { if (v !== null) setFilterAction(v) }}>
@@ -210,19 +208,19 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
             type="date"
             value={dateFrom}
             onChange={e => setDateFrom(e.target.value)}
-            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] h-8"
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051] h-8"
           />
-          <span className="text-[#94A3B8]">~</span>
+          <span className="text-[#8A949C]">~</span>
           <input
             type="date"
             value={dateTo}
             onChange={e => setDateTo(e.target.value)}
-            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#B32646] h-8"
+            className="border rounded px-2 py-1 text-[12px] focus:outline-none focus:border-[#D60051] h-8"
           />
           {(dateFrom || dateTo) && (
             <button
               onClick={() => { setDateFrom(''); setDateTo('') }}
-              className="text-[#94A3B8] hover:text-[#B32646] text-[11px] px-1"
+              className="text-[#8A949C] hover:text-[#D60051] text-[11px] px-1"
             >
               ✕
             </button>
@@ -244,7 +242,7 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         <Button
           variant={showStats ? 'default' : 'outline'}
           onClick={() => setShowStats(s => !s)}
-          className={`h-8 text-[12px] ${showStats ? 'bg-[#B32646] hover:bg-[#9a1f3c] text-white' : ''}`}
+          className={`h-8 text-[12px] ${showStats ? 'bg-[#D60051] hover:bg-[#A3003D] text-white' : ''}`}
         >
           📊 통계
         </Button>
@@ -272,12 +270,12 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
         const outQty = filtered.filter(h => h.action_type === 'out').reduce((s, h) => s + h.quantity, 0)
         const trQty  = filtered.filter(h => h.action_type === 'transfer').reduce((s, h) => s + h.quantity, 0)
         return (
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
           <div className="flex flex-wrap gap-3 text-[12px]">
-            <span className="text-[#64748B]">총 <b data-guest-blur className="text-[#1E293B]">{filtered.length.toLocaleString()}</b>건</span>
-            {inQty  > 0 && <span className="text-[#2e7d32]">📥 입고 <b data-guest-blur>{inQty.toLocaleString()}</b>개</span>}
-            {outQty > 0 && <span className="text-[#c62828]">📤 출고 <b data-guest-blur>{outQty.toLocaleString()}</b>개</span>}
-            {trQty  > 0 && <span className="text-[#1565c0]">🚚 이동 <b data-guest-blur>{trQty.toLocaleString()}</b>개</span>}
+            <span className="text-[#5A666F]">총 <b data-guest-blur className="text-[#111111]">{filtered.length.toLocaleString()}</b>건</span>
+            {inQty  > 0 && <span className="text-[#0C7A57]">📥 입고 <b data-guest-blur>{inQty.toLocaleString()}</b>개</span>}
+            {outQty > 0 && <span className="text-[#D60051]">📤 출고 <b data-guest-blur>{outQty.toLocaleString()}</b>개</span>}
+            {trQty  > 0 && <span className="text-[#2F3941]">🚚 이동 <b data-guest-blur>{trQty.toLocaleString()}</b>개</span>}
           </div>
           </div>
         )
@@ -285,22 +283,22 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
 
       {/* 테이블 */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#E3E1DE]">
           데이터 로딩 중...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#e2e8f0]">
+        <div className="flex items-center justify-center h-48 text-gray-400 bg-white rounded-lg border border-[#E3E1DE]">
           이력이 없습니다.
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-auto max-h-[600px]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] overflow-auto max-h-[600px]">
           <table className="w-full text-[12px] border-collapse">
-            <thead className="sticky top-0 bg-[#F8F9FA] z-10">
+            <thead className="sticky top-0 bg-[#F6F6F7] z-10">
               <tr>
                 {['일시','작업자','자재명','센터','작업유형','수량','변경전','변경후','이동경로','사유'].map(h => (
                   <th
                     key={h}
-                    className="text-left px-3 py-2 font-semibold text-[#64748B] border-b border-[rgba(0,0,0,0.08)] whitespace-nowrap"
+                    className="text-left px-3 py-2 font-semibold text-[#5A666F] border-b border-[rgba(0,0,0,0.08)] whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -316,34 +314,34 @@ export default function HistoryContent({ user }: { user: SessionUser }) {
                     key={h.id}
                     className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
                   >
-                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#475569]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap font-mono text-[11px] text-[#2F3941]">
                       {tsKst(h.acted_at)}
                     </td>
-                    <td className="px-3 py-1.5 whitespace-nowrap text-[#1E293B]">
+                    <td className="px-3 py-1.5 whitespace-nowrap text-[#111111]">
                       {h.users?.name ?? ''}
                     </td>
-                    <td className="px-3 py-1.5 text-[#1E293B] max-w-[200px] truncate">
+                    <td className="px-3 py-1.5 text-[#111111] max-w-[200px] truncate">
                       {h.warehouse?.item_name ?? ''}
                     </td>
-                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#64748B]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#5A666F]">
                       {h.warehouse?.location ?? ''}
                     </td>
                     <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap">
                       {ACTION_LABEL[h.action_type] ?? h.action_type}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono text-[#1E293B]">
+                    <td className="px-3 py-1.5 text-right font-mono text-[#111111]">
                       {h.quantity.toLocaleString()}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">
+                    <td className="px-3 py-1.5 text-right font-mono text-[#8A949C]">
                       {h.snapshot_qty_before ?? ''}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono text-[#94A3B8]">
+                    <td className="px-3 py-1.5 text-right font-mono text-[#8A949C]">
                       {h.snapshot_qty_after ?? ''}
                     </td>
-                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#64748B] text-[11px]">
+                    <td data-guest-clear className="px-3 py-1.5 whitespace-nowrap text-[#5A666F] text-[11px]">
                       {route}
                     </td>
-                    <td className="px-3 py-1.5 text-[#475569] max-w-[200px] truncate">
+                    <td className="px-3 py-1.5 text-[#2F3941] max-w-[200px] truncate">
                       {h.reason ?? ''}
                     </td>
                   </tr>

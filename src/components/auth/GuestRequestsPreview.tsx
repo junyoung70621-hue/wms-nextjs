@@ -70,38 +70,38 @@ export default async function GuestRequestsPreview({ kind }: { kind: 'material' 
   return (
     <div className="space-y-4">
       <div className="flex items-center">
-        <span className="text-[13px] font-bold text-[#1E293B]">
+        <span className="text-[13px] font-bold text-[#111111]">
           {kind === 'material' ? '📋 최근 자재요청' : '🛒 최근 구매요청'}
         </span>
         <GuestCallout label={kind === 'material' ? '로그인 후 자재요청 작성·승인 처리' : '로그인 후 구매요청 작성·진행 관리'} />
       </div>
       {/* 실제 요청 목록 — 품명·수량만 블러(guest-veil), 날짜·센터·상태는 data-guest-clear */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white overflow-x-auto">
+      <div className="rounded-xl border border-[#E3E1DE] bg-white overflow-x-auto">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="border-b border-[#e2e8f0] bg-[#f8f9ff]">
-              <th className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">요청일</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">{itemLabel}</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">수량</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">요청센터</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-[#475569] whitespace-nowrap">상태</th>
+            <tr className="border-b border-[#E3E1DE] bg-[#F6F6F7]">
+              <th className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">요청일</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">{itemLabel}</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">수량</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">요청센터</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-[#2F3941] whitespace-nowrap">상태</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td data-guest-clear colSpan={5} className="px-3 py-8 text-center text-[#94A3B8]">
+                <td data-guest-clear colSpan={5} className="px-3 py-8 text-center text-[#8A949C]">
                   표시할 요청이 없습니다.
                 </td>
               </tr>
             ) : (
               rows.map((r, i) => (
-                <tr key={i} className="border-b border-[#f1f5f9] last:border-0">
-                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#334155]">{r.date}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[#334155]">{r.item}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[#334155]">{r.qty}</td>
-                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#334155]">{r.center}</td>
-                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#334155]">{r.status}</td>
+                <tr key={i} className="border-b border-[#F1F1F0] last:border-0">
+                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#111111]">{r.date}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-[#111111]">{r.item}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-[#111111]">{r.qty}</td>
+                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#111111]">{r.center}</td>
+                  <td data-guest-clear className="px-3 py-2.5 whitespace-nowrap text-[#111111]">{r.status}</td>
                 </tr>
               ))
             )}

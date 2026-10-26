@@ -30,7 +30,7 @@ const ROLE_LABEL: Record<string, string> = {
   admin: 'ADMIN', materials: 'MATERIALS', manager: 'MANAGER', user: 'USER', guest: 'GUEST',
 }
 const ROLE_COLOR: Record<string, string> = {
-  admin: '#B32646', materials: '#7c3aed', manager: '#1565c0', user: '#2e7d32', guest: '#64748B',
+  admin: '#D60051', materials: '#7c3aed', manager: '#2F3941', user: '#0C7A57', guest: '#5A666F',
 }
 
 // ── KPI 칩 (컴팩트) ───────────────────────────────────────────────────────────
@@ -43,10 +43,10 @@ function KpiChip({ label, value, color, active, onClick }: {
       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border transition-all"
       style={active
         ? { borderColor: color, boxShadow: `inset 0 0 0 1px ${color}` }
-        : { borderColor: '#e2e8f0' }}
+        : { borderColor: '#E3E1DE' }}
     >
       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
-      <span className="text-[11px] text-[#64748B] whitespace-nowrap">{label}</span>
+      <span className="text-[11px] text-[#5A666F] whitespace-nowrap">{label}</span>
       <span className="text-[13px] font-bold leading-none font-heading" style={{ color }}>{value}</span>
     </button>
   )
@@ -107,14 +107,14 @@ function UserRow({
         >
           {u.name.charAt(0)}
         </div>
-        <span className="text-[12px] font-semibold text-[#1E293B] w-24 truncate flex-shrink-0">{u.name}</span>
-        <span className="text-[11px] text-[#64748B] w-28 truncate flex-shrink-0 hidden sm:block">@{u.username}</span>
-        <span className="text-[11px] text-[#64748B] flex-1 truncate min-w-0">
+        <span className="text-[12px] font-semibold text-[#111111] w-24 truncate flex-shrink-0">{u.name}</span>
+        <span className="text-[11px] text-[#5A666F] w-28 truncate flex-shrink-0 hidden sm:block">@{u.username}</span>
+        <span className="text-[11px] text-[#5A666F] flex-1 truncate min-w-0">
           {u.center}{u.assigned_center ? ` → ${u.assigned_center}` : ''}
         </span>
-        <span className="text-[11px] text-[#94A3B8] font-mono w-20 flex-shrink-0 hidden md:block">{tsKst(u.created_at)}</span>
+        <span className="text-[11px] text-[#8A949C] font-mono w-20 flex-shrink-0 hidden md:block">{tsKst(u.created_at)}</span>
         {!u.is_approved && (
-          <span className="text-[10px] font-bold text-white bg-[#f57c00] rounded px-1.5 py-0.5 flex-shrink-0">
+          <span className="text-[10px] font-bold text-white bg-[#96620A] rounded px-1.5 py-0.5 flex-shrink-0">
             미승인
           </span>
         )}
@@ -124,28 +124,28 @@ function UserRow({
         >
           {ROLE_LABEL[u.role] ?? u.role}
         </span>
-        <span className="text-[#94A3B8] text-[10px] flex-shrink-0">{open ? '▲' : '▼'}</span>
+        <span className="text-[#8A949C] text-[10px] flex-shrink-0">{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div className="px-4 py-4 bg-[#F8F9FA] border-t border-[rgba(0,0,0,0.06)] space-y-4">
+        <div className="px-4 py-4 bg-[#F6F6F7] border-t border-[rgba(0,0,0,0.06)] space-y-4">
           {/* 계정 정보 */}
-          <div className="grid grid-cols-2 gap-2 text-[12px] text-[#475569]">
-            <div><span className="text-[#94A3B8]">이메일:</span> {u.email}</div>
-            <div><span className="text-[#94A3B8]">전화:</span> {u.phone ?? '-'}</div>
+          <div className="grid grid-cols-2 gap-2 text-[12px] text-[#2F3941]">
+            <div><span className="text-[#8A949C]">이메일:</span> {u.email}</div>
+            <div><span className="text-[#8A949C]">전화:</span> {u.phone ?? '-'}</div>
           </div>
 
           {/* 미승인 빠른 승인 */}
           {!u.is_approved && (
-            <div className="flex items-center gap-2 p-3 bg-[#fff8e1] border border-[#f57c00] rounded-lg">
-              <span className="text-[12px] text-[#f57c00] font-medium flex-1">
+            <div className="flex items-center gap-2 p-3 bg-[#FCF5E9] border border-[#96620A] rounded-lg">
+              <span className="text-[12px] text-[#96620A] font-medium flex-1">
                 승인 대기 중인 계정입니다.
               </span>
               <Button
                 size="sm"
                 onClick={handleApprove}
                 disabled={saving}
-                className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-[11px]"
+                className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white text-[11px]"
               >
                 {saving ? '처리중...' : '승인'}
               </Button>
@@ -155,7 +155,7 @@ function UserRow({
           {/* 역할 / 센터 변경 */}
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">역할</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">역할</label>
               <Select value={role} onValueChange={v => v !== null && setRole(v)} disabled={isSelf}>
                 <SelectTrigger className="h-8 text-[12px]">
                   <SelectValue />
@@ -170,7 +170,7 @@ function UserRow({
               </Select>
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">소속 센터</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">소속 센터</label>
               <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
                 <SelectTrigger className="h-8 text-[12px]">
                   <SelectValue />
@@ -183,7 +183,7 @@ function UserRow({
               </Select>
             </div>
             <div>
-              <label className="text-[11px] text-[#64748B] mb-1 block">지정 센터 (선택)</label>
+              <label className="text-[11px] text-[#5A666F] mb-1 block">지정 센터 (선택)</label>
               <Select value={aCenter} onValueChange={v => v !== null && setACenter(v)}>
                 <SelectTrigger className="h-8 text-[12px]">
                   <SelectValue placeholder="없음" />
@@ -200,7 +200,7 @@ function UserRow({
 
           {/* 비밀번호 초기화 */}
           <div>
-            <label className="text-[11px] text-[#64748B] mb-1 block">
+            <label className="text-[11px] text-[#5A666F] mb-1 block">
               비밀번호 초기화 (입력 시 변경)
             </label>
             <Input
@@ -218,12 +218,12 @@ function UserRow({
               size="sm"
               onClick={handleSave}
               disabled={saving || isSelf}
-              className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[11px]"
+              className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[11px]"
             >
               {saving ? '저장 중...' : '저장'}
             </Button>
             {isSelf ? (
-              <span className="text-[11px] text-[#94A3B8]">본인 계정은 수정/삭제 불가</span>
+              <span className="text-[11px] text-[#8A949C]">본인 계정은 수정/삭제 불가</span>
             ) : (
               <>
                 {!confirmDel ? (
@@ -304,18 +304,18 @@ function AddItemForm({ onAdded }: { onAdded: () => void }) {
     <div className="space-y-4 max-w-2xl">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">품명 *</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">품명 *</label>
           <Input value={form.item_name} onChange={e => set('item_name')(e.target.value)}
             placeholder="품명 입력" className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">수량 *</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">수량 *</label>
           <Input type="number" min="0" value={form.quantity}
             onChange={e => set('quantity')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">센터 *</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">센터 *</label>
           <Select value={form.location} onValueChange={v => v !== null && set('location')(v)}>
             <SelectTrigger className="h-8 text-[12px]"><SelectValue placeholder="센터 선택" /></SelectTrigger>
             <SelectContent>
@@ -324,47 +324,47 @@ function AddItemForm({ onAdded }: { onAdded: () => void }) {
           </Select>
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">랙 번호</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">랙 번호</label>
           <Input value={form.rack_no} onChange={e => set('rack_no')(e.target.value)}
             placeholder="예: A-01" className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">선반</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">선반</label>
           <Input value={form.shelf} onChange={e => set('shelf')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">박스 번호</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">박스 번호</label>
           <Input value={form.box_no} onChange={e => set('box_no')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">대분류</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">대분류</label>
           <Input value={form.category_large} onChange={e => set('category_large')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">중분류</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">중분류</label>
           <Input value={form.category_mid} onChange={e => set('category_mid')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">소분류</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">소분류</label>
           <Input value={form.category_small} onChange={e => set('category_small')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">ERP 품명</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">ERP 품명</label>
           <Input value={form.erp_name} onChange={e => set('erp_name')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">ERP 코드</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">ERP 코드</label>
           <Input value={form.erp_code} onChange={e => set('erp_code')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] mb-1 block">비고</label>
+          <label className="text-[11px] text-[#5A666F] mb-1 block">비고</label>
           <Input value={form.notes} onChange={e => set('notes')(e.target.value)}
             className="h-8 text-[12px]" />
         </div>
@@ -379,7 +379,7 @@ function AddItemForm({ onAdded }: { onAdded: () => void }) {
       <Button
         onClick={handleSubmit}
         disabled={saving}
-        className="bg-[#B32646] hover:bg-[#a8003c] text-white text-[12px]"
+        className="bg-[#D60051] hover:bg-[#A3003D] text-white text-[12px]"
       >
         {saving ? '추가 중...' : '자재 추가'}
       </Button>
@@ -478,7 +478,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
     <div className="relative">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-[13px] font-medium text-white transition-all ${
-          toast.startsWith('❌') ? 'bg-red-600' : 'bg-[#1E293B]'
+          toast.startsWith('❌') ? 'bg-red-600' : 'bg-[#111111]'
         }`}>
           {toast}
         </div>
@@ -488,7 +488,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         <TabsTrigger value="users">
           유저 관리
           {pendingCount > 0 && (
-            <span className="ml-1.5 bg-[#f57c00] text-white text-[10px] font-bold rounded px-1.5 py-0.5">
+            <span className="ml-1.5 bg-[#96620A] text-white text-[10px] font-bold rounded px-1.5 py-0.5">
               {pendingCount}
             </span>
           )}
@@ -501,7 +501,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         {/* KPI 칩 (총원 · 권한별 · 미승인) */}
         <div className="flex flex-wrap items-center gap-2">
           <KpiChip
-            label="전체" value={users.length} color="#1E293B"
+            label="전체" value={users.length} color="#111111"
             active={filterRole === 'all' && filterApprv === 'all'}
             onClick={() => { setFilterRole('all'); setFilterApprv('all') }}
           />
@@ -514,14 +514,14 @@ export default function AdminContent({ user }: { user: SessionUser }) {
             />
           ))}
           <KpiChip
-            label="미승인" value={pendingCount} color="#f57c00"
+            label="미승인" value={pendingCount} color="#96620A"
             active={filterApprv === 'pending'}
             onClick={() => setFilterApprv(filterApprv === 'pending' ? 'all' : 'pending')}
           />
         </div>
 
         {/* 필터 */}
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap gap-2 items-center">
           <Input
             placeholder="이름 / 아이디 / 이메일 검색"
@@ -550,14 +550,14 @@ export default function AdminContent({ user }: { user: SessionUser }) {
               <SelectItem value="approved" className="text-[12px]">승인됨만</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">
+          <span className="text-[11px] text-[#8A949C] ml-auto">
             {filtered.length} / {users.length}명
           </span>
           {pendingCount > 0 && (
             <Button
               size="sm"
               onClick={handleApproveAll}
-              className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-[11px] h-7 px-2 flex-shrink-0"
+              className="bg-[#0C7A57] hover:bg-[#0C7A57] text-white text-[11px] h-7 px-2 flex-shrink-0"
             >
               전체 승인 ({pendingCount}명)
             </Button>
@@ -566,13 +566,13 @@ export default function AdminContent({ user }: { user: SessionUser }) {
         </div>
 
         {loading ? (
-          <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중...</div>
+          <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중...</div>
         ) : error ? (
           <div className="text-red-500 text-[12px]">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-[12px] text-[#94A3B8] py-8 text-center">해당 조건의 유저 없음</div>
+          <div className="text-[12px] text-[#8A949C] py-8 text-center">해당 조건의 유저 없음</div>
         ) : (
-          <div className="bg-white rounded-lg border border-[#e2e8f0] overflow-hidden divide-y divide-[#eef1f6]">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] overflow-hidden divide-y divide-[#eef1f6]">
             {filtered.map(u => (
               <UserRow
                 key={u.id}
@@ -589,7 +589,7 @@ export default function AdminContent({ user }: { user: SessionUser }) {
       {/* ── 자재 추가 탭 ── */}
       <TabsContent value="add-item">
         <div className="bg-white rounded-lg border border-[rgba(0,0,0,0.08)] p-4">
-          <h3 className="text-[13px] font-semibold text-[#1E293B] mb-4">신규 자재 등록</h3>
+          <h3 className="text-[13px] font-semibold text-[#111111] mb-4">신규 자재 등록</h3>
           <AddItemForm onAdded={() => {}} />
         </div>
       </TabsContent>

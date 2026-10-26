@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import type { SessionUser } from '@/lib/session'
 import Sidebar from './Sidebar'
-import TopBar from './TopBar'
+import TopBar, { pageTitle } from './TopBar'
 import PageTransition from './PageTransition'
 import IdleLogout from './IdleLogout'
 import PushPrompt from '../PushPrompt'
@@ -21,6 +21,7 @@ export default function SidebarShell({
   const pathname = usePathname()
 
   const guest = !user
+  const title = pageTitle(pathname)
 
   useEffect(() => {
     // 모바일은 기본 닫힘(드로어), 데스크톱은 저장값 따름
@@ -58,6 +59,11 @@ export default function SidebarShell({
         {user && <PushPrompt />}
         {/* 게스트: guest-veil 이 데이터 글자(td, data-guest-blur)만 블러 처리 */}
         <div className={guest ? 'guest-veil' : undefined}>
+          {title && (
+            <div className="mb-4 pb-2.5 border-b-2 border-[#D60051]">
+              <h1 className="text-[22px] font-bold tracking-tight text-[#111111] leading-tight">{title}</h1>
+            </div>
+          )}
           <PageTransition>{children}</PageTransition>
         </div>
         {/* 게스트: 본문 클릭 시 로그인/회원가입 팝업 */}

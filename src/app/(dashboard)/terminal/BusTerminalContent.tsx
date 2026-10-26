@@ -82,35 +82,35 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
   if (!pivot.rows.length) {
     return (
       <div>
-        <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">{title}</div>
-        <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">데이터 없음</div>
+        <div className="text-[12px] font-bold text-[#111111] mb-1.5">{title}</div>
+        <div className="text-[11px] text-[#8A949C] py-3 text-center bg-[#F6F6F7] rounded">데이터 없음</div>
       </div>
     )
   }
   return (
     <div>
-      <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">{title}</div>
-      <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+      <div className="text-[12px] font-bold text-[#111111] mb-1.5">{title}</div>
+      <div className="overflow-x-auto rounded border border-[#E3E1DE]">
         <table className="w-full text-[11px] border-collapse">
           <thead>
-            <tr className="bg-[#F8F9FA] text-[#64748B]">
-              <th className="px-2 py-1.5 text-left font-semibold border-b border-[#E2E8F0]">종류</th>
+            <tr className="bg-[#F6F6F7] text-[#5A666F]">
+              <th className="px-2 py-1.5 text-left font-semibold border-b border-[#E3E1DE]">종류</th>
               {pivot.subTypes.map(s => (
-                <th key={s} className="px-2 py-1.5 text-center font-semibold border-b border-[#E2E8F0]">{s}</th>
+                <th key={s} className="px-2 py-1.5 text-center font-semibold border-b border-[#E3E1DE]">{s}</th>
               ))}
-              <th className="px-2 py-1.5 text-center font-semibold border-b border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">합계</th>
+              <th className="px-2 py-1.5 text-center font-semibold border-b border-[#E3E1DE] bg-[#FCEEF3] text-[#D60051]">합계</th>
             </tr>
           </thead>
           <tbody>
             {pivot.rows.map(r => (
-              <tr key={r.device} className="border-b border-[#F1F5F9]">
-                <td className="px-2 py-1.5 font-semibold text-[#1E293B]">{r.device}</td>
+              <tr key={r.device} className="border-b border-[#F1F1F0]">
+                <td className="px-2 py-1.5 font-semibold text-[#111111]">{r.device}</td>
                 {r.cells.map((c, i) => (
-                  <td key={i} className={`px-2 py-1.5 text-center ${c > 0 ? 'text-[#1E293B]' : 'text-[#CBD5E1]'}`}>
+                  <td key={i} className={`px-2 py-1.5 text-center ${c > 0 ? 'text-[#111111]' : 'text-[#D9D9D9]'}`}>
                     {c > 0 ? c : ''}
                   </td>
                 ))}
-                <td className="px-2 py-1.5 text-center font-bold text-[#B32646]">{r.total}</td>
+                <td className="px-2 py-1.5 text-center font-bold text-[#D60051]">{r.total}</td>
               </tr>
             ))}
           </tbody>
@@ -123,7 +123,7 @@ function DevicePivotTable({ pivot, title }: { pivot: DevicePivot; title: string 
 function CenterCrossTable({ pivot, date, title, action, showTotals = false }: { pivot: CenterPivot | null; date: string; title: string; action?: React.ReactNode; showTotals?: boolean }) {
   const header = (
     <div className="flex items-center justify-between mb-1.5 gap-2">
-      <div className="text-[12px] font-bold text-[#1E293B]">{title}</div>
+      <div className="text-[12px] font-bold text-[#111111]">{title}</div>
       {action}
     </div>
   )
@@ -131,7 +131,7 @@ function CenterCrossTable({ pivot, date, title, action, showTotals = false }: { 
     return (
       <div>
         {header}
-        <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">데이터 없음</div>
+        <div className="text-[11px] text-[#8A949C] py-3 text-center bg-[#F6F6F7] rounded">데이터 없음</div>
       </div>
     )
   }
@@ -145,31 +145,31 @@ function CenterCrossTable({ pivot, date, title, action, showTotals = false }: { 
           <thead>
             <tr>
               <th colSpan={pivot.centers.length + (showTotals ? 2 : 1)}
-                  className="px-3 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">
+                  className="px-3 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCEEF3] text-[#D60051]">
                 {dateLabel(date)}
               </th>
             </tr>
             <tr>
-              <th className="px-2 py-1.5 text-center font-semibold border border-[#E2E8F0] bg-[#F8F9FA] text-[#64748B] min-w-[80px]">종류</th>
+              <th className="px-2 py-1.5 text-center font-semibold border border-[#E3E1DE] bg-[#F6F6F7] text-[#5A666F] min-w-[80px]">종류</th>
               {pivot.centers.map(c => (
-                <th key={c} className="px-2 py-1.5 text-center font-semibold border border-[#E2E8F0] bg-[#F8F9FA] text-[#1E293B] min-w-[48px]">{c}</th>
+                <th key={c} className="px-2 py-1.5 text-center font-semibold border border-[#E3E1DE] bg-[#F6F6F7] text-[#111111] min-w-[48px]">{c}</th>
               ))}
               {showTotals && (
-                <th className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646] min-w-[48px]">합계</th>
+                <th className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCEEF3] text-[#D60051] min-w-[48px]">합계</th>
               )}
             </tr>
           </thead>
           <tbody>
             {pivot.rows.map(r => (
               <tr key={r.rowKey}>
-                <td className="px-2.5 py-1.5 text-left font-semibold border border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">{r.rowKey}</td>
+                <td className="px-2.5 py-1.5 text-left font-semibold border border-[#E3E1DE] bg-[#FCEEF3] text-[#D60051]">{r.rowKey}</td>
                 {r.cells.map((c, i) => (
-                  <td key={i} className={`px-2 py-1.5 text-center border border-[#E2E8F0] ${c > 0 ? 'text-[#1E293B]' : 'text-[#CBD5E1]'}`}>
+                  <td key={i} className={`px-2 py-1.5 text-center border border-[#E3E1DE] ${c > 0 ? 'text-[#111111]' : 'text-[#D9D9D9]'}`}>
                     {c > 0 ? c : ''}
                   </td>
                 ))}
                 {showTotals && (
-                  <td className="px-2 py-1.5 text-center font-bold border border-[#E2E8F0] bg-[#FEF3F6] text-[#B32646]">{r.total}</td>
+                  <td className="px-2 py-1.5 text-center font-bold border border-[#E3E1DE] bg-[#FCEEF3] text-[#D60051]">{r.total}</td>
                 )}
               </tr>
             ))}
@@ -177,11 +177,11 @@ function CenterCrossTable({ pivot, date, title, action, showTotals = false }: { 
           {showTotals && (
             <tfoot>
               <tr>
-                <td className="px-2.5 py-1.5 text-left font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">합계</td>
+                <td className="px-2.5 py-1.5 text-left font-bold border border-[#f0c0d0] bg-[#FCEEF3] text-[#D60051]">합계</td>
                 {colTotals.map((t, i) => (
-                  <td key={i} className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCE4ED] text-[#B32646]">{t > 0 ? t : ''}</td>
+                  <td key={i} className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#FCEEF3] text-[#D60051]">{t > 0 ? t : ''}</td>
                 ))}
-                <td className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#F9CEDB] text-[#B32646]">{grandTotal}</td>
+                <td className="px-2 py-1.5 text-center font-bold border border-[#f0c0d0] bg-[#F9CEDB] text-[#D60051]">{grandTotal}</td>
               </tr>
             </tfoot>
           )}
@@ -196,11 +196,11 @@ function CenterCountList({ rows, field, label }: { rows: TerminalMovement[]; fie
   if (!counts.length) return null
   return (
     <div className="text-[11px]">
-      <div className="text-[#64748B] font-semibold mb-1">{label}</div>
+      <div className="text-[#5A666F] font-semibold mb-1">{label}</div>
       <div className="flex flex-wrap gap-1.5">
         {counts.map(c => (
-          <span key={c.center} className="px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569]">
-            {c.center} <b data-guest-blur className="text-[#B32646]">{c.count}</b>
+          <span key={c.center} className="px-2 py-0.5 rounded bg-[#F1F1F0] text-[#2F3941]">
+            {c.center} <b data-guest-blur className="text-[#D60051]">{c.count}</b>
           </span>
         ))}
       </div>
@@ -317,10 +317,10 @@ function UploadPanel({
   }
 
   return (
-    <div className="space-y-3 p-3 bg-[#FAFAFA] rounded-lg border border-[#E2E8F0]">
+    <div className="space-y-3 p-3 bg-[#F6F6F7] rounded-lg border border-[#E3E1DE]">
       <div className="flex flex-wrap gap-2 items-end">
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">{direction === 'out' ? '도착센터' : '출발센터'}</label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">{direction === 'out' ? '도착센터' : '출발센터'}</label>
           <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
             <SelectTrigger className="h-8 text-[12px] w-36 bg-white"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -329,32 +329,32 @@ function UploadPanel({
           </Select>
         </div>
         <div>
-          <label className="text-[11px] text-[#64748B] block mb-0.5">이동 날짜</label>
+          <label className="text-[11px] text-[#5A666F] block mb-0.5">이동 날짜</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
+                 className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white" />
         </div>
-        <div className="text-[11px] text-[#94A3B8]">{fromCenter} → {toCenter}</div>
+        <div className="text-[11px] text-[#8A949C]">{fromCenter} → {toCenter}</div>
       </div>
 
       {/* 엑셀 업로드 */}
       <div>
-        <label className="text-[11px] text-[#64748B] block mb-0.5">엑셀 파일 (.xlsx / .xls)</label>
+        <label className="text-[11px] text-[#5A666F] block mb-0.5">엑셀 파일 (.xlsx / .xls)</label>
         <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" className="h-8 text-[12px] gap-1.5"
                   onClick={() => fileRef.current?.click()}>
             <Upload size={14} strokeWidth={1.9} /> 파일 선택
           </Button>
-          <span className="text-[11px] text-[#64748B] truncate max-w-[220px]">
+          <span className="text-[11px] text-[#5A666F] truncate max-w-[220px]">
             {fileName || '선택된 파일 없음'}
           </span>
         </div>
       </div>
       {/* 직접 입력 */}
       <div>
-        <label className="text-[11px] text-[#64748B] block mb-0.5">또는 직접 입력 (줄바꿈/쉼표 구분)</label>
+        <label className="text-[11px] text-[#5A666F] block mb-0.5">또는 직접 입력 (줄바꿈/쉼표 구분)</label>
         <textarea value={manualText} onChange={e => setManualText(e.target.value)}
-                  rows={2} className="w-full text-[12px] border border-[#E2E8F0] rounded px-2 py-1 bg-white"
+                  rows={2} className="w-full text-[12px] border border-[#E3E1DE] rounded px-2 py-1 bg-white"
                   placeholder="560002215, 445001234 ..." />
         <div className="flex justify-end mt-1.5">
           <Button type="button" variant="outline" className="h-7 text-[12px]" onClick={applyManual}>적용</Button>
@@ -363,41 +363,41 @@ function UploadPanel({
 
       {ids.length > 0 && (
         <div className="text-[11px] flex flex-wrap gap-3">
-          <span className="text-[#1565c0]">유효 <b>{validCount}</b></span>
-          {invalid.length > 0 && <span className="text-[#c62828]">미분류 <b>{invalid.length}</b></span>}
-          <span className="text-[#94A3B8]">전체 {ids.length}</span>
+          <span className="text-[#2F3941]">유효 <b>{validCount}</b></span>
+          {invalid.length > 0 && <span className="text-[#D60051]">미분류 <b>{invalid.length}</b></span>}
+          <span className="text-[#8A949C]">전체 {ids.length}</span>
         </div>
       )}
       {deviceGroups.length > 0 && (
-        <div className="rounded-md border border-[#E2E8F0] bg-white p-2">
-          <div className="text-[11px] font-semibold text-[#334155] mb-1.5">
+        <div className="rounded-md border border-[#E3E1DE] bg-white p-2">
+          <div className="text-[11px] font-semibold text-[#111111] mb-1.5">
             인식된 단말기 · 기종별 {validCount}개
           </div>
           <div className="flex flex-wrap gap-1.5">
             {deviceGroups.map(g => (
               <span key={`${g.device}-${g.sub}`}
-                    className="px-2 py-0.5 rounded border border-[#E2E8F0] bg-[#FAFAFA] text-[11px] text-[#475569]">
-                {g.device} <span className="text-[#94A3B8]">{g.sub}</span> <b className="text-[#1565c0]">{g.count}</b>
+                    className="px-2 py-0.5 rounded border border-[#E3E1DE] bg-[#F6F6F7] text-[11px] text-[#2F3941]">
+                {g.device} <span className="text-[#8A949C]">{g.sub}</span> <b className="text-[#2F3941]">{g.count}</b>
               </span>
             ))}
           </div>
         </div>
       )}
       {invalid.length > 0 && (
-        <div className="text-[10px] text-[#94A3B8] max-h-20 overflow-y-auto">
+        <div className="text-[10px] text-[#8A949C] max-h-20 overflow-y-auto">
           미분류: {invalid.slice(0, 30).map(i => i.id).join(', ')}{invalid.length > 30 ? ' …' : ''}
         </div>
       )}
 
       <div>
-        <label className="text-[11px] text-[#64748B] block mb-0.5">비고 (선택)</label>
+        <label className="text-[11px] text-[#5A666F] block mb-0.5">비고 (선택)</label>
         <Input value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px] bg-white" placeholder="메모" />
       </div>
 
       {dups !== null && dups.length > 0 && (
         <div className="flex items-center gap-2 text-[11px]">
           <Checkbox checked={force} onCheckedChange={v => setForce(!!v)} id={`force-${direction}`} />
-          <label htmlFor={`force-${direction}`} className="text-[#c62828]">중복 {dups.length}건 무시하고 강제 저장</label>
+          <label htmlFor={`force-${direction}`} className="text-[#D60051]">중복 {dups.length}건 무시하고 강제 저장</label>
         </div>
       )}
 
@@ -405,7 +405,7 @@ function UploadPanel({
         <Button type="button" disabled={busy || !validCount} onClick={save} className="h-8 text-[12px]">
           {busy ? '저장 중…' : '저장'}
         </Button>
-        {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+        {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
       </div>
     </div>
   )
@@ -424,9 +424,9 @@ function UploadModal({
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white rounded-lg w-[560px] max-w-full my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B]">{title}</div>
-          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111]">{title}</div>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#5A666F] hover:bg-[#F1F1F0]">
             <X size={16} strokeWidth={2} />
           </button>
         </div>
@@ -499,56 +499,56 @@ function ManagePanel({ rows, perms, onChanged, defaultOpen = false }: { rows: Te
     r.uploaded_by === perms.userId
 
   return (
-    <div className="border border-[#E2E8F0] rounded-lg bg-white overflow-hidden">
+    <div className="border border-[#E3E1DE] rounded-lg bg-white overflow-hidden">
       {/* 접기/펼치기 헤더 */}
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#1E293B] hover:bg-[#f8f9ff] transition-colors">
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#111111] hover:bg-[#F6F6F7] transition-colors">
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        업로드 내역 <span className="text-[#94A3B8] font-normal">({rows.length}건)</span>
+        업로드 내역 <span className="text-[#8A949C] font-normal">({rows.length}건)</span>
       </button>
 
       {open && (
         <div className="px-2.5 pb-2.5 space-y-2">
           {groups.length === 0 ? (
-            <div className="text-[11px] text-[#94A3B8] py-3 text-center">관리할 업로드 내역이 없습니다.</div>
+            <div className="text-[11px] text-[#8A949C] py-3 text-center">관리할 업로드 내역이 없습니다.</div>
           ) : groups.map(([uid, recs]) => {
             const manageable = recs.some(canManage)
             return (
-              <div key={uid} className="border border-[#E2E8F0] rounded-lg p-2.5 bg-[#f8f9ff]">
+              <div key={uid} className="border border-[#E3E1DE] rounded-lg p-2.5 bg-[#F6F6F7]">
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[11px] text-[#475569]">
+                  <div className="text-[11px] text-[#2F3941]">
                     {(() => {
                       // 출고는 도착센터, 입고는 출발센터(=실제 단말기를 다룬 센터)
                       const c = recs[0].direction === 'in' ? recs[0].from_center : recs[0].to_center
                       return c ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#fbe9ee] text-[#B32646] font-semibold mr-1.5">{c}</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#FCEEF3] text-[#D60051] font-semibold mr-1.5">{c}</span>
                       ) : null
                     })()}
                     <b>{recs[0].file_name || '직접입력'}</b> · {recs.length}건 · {recs[0].upload_date}
                   </div>
                   {manageable && (
                     <Button type="button" variant="outline" disabled={busy}
-                            className="h-6 text-[10px] text-[#c62828]" onClick={() => delBatch(uid)}>배치 삭제</Button>
+                            className="h-6 text-[10px] text-[#D60051]" onClick={() => delBatch(uid)}>배치 삭제</Button>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {recs.slice(0, 60).map(r => (
-                    <span key={r.id} className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded bg-white border border-[#E2E8F0] text-[10px] text-[#475569]">
+                    <span key={r.id} className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded bg-white border border-[#E3E1DE] text-[10px] text-[#2F3941]">
                       <span className="font-mono">{r.trcn_id}</span>
-                      <span className="text-[#94A3B8]">{r.device_type}/{r.sub_type}</span>
+                      <span className="text-[#8A949C]">{r.device_type}/{r.sub_type}</span>
                       {canManage(r) && (
                         <span className="flex items-center gap-0.5">
                           <button type="button" title="수정" disabled={busy} onClick={() => openEdit(r)}
-                            className="p-0.5 rounded text-[#3B82F6] hover:bg-[#eff6ff]">
+                            className="p-0.5 rounded text-[#2F3941] hover:bg-[#F6F6F7]">
                             <Pencil size={11} strokeWidth={2} />
                           </button>
                           <button type="button" title="삭제" disabled={busy} onClick={() => delOne(r.id)}
-                            className="px-1 rounded text-[#c62828] hover:bg-[#fef2f2] leading-none text-[12px]">×</button>
+                            className="px-1 rounded text-[#D60051] hover:bg-[#FCEEF3] leading-none text-[12px]">×</button>
                         </span>
                       )}
                     </span>
                   ))}
-                  {recs.length > 60 && <span className="text-[10px] text-[#94A3B8] self-center">+{recs.length - 60}건</span>}
+                  {recs.length > 60 && <span className="text-[10px] text-[#8A949C] self-center">+{recs.length - 60}건</span>}
                 </div>
               </div>
             )
@@ -560,21 +560,21 @@ function ManagePanel({ rows, perms, onChanged, defaultOpen = false }: { rows: Te
       {editRec && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditRec(null)}>
           <div className="bg-white rounded-lg p-4 w-[330px] space-y-3" onClick={e => e.stopPropagation()}>
-            <div className="text-[13px] font-bold text-[#1E293B]">레코드 수정</div>
+            <div className="text-[13px] font-bold text-[#111111]">레코드 수정</div>
             <div>
-              <label className="text-[11px] text-[#64748B] block mb-0.5">TRCN_ID</label>
+              <label className="text-[11px] text-[#5A666F] block mb-0.5">TRCN_ID</label>
               <Input value={editTrcn} onChange={e => setEditTrcn(e.target.value)} className="h-8 text-[12px]" />
             </div>
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="text-[11px] text-[#64748B] block mb-0.5">기종</label>
+                <label className="text-[11px] text-[#5A666F] block mb-0.5">기종</label>
                 <Select value={editDevice} onValueChange={v => v !== null && setEditDevice(v)}>
                   <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
                   <SelectContent>{DEVICE_ORDER.map(d => <SelectItem key={d} value={d} className="text-[12px]">{d}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="flex-1">
-                <label className="text-[11px] text-[#64748B] block mb-0.5">유형</label>
+                <label className="text-[11px] text-[#5A666F] block mb-0.5">유형</label>
                 <Select value={editSub} onValueChange={v => v !== null && setEditSub(v)}>
                   <SelectTrigger className="h-8 text-[12px]"><SelectValue /></SelectTrigger>
                   <SelectContent>{SUB_ORDER.map(s => <SelectItem key={s} value={s} className="text-[12px]">{s}</SelectItem>)}</SelectContent>
@@ -606,9 +606,9 @@ function ManageModal({
   return (
     <div className="fixed inset-0 bg-black/40 z-40 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-white rounded-lg w-[640px] max-w-full my-8" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-          <div className="text-[13px] font-bold text-[#1E293B]">{title}</div>
-          <button type="button" onClick={onClose} className="p-1 rounded text-[#64748B] hover:bg-[#F1F5F9]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E1DE]">
+          <div className="text-[13px] font-bold text-[#111111]">{title}</div>
+          <button type="button" onClick={onClose} className="p-1 rounded text-[#5A666F] hover:bg-[#F1F1F0]">
             <X size={16} strokeWidth={2} />
           </button>
         </div>
@@ -698,12 +698,12 @@ export default function BusTerminalContent({ user }: { user: SessionUser }) {
     <div className="space-y-4">
       <Tabs defaultValue="today">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="today" className="text-[12px]">📊 오늘의 현황</TabsTrigger>
-          <TabsTrigger value="repair" className="text-[12px]">📦 수리완료 출고대기</TabsTrigger>
-          <TabsTrigger value="monthly" className="text-[12px]">📈 월간 현황</TabsTrigger>
-          <TabsTrigger value="history" className="text-[12px]">📋 이력 조회</TabsTrigger>
-          <TabsTrigger value="cert" className="text-[12px]">📄 인수인계증</TabsTrigger>
-          {perms.isAdmin && <TabsTrigger value="admin" className="text-[12px]">⚙️ 관리</TabsTrigger>}
+          <TabsTrigger value="today" className="text-[12px]">오늘의 현황</TabsTrigger>
+          <TabsTrigger value="repair" className="text-[12px]">수리완료 출고대기</TabsTrigger>
+          <TabsTrigger value="monthly" className="text-[12px]">월간 현황</TabsTrigger>
+          <TabsTrigger value="history" className="text-[12px]">이력 조회</TabsTrigger>
+          <TabsTrigger value="cert" className="text-[12px]">인수인계증</TabsTrigger>
+          {perms.isAdmin && <TabsTrigger value="admin" className="text-[12px]">관리</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="today" className="mt-4"><TodayTab perms={perms} /></TabsContent>
@@ -781,15 +781,15 @@ function RepairPoolTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-3">
-      <div className="text-[12px] text-[#64748B]">
-        수리센터에서 수리완료되어 <b className="text-[#1E293B]">자재센터로 귀속</b>된 버스단말기입니다.
+      <div className="text-[12px] text-[#5A666F]">
+        수리센터에서 수리완료되어 <b className="text-[#111111]">자재센터로 귀속</b>된 버스단말기입니다.
         선택 후 도착센터로 출고하면 해당 센터 보유현황에 자동 등록됩니다.
       </div>
 
       {perms.canUpOut && (
-        <div className="flex flex-wrap gap-2 items-end p-3 bg-[#FAFAFA] rounded-lg border border-[#E2E8F0]">
+        <div className="flex flex-wrap gap-2 items-end p-3 bg-[#F6F6F7] rounded-lg border border-[#E3E1DE]">
           <div>
-            <label className="text-[11px] text-[#64748B] block mb-0.5">도착센터</label>
+            <label className="text-[11px] text-[#5A666F] block mb-0.5">도착센터</label>
             <Select value={center} onValueChange={v => v !== null && setCenter(v)}>
               <SelectTrigger className="h-8 text-[12px] w-36 bg-white"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -798,42 +798,42 @@ function RepairPoolTab({ perms }: { perms: Perms }) {
             </Select>
           </div>
           <div>
-            <label className="text-[11px] text-[#64748B] block mb-0.5">출고 날짜</label>
+            <label className="text-[11px] text-[#5A666F] block mb-0.5">출고 날짜</label>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                   className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2 bg-white" />
+                   className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2 bg-white" />
           </div>
-          <div className="text-[11px] text-[#94A3B8]">{HUB} → {center}</div>
+          <div className="text-[11px] text-[#8A949C]">{HUB} → {center}</div>
           <Button type="button" disabled={busy || !sel.size} onClick={ship} className="h-8 text-[12px] gap-1.5">
             <Send size={14} strokeWidth={1.9} /> {busy ? '출고 중…' : `선택 ${sel.size}건 출고`}
           </Button>
           {selUnclassified > 0 && (
-            <span className="text-[11px] text-[#c62828]">미분류 {selUnclassified}건은 출고 시 제외됩니다.</span>
+            <span className="text-[11px] text-[#D60051]">미분류 {selUnclassified}건은 출고 시 제외됩니다.</span>
           )}
-          {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+          {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
         </div>
       )}
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-6 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-6 text-center">불러오는 중…</div>
       ) : items.length === 0 ? (
-        <div className="text-[12px] text-[#94A3B8] py-6 text-center bg-[#F8F9FA] rounded">
+        <div className="text-[12px] text-[#8A949C] py-6 text-center bg-[#F6F6F7] rounded">
           출고대기 중인 수리완료 단말기가 없습니다.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+        <div className="overflow-x-auto rounded border border-[#E3E1DE]">
           <table className="w-full text-[12px] border-collapse">
             <thead>
-              <tr className="bg-[#F8F9FA] text-[#64748B]">
+              <tr className="bg-[#F6F6F7] text-[#5A666F]">
                 {perms.canUpOut && (
-                  <th className="px-2 py-2 w-8 text-center border-b border-[#E2E8F0]">
+                  <th className="px-2 py-2 w-8 text-center border-b border-[#E3E1DE]">
                     <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
                   </th>
                 )}
-                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">단말기 IH</th>
-                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">기종</th>
-                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">유형</th>
-                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">수리완료일</th>
-                <th className="px-3 py-2 text-left font-medium border-b border-[#E2E8F0]">담당자</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E3E1DE]">단말기 IH</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E3E1DE]">기종</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E3E1DE]">유형</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E3E1DE]">수리완료일</th>
+                <th className="px-3 py-2 text-left font-medium border-b border-[#E3E1DE]">담당자</th>
               </tr>
             </thead>
             <tbody>
@@ -841,22 +841,22 @@ function RepairPoolTab({ perms }: { perms: Perms }) {
                 const checked = sel.has(it.ih_code)
                 return (
                   <tr key={it.ih_code}
-                      className={`border-b border-[#F1F5F9] ${checked ? 'bg-[#FEF3F6]' : ''} ${perms.canUpOut ? 'cursor-pointer hover:bg-[#f8f9ff]' : ''}`}
+                      className={`border-b border-[#F1F1F0] ${checked ? 'bg-[#FCEEF3]' : ''} ${perms.canUpOut ? 'cursor-pointer hover:bg-[#F6F6F7]' : ''}`}
                       onClick={() => perms.canUpOut && toggle(it.ih_code)}>
                     {perms.canUpOut && (
                       <td className="px-2 py-1.5 text-center" onClick={e => e.stopPropagation()}>
                         <Checkbox checked={checked} onCheckedChange={() => toggle(it.ih_code)} />
                       </td>
                     )}
-                    <td className="px-3 py-1.5 font-mono text-[#1E293B]">{it.ih_code}</td>
+                    <td className="px-3 py-1.5 font-mono text-[#111111]">{it.ih_code}</td>
                     <td className="px-3 py-1.5">
                       {it.device_type === '미분류'
-                        ? <span className="text-[#c62828]">미분류</span>
-                        : <span className="text-[#1E293B]">{it.device_type}</span>}
+                        ? <span className="text-[#D60051]">미분류</span>
+                        : <span className="text-[#111111]">{it.device_type}</span>}
                     </td>
-                    <td className="px-3 py-1.5 text-[#64748B]">{it.sub_type}</td>
-                    <td className="px-3 py-1.5 text-[#64748B]">{it.repair_date}</td>
-                    <td className="px-3 py-1.5 text-[#64748B]">{it.worker ?? '-'}</td>
+                    <td className="px-3 py-1.5 text-[#5A666F]">{it.sub_type}</td>
+                    <td className="px-3 py-1.5 text-[#5A666F]">{it.repair_date}</td>
+                    <td className="px-3 py-1.5 text-[#5A666F]">{it.worker ?? '-'}</td>
                   </tr>
                 )
               })}
@@ -865,7 +865,7 @@ function RepairPoolTab({ perms }: { perms: Perms }) {
         </div>
       )}
 
-      <div className="text-[11px] text-[#94A3B8]">
+      <div className="text-[11px] text-[#8A949C]">
         총 {items.length}건 대기 중{perms.canUpOut && sel.size > 0 ? ` · ${sel.size}건 선택됨` : ''}
       </div>
     </div>
@@ -915,22 +915,22 @@ function TodayTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex items-center gap-2">
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                 className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+                 className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>새로고침</Button>
           <GuestCallout label="날짜 선택 → 그날의 출고·입고 현황 조회" />
-          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
         <>
           <div className="grid md:grid-cols-2 gap-5">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
               <CenterCrossTable pivot={outCenterPivot} date={date} title="📤 센터별 출고 현황"
                 action={(perms.isAdmin || perms.isJjae) ? (
                   <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -946,11 +946,11 @@ function TodayTab({ perms }: { perms: Perms }) {
                       <span className="flex items-center gap-1 text-[11px]">
                         <span className="flex items-center gap-1 mr-1">
                           <Checkbox checked={viaIncheon} onCheckedChange={v => setViaIncheon(!!v)} id="teams-via-incheon" />
-                          <label htmlFor="teams-via-incheon" className="text-[#475569] cursor-pointer">인천센터 경유</label>
+                          <label htmlFor="teams-via-incheon" className="text-[#2F3941] cursor-pointer">인천센터 경유</label>
                         </span>
-                        <span className="text-[#64748B]">방향:</span>
+                        <span className="text-[#5A666F]">방향:</span>
                         {TEAMS_ROUTES.map(rt => (
-                          <Button key={rt} type="button" className="h-7 text-[11px] bg-[#B32646] hover:bg-[#9a1f3c] text-white"
+                          <Button key={rt} type="button" className="h-7 text-[11px] bg-[#D60051] hover:bg-[#A3003D] text-white"
                             onClick={() => sendTeams(rt)}>{rt}</Button>
                         ))}
                         <Button type="button" variant="outline" className="h-7 text-[11px]" onClick={() => setTeamsPick(false)}>취소</Button>
@@ -966,11 +966,11 @@ function TodayTab({ perms }: { perms: Perms }) {
                   </div>
                 ) : undefined}
               />
-              {teamsMsg && <div className="text-[11px] text-[#475569]">{teamsMsg}</div>}
+              {teamsMsg && <div className="text-[11px] text-[#2F3941]">{teamsMsg}</div>}
               <DevicePivotTable pivot={buildPivot(out)} title="출고 기종별" />
               <CenterCountList rows={out} field="to_center" label="출고 센터별" />
             </div>
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-3">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-3">
               <CenterCrossTable pivot={inCenterPivot} date={date} title="📥 센터별 입고 현황" showTotals
                 action={
                   <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -1018,15 +1018,15 @@ function TodayTab({ perms }: { perms: Perms }) {
           {(perms.canUpOut || perms.canUpIn) && (
             <div className="grid md:grid-cols-2 gap-5 pt-2">
               {perms.canUpOut && (
-                <div className="bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2">
-                  <div className="text-[12px] font-bold text-[#1E293B]">📤 출고 업로드</div>
+                <div className="bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-2">
+                  <div className="text-[12px] font-bold text-[#111111]">📤 출고 업로드</div>
                   <UploadPanel direction="out" perms={perms} onSaved={load} />
                   <ManagePanel rows={out} perms={perms} onChanged={load} />
                 </div>
               )}
               {perms.canUpIn && (
-                <div className={`bg-white rounded-lg border border-[#e2e8f0] p-4 space-y-2${perms.canUpOut ? '' : ' md:col-start-2'}`}>
-                  <div className="text-[12px] font-bold text-[#1E293B]">📥 입고 업로드</div>
+                <div className={`bg-white rounded-lg border border-[#E3E1DE] p-4 space-y-2${perms.canUpOut ? '' : ' md:col-start-2'}`}>
+                  <div className="text-[12px] font-bold text-[#111111]">📥 입고 업로드</div>
                   <UploadPanel direction="in" perms={perms} onSaved={load} />
                   <ManagePanel rows={inn} perms={perms} onChanged={load} />
                 </div>
@@ -1073,7 +1073,7 @@ function MonthlyTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={String(year)} onValueChange={v => v !== null && setYear(Number(v))}>
             <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
@@ -1088,42 +1088,42 @@ function MonthlyTab() {
                   onClick={() => exportMonthly(out, inn, daily, `${year}${String(month).padStart(2, '0')}`)}>
             엑셀 내보내기
           </Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">출고 <span data-guest-blur>{out.length}</span> · 입고 <span data-guest-blur>{inn.length}</span></span>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
         <>
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-            <div className="text-[12px] font-bold text-[#1E293B] mb-1.5">일별 추이</div>
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+            <div className="text-[12px] font-bold text-[#111111] mb-1.5">일별 추이</div>
             {daily.length ? (
-              <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+              <div className="overflow-x-auto rounded border border-[#E3E1DE]">
                 <table className="w-full text-[11px]">
-                  <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
+                  <thead><tr className="bg-[#F6F6F7] text-[#5A666F]">
                     <th className="px-2 py-1.5 text-left font-semibold">날짜</th>
                     <th className="px-2 py-1.5 text-right font-semibold">출고</th>
                     <th className="px-2 py-1.5 text-right font-semibold">입고</th>
                     <th className="px-2 py-1.5 text-right font-semibold">합계</th>
                   </tr></thead>
                   <tbody>{daily.map(d => (
-                    <tr key={d.date} className="border-t border-[#F1F5F9]">
-                      <td className="px-2 py-1.5 text-[#1E293B]">{d.date}</td>
-                      <td className="px-2 py-1.5 text-right text-[#1565c0]">{d.out}</td>
-                      <td className="px-2 py-1.5 text-right text-[#16a34a]">{d.in}</td>
-                      <td className="px-2 py-1.5 text-right font-bold text-[#B32646]">{d.out + d.in}</td>
+                    <tr key={d.date} className="border-t border-[#F1F1F0]">
+                      <td className="px-2 py-1.5 text-[#111111]">{d.date}</td>
+                      <td className="px-2 py-1.5 text-right text-[#2F3941]">{d.out}</td>
+                      <td className="px-2 py-1.5 text-right text-[#0C7A57]">{d.in}</td>
+                      <td className="px-2 py-1.5 text-right font-bold text-[#D60051]">{d.out + d.in}</td>
                     </tr>
                   ))}</tbody>
                 </table>
               </div>
-            ) : <div className="text-[11px] text-[#94A3B8] py-3 text-center bg-[#F8F9FA] rounded">데이터 없음</div>}
+            ) : <div className="text-[11px] text-[#8A949C] py-3 text-center bg-[#F6F6F7] rounded">데이터 없음</div>}
           </div>
           <div className="grid md:grid-cols-2 gap-5">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
               <DevicePivotTable pivot={buildPivot(out)} title="기종별 출고" />
             </div>
-            <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+            <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
               <DevicePivotTable pivot={buildPivot(inn)} title="기종별 입고" />
             </div>
           </div>
@@ -1164,11 +1164,11 @@ function HistoryTab() {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3">
         <div className="flex flex-wrap items-center gap-2">
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
-          <span className="text-[#94A3B8]">~</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
+          <span className="text-[#8A949C]">~</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
           <Select value={dir} onValueChange={v => v !== null && setDir(v)}>
             <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1179,17 +1179,17 @@ function HistoryTab() {
           <Input placeholder="검색 (ID/센터/종류)" value={search} onChange={e => setSearch(e.target.value)} className="h-8 text-[12px] w-44" />
           <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={!filtered.length}
                   onClick={() => exportHistory(filtered, from, to)}>엑셀</Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">{filtered.length}건</span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">{filtered.length}건</span>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-        <div className="overflow-x-auto rounded border border-[#E2E8F0]">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+        <div className="overflow-x-auto rounded border border-[#E3E1DE]">
           <table className="w-full text-[11px]">
-            <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
+            <thead><tr className="bg-[#F6F6F7] text-[#5A666F]">
               <th className="px-2 py-1.5 text-left font-semibold">날짜</th>
               <th className="px-2 py-1.5 text-left font-semibold">방향</th>
               <th className="px-2 py-1.5 text-left font-semibold">출발</th>
@@ -1200,21 +1200,21 @@ function HistoryTab() {
             </tr></thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-2 py-6 text-center text-[#94A3B8]">데이터 없음</td></tr>
+                <tr><td colSpan={7} className="px-2 py-6 text-center text-[#8A949C]">데이터 없음</td></tr>
               ) : filtered.slice(0, 1000).map(r => (
-                <tr key={r.id} className="border-t border-[#F1F5F9]">
-                  <td className="px-2 py-1.5 text-[#475569]">{r.upload_date}</td>
-                  <td className={`px-2 py-1.5 ${r.direction === 'out' ? 'text-[#1565c0]' : 'text-[#16a34a]'}`}>{r.direction === 'out' ? '출고' : '입고'}</td>
-                  <td className="px-2 py-1.5 text-[#475569]">{r.from_center}</td>
-                  <td className="px-2 py-1.5 text-[#475569]">{r.to_center}</td>
-                  <td className="px-2 py-1.5 text-[#1E293B]">{r.device_type}</td>
-                  <td className="px-2 py-1.5 text-[#64748B]">{r.sub_type}</td>
-                  <td className="px-2 py-1.5 font-mono text-[#475569]">{r.trcn_id}</td>
+                <tr key={r.id} className="border-t border-[#F1F1F0]">
+                  <td className="px-2 py-1.5 text-[#2F3941]">{r.upload_date}</td>
+                  <td className={`px-2 py-1.5 ${r.direction === 'out' ? 'text-[#2F3941]' : 'text-[#0C7A57]'}`}>{r.direction === 'out' ? '출고' : '입고'}</td>
+                  <td className="px-2 py-1.5 text-[#2F3941]">{r.from_center}</td>
+                  <td className="px-2 py-1.5 text-[#2F3941]">{r.to_center}</td>
+                  <td className="px-2 py-1.5 text-[#111111]">{r.device_type}</td>
+                  <td className="px-2 py-1.5 text-[#5A666F]">{r.sub_type}</td>
+                  <td className="px-2 py-1.5 font-mono text-[#2F3941]">{r.trcn_id}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {filtered.length > 1000 && <div className="text-[10px] text-[#94A3B8] p-2 text-center">상위 1000건만 표시 (엑셀로 전체 내보내기)</div>}
+          {filtered.length > 1000 && <div className="text-[10px] text-[#8A949C] p-2 text-center">상위 1000건만 표시 (엑셀로 전체 내보내기)</div>}
         </div>
         </div>
       )}
@@ -1252,9 +1252,9 @@ function CertTab({ perms }: { perms: Perms }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-[12px] border border-[#E2E8F0] rounded px-2" />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-[12px] border border-[#E3E1DE] rounded px-2" />
           <Select value={dir} onValueChange={v => v !== null && setDir(v as 'in' | 'out')}>
             <SelectTrigger className="h-8 text-[12px] w-24"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1270,15 +1270,15 @@ function CertTab({ perms }: { perms: Perms }) {
           </Select>
           <Button type="button" variant="outline" className="h-8 text-[12px]" onClick={load}>조회</Button>
           <Button type="button" className="h-8 text-[12px]" disabled={!rows.length} onClick={download}>인수인계증 다운로드</Button>
-          <span className="text-[11px] text-[#94A3B8] ml-auto">{rows.length}건</span>
+          <span className="text-[11px] text-[#8A949C] ml-auto">{rows.length}건</span>
         </div>
         <Input placeholder="비고 (선택)" value={notes} onChange={e => setNotes(e.target.value)} className="h-8 text-[12px] max-w-md" />
       </div>
 
       {loading ? (
-        <div className="text-[12px] text-[#94A3B8] py-8 text-center">불러오는 중…</div>
+        <div className="text-[12px] text-[#8A949C] py-8 text-center">불러오는 중…</div>
       ) : (
-        <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+        <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
           <DevicePivotTable pivot={buildPivot(rows)} title={`${dir === 'out' ? '출고' : '입고'} · ${centerFilter} · ${dateLabel(date)}`} />
         </div>
       )}
@@ -1313,33 +1313,33 @@ function AdminTab() {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-[#e2e8f0] p-3 space-y-3">
-        <div className="text-[12px] text-[#64748B]">「모뎀」·「미분류」로 저장된 단말기를 현재 분류 규칙으로 재분류합니다. (B820 등 신규 기종 반영)</div>
+      <div className="bg-white rounded-lg border border-[#E3E1DE] p-3 space-y-3">
+        <div className="text-[12px] text-[#5A666F]">「모뎀」·「미분류」로 저장된 단말기를 현재 분류 규칙으로 재분류합니다. (B820 등 신규 기종 반영)</div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" className="h-8 text-[12px]" disabled={busy} onClick={preview}>미리보기</Button>
           {changes && changes.length > 0 && (
             <Button type="button" className="h-8 text-[12px]" disabled={busy} onClick={apply}>{changes.length}건 일괄 변경</Button>
           )}
-          {msg && <span className="text-[11px] text-[#475569]">{msg}</span>}
+          {msg && <span className="text-[11px] text-[#2F3941]">{msg}</span>}
         </div>
       </div>
       {changes && (
         changes.length === 0 ? (
-          <div className="text-[11px] text-[#94A3B8]">변경할 항목이 없습니다.</div>
+          <div className="text-[11px] text-[#8A949C]">변경할 항목이 없습니다.</div>
         ) : (
-          <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
-          <div className="overflow-x-auto rounded border border-[#E2E8F0] max-h-96">
+          <div className="bg-white rounded-lg border border-[#E3E1DE] p-4">
+          <div className="overflow-x-auto rounded border border-[#E3E1DE] max-h-96">
             <table className="w-full text-[11px]">
-              <thead><tr className="bg-[#F8F9FA] text-[#64748B]">
+              <thead><tr className="bg-[#F6F6F7] text-[#5A666F]">
                 <th className="px-2 py-1.5 text-left font-semibold">TRCN_ID</th>
                 <th className="px-2 py-1.5 text-left font-semibold">기존</th>
                 <th className="px-2 py-1.5 text-left font-semibold">변경</th>
               </tr></thead>
               <tbody>{changes.slice(0, 500).map(c => (
-                <tr key={c.id} className="border-t border-[#F1F5F9]">
-                  <td className="px-2 py-1.5 font-mono text-[#475569]">{c.trcn_id}</td>
-                  <td className="px-2 py-1.5 text-[#94A3B8]">{c.old_device}/{c.old_sub}</td>
-                  <td className="px-2 py-1.5 text-[#B32646] font-semibold">{c.new_device}/{c.new_sub}</td>
+                <tr key={c.id} className="border-t border-[#F1F1F0]">
+                  <td className="px-2 py-1.5 font-mono text-[#2F3941]">{c.trcn_id}</td>
+                  <td className="px-2 py-1.5 text-[#8A949C]">{c.old_device}/{c.old_sub}</td>
+                  <td className="px-2 py-1.5 text-[#D60051] font-semibold">{c.new_device}/{c.new_sub}</td>
                 </tr>
               ))}</tbody>
             </table>
