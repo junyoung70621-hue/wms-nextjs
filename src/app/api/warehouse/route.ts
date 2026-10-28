@@ -31,6 +31,15 @@ export async function GET(request: Request) {
     query = query.in('location', viewable)
   }
 
+  // 전역 검색(상단 검색창): 자재명·ERP코드/명·분류 부분일치
+  const q = searchParams.get('q')?.trim()
+  if (q) {
+    const like = `%${q.replace(/[%_,()]/g, '')}%`
+    query = query
+      .or(['item_name', 'erp_code', 'erp_name', 'category_mid', 'category_small'].map(c => `${c}.ilike.${like}`).join(','))
+      .limit(300)
+  }
+
   const { data, error } = await query
 
   if (error) {

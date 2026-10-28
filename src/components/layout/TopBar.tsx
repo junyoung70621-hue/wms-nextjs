@@ -58,6 +58,24 @@ export function pageTitle(pathname: string): string {
   return key ? TITLE_MAP[key] : ''
 }
 
+// 전역 검색 결과: 자재명 기준으로 묶어 센터별 수량 + 총수량
+type SearchHit = { name: string; total: number; centers: { center: string; qty: number }[] }
+
+function groupHits(rows: { item_name: string; location: string | null; quantity: number | null }[]): SearchHit[] {
+  const map = new Map<string, Map<string, number>>()
+  for (const r of rows) {
+    if (!r.item_name) continue
+    const byCenter = map.get(r.item_name) ?? new Map<string, number>()
+    const c = r.location ?? '미지정'
+    byCenter.set(c, (byCenter.get(c) ?? 0) + (r.quantity ?? 0))
+    map.set(r.item_name, byCenter)
+  }
+  return [...map].map(([name, byCenter]) => {
+    const centers = [...byCenter].map(([center, qty]) => ({ center, qty })).sort((a, b) => b.qty - a.qty)
+    return { name, total: centers.reduce((s, c) => s + c.qty, 0), centers }
+  }).slice(0, 10)
+}
+
 type Counts = {
   mat_pending: number
   pur_pending: number
@@ -104,10 +122,31 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
   const router = useRouter()
   const { openLogin } = useAuthGate()
   const [q, setQ] = useState('')
+  const [hits, setHits] = useState<SearchHit[]>([])
+  const [open, setOpen] = useState(false)
   const [counts, setCounts] = useState<Counts>({ mat_pending: 0, pur_pending: 0, tr_pending: 0, unread_notices: 0 })
   const [remaining, setRemaining] = useState<number | null>(null)
   const [activity, setActivity] = useState<ActivityState>('active')
   const lastActivityRef = useRef<number>(Date.now())
+
+  // 검색어 입력 → 250ms 디바운스 후 조회, 자재명 기준 센터별 수량 드롭다운
+  useEffect(() => {
+    const v = q.trim()
+    if (!v) return
+    const ctrl = new AbortController()
+    const t = setTimeout(() => {
+      fetch(`/api/warehouse?q=${encodeURIComponent(v)}`, { signal: ctrl.signal })
+        .then(r => r.json())
+        .then(d => { if (!d.error) { setHits(groupHits(d.data ?? [])); setOpen(true) } })
+        .catch(() => {})
+    }, 250)
+    return () => { clearTimeout(t); ctrl.abort() }
+  }, [q])
+
+  const goSearch = (v: string) => {
+    setOpen(false); setQ('')
+    router.push(`/warehouse?q=${encodeURIComponent(v)}`)
+  }
 
   // 카운트 갱신 (게스트는 인증 API 호출 생략)
   useEffect(() => {
@@ -181,18 +220,54 @@ export default function TopBar({ user, collapsed, onToggle }: TopBarProps) {
 
       {/* 전역 검색 → 재고 현황으로 검색어 전달 */}
       <form
-        onSubmit={e => { e.preventDefault(); const v = q.trim(); if (v) { router.push(`/warehouse?q=${encodeURIComponent(v)}`); setQ('') } }}
-        className={`hidden md:flex items-center pl-4 border-l border-[#E3E1DE] ${collapsed ? '' : 'md:ml-1'}`}
+        onSubmit={e => { e.preventDefault(); const v = q.trim(); if (v) goSearch(v) }}
+        className={`hidden md:flex items-center pl-4 border-l border-[#E3E1DE] `}
       >
-        <div className="flex items-center gap-2 h-9 px-3 w-[260px] lg:w-[320px] rounded-[3px] border border-[#D9D9D9] bg-white focus-within:border-[#111111] transition-colors">
-          <Search size={15} strokeWidth={2} className="text-[#8A949C] flex-shrink-0" />
-          <input
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="자재명 · ERP코드 · 분류 검색"
-            aria-label="자재 검색"
-            className="flex-1 min-w-0 text-[13px] bg-transparent outline-none placeholder:text-[#8A949C]"
-          />
+        <div className="relative w-[260px] lg:w-[320px]">
+          <div className="flex items-center gap-2 h-9 px-3 rounded-[3px] border border-[#D9D9D9] bg-white focus-within:border-[#111111] transition-colors">
+            <Search size={15} strokeWidth={2} className="text-[#8A949C] flex-shrink-0" />
+            <input
+              value={q}
+              onChange={e => { setQ(e.target.value); if (!e.target.value.trim()) setHits([]) }}
+              onFocus={() => { if (hits.length) setOpen(true) }}
+              onBlur={() => setOpen(false)}
+              onKeyDown={e => { if (e.key === 'Escape') setOpen(false) }}
+              placeholder="자재명 · ERP코드 · 분류 검색"
+              aria-label="자재 검색"
+              className="flex-1 min-w-0 text-[13px] bg-transparent outline-none placeholder:text-[#8A949C]"
+            />
+          </div>
+
+          {/* 검색 결과 드롭다운: 자재명 / 총수량 / 센터별 수량. onMouseDown 방지 → blur 전에 클릭 처리 */}
+          {open && q.trim() && (
+            <div
+              onMouseDown={e => e.preventDefault()}
+              className="absolute left-0 right-0 top-[calc(100%+4px)] max-h-[420px] overflow-y-auto bg-white border border-[#D9D9D9] rounded-[3px] shadow-[0_6px_20px_rgba(0,0,0,0.12)] z-50"
+            >
+              {hits.length === 0 ? (
+                <div className="px-3 py-3 text-[12.5px] text-[#8A949C]">검색 결과 없음</div>
+              ) : hits.map(h => (
+                <button
+                  key={h.name}
+                  type="button"
+                  onClick={() => goSearch(h.name)}
+                  className="w-full text-left px-3 py-2 border-b border-[#F0EEEB] last:border-b-0 hover:bg-[#F6F6F7] transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-semibold text-[#111111] truncate">{h.name}</span>
+                    <span className="text-[12px] whitespace-nowrap text-[#5A666F]">
+                      총 <b className={h.total > 0 ? 'text-[#D60051]' : 'text-[#8A949C]'}>{h.total.toLocaleString()}</b>개
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11.5px] text-[#5A666F]">
+                    {h.centers.map(c => (
+                      <span key={c.center}>{c.center} <b className="text-[#2F3941]">{c.qty.toLocaleString()}</b></span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </form>
 
