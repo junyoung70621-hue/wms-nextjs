@@ -306,8 +306,6 @@ function UploadPanel({
       let m = `저장 완료: ${d.inserted}건`
       if (d.unclassified) m += ` · 미분류 제외 ${d.unclassified}건`
       if (d.dups) m += ` · 중복 ${d.dups}건`
-      if (d.autoReturned) m += ` · 자동반납 ${d.autoReturned}건`
-      if (d.stocked) m += ` · 센터보유 추가 ${d.stocked}건`
       setMsg(m)
       setIds([]); setFileName(''); setManualText(''); setNotes(''); setDups(null); setForce(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -772,7 +770,6 @@ function RepairPoolTab({ perms }: { perms: Perms }) {
       let m = `${center}로 출고 완료: ${d.inserted}건`
       if (d.unclassified) m += ` · 미분류 제외 ${d.unclassified}건`
       if (d.dups) m += ` · 중복 ${d.dups}건`
-      if (d.stocked) m += ` · ${center} 보유 추가 ${d.stocked}건`
       setMsg(m)
       await load()
     } catch { setMsg('출고 실패') }

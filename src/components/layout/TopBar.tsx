@@ -39,7 +39,6 @@ const TITLE_MAP: Record<string, string> = {
   '/usage': '사용내역',
   '/history': '입출고 이력',
   '/rack-map': '자재창고 지도',
-  '/bus-tracking': '센터 단말현황(버스)',
   '/terminal/bus': '버스단말기 현황',
   '/terminal/taxi': '택시단말기 현황',
   '/notices': '공지사항',

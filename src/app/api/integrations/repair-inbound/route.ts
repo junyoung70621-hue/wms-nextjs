@@ -161,7 +161,7 @@ export async function POST(request: Request) {
     const payload = {
       title: '수리완료 단말기 입고',
       body: `수리센터에서 ${parts} 자재센터로 귀속되었습니다.`,
-      url: taxiN ? '/terminal/taxi' : '/bus-tracking',
+      url: taxiN ? '/terminal/taxi' : '/terminal/bus',
       tag: 'repair-inbound',
     }
     firePush(sendPushToCenters([REPAIR_TO_CENTER], payload))

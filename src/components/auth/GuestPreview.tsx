@@ -7,7 +7,7 @@ type Col = { label: string; type: ColType }
 
 type Variant =
   | 'default' | 'dashboard' | 'warehouse' | 'terminal-bus' | 'terminal-taxi'
-  | 'bus-tracking' | 'history' | 'usage' | 'material-requests'
+  | 'history' | 'usage' | 'material-requests'
   | 'purchase-requests' | 'notices' | 'inquiry'
 
 type Config = {
@@ -115,22 +115,6 @@ const CONFIGS: Record<Variant, Config> = {
       { label: '일자', type: 'date' },
     ],
     chips: ['전체', '입고', '출고'],
-  },
-  'bus-tracking': {
-    stats: [
-      { label: '센터 보유', value: '246' },
-      { label: '설치 운영', value: '1,893' },
-      { label: '회수', value: '57' },
-      { label: '이번 달 교체', value: '21' },
-    ],
-    columns: [
-      { label: '운수사·센터', type: 'company' },
-      { label: '보유', type: 'number' },
-      { label: '설치', type: 'number' },
-      { label: '회수', type: 'number' },
-      { label: '최근 처리', type: 'date' },
-    ],
-    chips: ['전체', '보유', '교체'],
   },
   history: {
     stats: [

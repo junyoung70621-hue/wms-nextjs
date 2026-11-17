@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import {
-  LayoutGrid, Bus, CarTaxiFront, Boxes, Share2, History, BarChart3,
+  LayoutGrid, Bus, CarTaxiFront, Boxes, History, BarChart3,
   ClipboardList, ShoppingCart, Map, Settings, Users, Megaphone,
   MessageSquare, CircleUser, type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NO_WAREHOUSE, BUS_CENTERS, NO_TAXI_TERMINAL } from '@/constants/centers'
+import { NO_WAREHOUSE, NO_TAXI_TERMINAL } from '@/constants/centers'
 import type { SessionUser } from '@/lib/session'
 
 type Counts = { mat_pending: number; pur_pending: number; unread_notices: number }
@@ -32,7 +32,6 @@ function getMenuSections(user: SessionUser | null): Section[] {
           { href: '/terminal/bus', label: '버스단말기 현황', icon: Bus },
           { href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront },
           { href: '/warehouse', label: '재고 현황', icon: Boxes },
-          { href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 },
           { href: '/history', label: '입출고 이력', icon: History },
           { href: '/usage', label: '사용내역 이력', icon: BarChart3 },
         ],
@@ -62,9 +61,6 @@ function getMenuSections(user: SessionUser | null): Section[] {
   const isMaterials = role === 'materials'
   const isGuest = role === 'guest'
 
-  const showBusTracking =
-    isAdmin || [...BUS_CENTERS, '자재센터'].includes(center)
-
   const sections: Section[] = []
 
   sections.push({
@@ -76,8 +72,6 @@ function getMenuSections(user: SessionUser | null): Section[] {
   if (isAdmin || !NO_TAXI_TERMINAL.has(center))
     assetItems.push({ href: '/terminal/taxi', label: '택시단말기 현황', icon: CarTaxiFront })
   assetItems.push({ href: '/warehouse', label: '재고 현황', icon: Boxes })
-  if (showBusTracking)
-    assetItems.push({ href: '/bus-tracking', label: '센터 단말현황(버스)', icon: Share2 })
   assetItems.push({ href: '/history', label: '입출고 이력', icon: History })
   if (!isGuest) assetItems.push({ href: '/usage', label: '사용내역 이력', icon: BarChart3 })
   sections.push({ title: '자산 관리', items: assetItems })
