@@ -77,8 +77,81 @@ function ItemChip({ item, onClick }: { item: Item; onClick: () => void }) {
   )
 }
 
-function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: {
-  item: Item; canEdit: boolean; location: string; onClose: () => void; onSaved: () => void; onBoxChanged: () => void
+// 같은 자재명의 다른 박스로 수량 이동(분할)
+function MoveBoxSection({ item, items, onMoved }: { item: Item; items: Item[]; onMoved: () => void }) {
+  const name = item.item_name.trim()
+  const targets = items
+    .filter(i => i.id !== item.id && i.item_name.trim() === name)
+    .sort((a, b) => coordKey(a.rack_no, a.shelf, a.box_no).localeCompare(coordKey(b.rack_no, b.shelf, b.box_no), 'ko', { numeric: true }))
+  const [toId, setToId] = useState<number | 'new' | null>(null)
+  const [coord, setCoord] = useState({ rack_no: item.rack_no ?? '', shelf: item.shelf ?? '', box_no: '' })
+  const [qty, setQty] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  async function move() {
+    const n = Number(qty)
+    if (!toId) { setMsg('옮길 박스를 선택해 주세요.'); return }
+    if (toId === 'new' && (!coord.rack_no.trim() || !coord.box_no.trim())) { setMsg('새 박스의 랙과 박스 번호를 입력해 주세요.'); return }
+    if (!Number.isInteger(n) || n < 1 || n > item.quantity) { setMsg(`수량은 1 ~ ${item.quantity}개`); return }
+    setBusy(true); setMsg('')
+    try {
+      const res = await fetch('/api/warehouse/move-box', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from_id: item.id, quantity: n, ...(toId === 'new' ? { to: coord } : { to_id: toId }) }),
+      })
+      const d = await res.json()
+      if (!res.ok || d.error) { setMsg(d.error || '이동 실패'); return }
+      setQty(''); setToId(null); onMoved()
+    } catch { setMsg('이동 실패') } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="border-t border-[#E3E1DE] pt-3 space-y-2">
+      <div className="text-[11px] font-bold text-[#5A666F]">
+        다른 박스로 이동 <span className="font-normal text-[#8A949C]">— 같은 자재명 박스 {targets.length}곳 또는 새 박스</span>
+      </div>
+      <div className="space-y-1 max-h-40 overflow-y-auto">
+        {targets.map(t => (
+          <button key={t.id} type="button" onClick={() => setToId(t.id)}
+            className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md border text-left text-[11px] ${
+              toId === t.id ? 'border-[#D60051] bg-[#FCEEF3]' : 'border-[#E3E1DE] bg-white hover:bg-[#F1F1F0]'}`}>
+            <span className="text-[#111111]">랙 {t.rack_no ?? '-'} · 선반 {t.shelf ?? '-'} · 박스 {t.box_no ?? '-'}</span>
+            <span className="text-[#5A666F] flex-shrink-0">{t.quantity.toLocaleString()}개</span>
+          </button>
+        ))}
+        <button type="button" onClick={() => setToId('new')}
+          className={`w-full px-2.5 py-1.5 rounded-md border border-dashed text-left text-[11px] ${
+            toId === 'new' ? 'border-[#D60051] bg-[#FCEEF3] text-[#D60051]' : 'border-[#C9C7C4] bg-white text-[#5A666F] hover:bg-[#F1F1F0]'}`}>
+          + 새 박스로 나누기 (빈 박스 위치 직접 입력)
+        </button>
+      </div>
+      {toId === 'new' && (
+        <div className="grid grid-cols-3 gap-1.5">
+          {([['rack_no', '랙'], ['shelf', '선반'], ['box_no', '박스']] as const).map(([k, label]) => (
+            <div key={k}>
+              <label className="text-[10px] text-[#5A666F] block mb-0.5">{label}{k !== 'shelf' && <span className="text-[#D60051]"> *</span>}</label>
+              <Input value={coord[k]} onChange={e => setCoord(c => ({ ...c, [k]: e.target.value }))}
+                className="h-8 text-[12px] bg-white" />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Input type="number" min={1} max={item.quantity} value={qty} onChange={e => setQty(e.target.value)}
+          placeholder={`이동 수량 (최대 ${item.quantity})`} className="h-8 text-[12px] bg-white" />
+        <button onClick={move} disabled={busy || item.quantity < 1}
+          className="h-8 px-3 text-[12px] rounded-md bg-[#111111] text-white hover:bg-[#2F3941] disabled:opacity-60 flex-shrink-0">
+          {busy ? '이동 중…' : '이동'}
+        </button>
+      </div>
+      {msg && <div className="text-[11px] text-[#D60051]">{msg}</div>}
+    </div>
+  )
+}
+
+function ItemModal({ item, items, canEdit, location, onClose, onSaved, onBoxChanged }: {
+  item: Item; items: Item[]; canEdit: boolean; location: string; onClose: () => void; onSaved: () => void; onBoxChanged: () => void
 }) {
   const [form, setForm] = useState({
     item_name: item.item_name,
@@ -206,6 +279,7 @@ function ItemModal({ item, canEdit, location, onClose, onSaved, onBoxChanged }: 
           </table>
         )}
 
+        {canEdit && !isTerminalBox && <MoveBoxSection item={item} items={items} onMoved={onBoxChanged} />}
         {isTerminalBox && <TerminalBoxSection item={item} canEdit={canEdit} location={location} onChanged={onBoxChanged} />}
       </div>
     </div>
@@ -719,6 +793,7 @@ export default function RackMapContent({ user }: { user: SessionUser | null }) {
       {selected && (
         <ItemModal
           item={selected}
+          items={items}
           canEdit={canEdit}
           location={center}
           onClose={() => setSelected(null)}
